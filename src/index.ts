@@ -86,9 +86,25 @@ export const estimateAbilityMLE = (answers: Array<number>, zetas: Array<Zeta>, m
     }
 }
 
+export const normal = (mean: number, stdDev: number) => {
+    let distr = [];
+    for (let i = -4; i <= 4; i += 0.1) {
+        distr.push([i, y(i)]);
+    }
+    return distr;
+
+    function y(x) {
+        return (
+            (1 / (Math.sqrt(2 * Math.PI) * stdDev)) *
+            Math.exp(-Math.pow(x - mean, 2) / (2 * Math.pow(stdDev, 2)))
+        );
+    }
+}
+
 export const estimateAbilityEAP = (answers:  Array<number>, zetas: Array<Zeta>) => {
     let num = 0;
     let nf = 0;
+    const ABILITY_PRIOR = normal(0,1);
     for (let i = 0; i < ABILITY_PRIOR.length; i++) {
         let theta = ABILITY_PRIOR[i][0];
         let probability = ABILITY_PRIOR[i][1];
