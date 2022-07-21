@@ -15,9 +15,9 @@ import {jsCAT} from '@bdelab/jsCAT';
 const prior = jsCAT.normal();
 
 // for each adaptive trial, you will use the following functions
-const theta = estimateAbility(answers, zetas, method, minTheta, maxTheta, prior);
+const theta = jsCAT.estimateAbility(answers, zetas, method, minTheta, maxTheta, prior);
 
-const nextStimulus = findNextItem(stimuli, theta, method, deepCopy);
+const nextStimulus = jsCAT.findNextItem(stimuli, theta, method, deepCopy);
 ```
 
 
