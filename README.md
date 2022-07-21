@@ -1,1 +1,1 @@
-# jsCAT: Computer Adaptive Testing in javascript
+# jsCAT: Computer Adaptive Testing in JavaScript
