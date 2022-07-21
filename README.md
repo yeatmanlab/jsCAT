@@ -4,12 +4,12 @@ A library to support IRT-based computer adaptive testing in JavaScript
 ## Installation 
 You can install jsCAT from npm with 
 ```bash
-npm i @bdelab/jsCAT
+npm i @bdelab/jscat
 ```
 
 ## Usage
 ```JavaScript
-import {jsCAT} from '@bdelab/jsCAT';
+import {jsCAT} from '@bdelab/jscat';
 
 // declare prior if you choose to use EAP method
 const prior = jsCAT.normal();
@@ -20,8 +20,7 @@ const theta = jsCAT.estimateAbility(answers, zetas, method, minTheta, maxTheta, 
 const nextStimulus = jsCAT.findNextItem(stimuli, theta, method, deepCopy);
 ```
 
-
 ## References
-
+Lucas Duailibe, irt-js, (2019), GitHub repository, https://github.com/geekie/irt-js
 
 ## License

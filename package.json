@@ -1,28 +1,52 @@
 {
-  "name": "jscat",
+  "name": "@bdelab/jscat",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "A library to support IRT-based computer adaptive testing in JavaScript",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest --config jestconfig.json --verbose",
+    "build": "tsc",
+    "format": "prettier --write \"src/**/*.ts\" \"lib/**/*.js\"",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "doc": "npx typedoc",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm test && npm run lint",
+    "preversion": "npm run lint",
+    "version": "npm run format && git add -A src",
+    "postversion": "git push && git push --tags"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/yeatmanlab/jsCAT.git"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "adaptive testing",
+    "item response theory",
+    "assessment",
+    "psychometric"
+  ],
+  "author": "Wanjing Anya Ma <wanjingma1122@gmail.com>",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/yeatmanlab/jsCAT/issues"
   },
   "homepage": "https://github.com/yeatmanlab/jsCAT#readme",
   "devDependencies": {
+    "@types/jest": "^28.1.6",
     "@types/lodash": "^4.14.182",
+    "@typescript-eslint/eslint-plugin": "^5.30.7",
+    "@typescript-eslint/parser": "^5.30.7",
+    "eslint": "^8.20.0",
+    "eslint-config-prettier": "^8.5.0",
+    "jest": "^28.1.3",
+    "prettier": "^2.7.1",
+    "ts-jest": "^28.0.7",
+    "tsdoc": "^0.0.4",
     "typescript": "^4.7.4"
   },
   "dependencies": {
     "lodash": "^4.17.21",
-    "optimization-js": "^1.5.0"
+    "optimization-js": "^0.0.0"
   }
 }
