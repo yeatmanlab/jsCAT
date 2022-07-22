@@ -57,7 +57,7 @@ export const estimateAbility = (answers:  Array<0 | 1>,
                                 method = 'MLE',
                                 minTheta = -4,
                                 maxTheta = 4,
-                                prior = normal()) => {
+                                prior = [[0,0]]) => {
     method = method.toLowerCase();
     const validMethod: Array<string> = ['mle', 'eap']; // TO DO: add staircase
     if (!validMethod.includes(method)){
@@ -102,7 +102,7 @@ export const estimateAbility = (answers:  Array<0 | 1>,
     function likelihood(theta: number) {
         return zetas.reduce((acc, zeta, i) => {
             let irf = itemResponseFunction(theta, zeta);
-            return answers[i] === 1 ? acc * irf : acc * (1 - irf);
+            return answers[i] === 1 ? acc + Math.log(irf) : acc + Math.log(1 - irf);
         }, 1);
     }
 }
@@ -149,16 +149,20 @@ export const findNextItem = (stimuli: Array<Stimulus>,
         } else {
             index = Math.floor(arr.length / 2) + randomInteger(-2, 2);
         }
+        const nextItem = arr[index];
+        arr.splice(index, 1);
         return {
-            nextStimulus: arr[index],
-            remainingStimuli: arr.splice(index, 1)
+            nextStimulus: nextItem,
+            remainingStimuli: arr
         };
     } else if (method === 'closest') {
         //findClosest requires arr is sorted by difficulty
         const index = findClosest(arr, theta + 0.481);
+        const nextItem = arr[index];
+        arr.splice(index, 1);
         return {
-            nextStimulus: arr[index],
-            remainingStimuli: arr.splice(index, 1)
+            nextStimulus: nextItem,
+            remainingStimuli: arr
         };
     }
 
