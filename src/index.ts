@@ -42,6 +42,8 @@ export const normal = (mean=0, stdDev = 1, min = -4, max = 4, stepSize = 0.1) =>
     }
 }
 
+export const abilityPrior = normal();
+
 /**
  * use an input estimate method to calculate the estimate ability based on previous response patterns and item params
  * @param answers - response patterns
@@ -57,7 +59,7 @@ export const estimateAbility = (answers:  Array<0 | 1>,
                                 method = 'MLE',
                                 minTheta = -4,
                                 maxTheta = 4,
-                                prior = [[0,0]]) => {
+                                prior = abilityPrior) => {
     method = method.toLowerCase();
     const validMethod: Array<string> = ['mle', 'eap']; // TO DO: add staircase
     if (!validMethod.includes(method)){
@@ -116,7 +118,7 @@ export const estimateAbility = (answers:  Array<0 | 1>,
  * @returns {nextStimulus: Stimulus,
             remainingStimuli: Array<Stimulus>}
  */
-export const findNextItem = (stimuli: Array<Stimulus>,
+export const findNextItem = (stimuli: Stimulus[],
                              theta = 0,
                              method = 'MFI',
                              deepCopy = true) => {
