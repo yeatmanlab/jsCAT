@@ -5,6 +5,7 @@ export type Zeta = { a: number, b: number, c: number, d: number };
 
 export interface Stimulus {
     difficulty: number;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any;
 }
 
@@ -28,7 +29,7 @@ export const itemResponseFunction = (theta: number, zeta: Zeta) => {
  * @returns {Array<[number, number]>} - a normal distribution
  */
 export const normal = (mean=0, stdDev = 1, min = -4, max = 4, stepSize = 0.1) => {
-    let distribution = [];
+    const distribution = [];
     for (let i = min; i <= max; i += stepSize) {
         distribution.push([i, y(i)]);
     }
@@ -75,9 +76,9 @@ export const estimateAbility = (answers:  Array<0 | 1>,
         let num = 0;
         let nf = 0;
         for (let i = 0; i < prior.length; i++) {
-            let theta = prior[i][0];
-            let probability = prior[i][1];
-            let like = likelihood(theta);
+            const theta = prior[i][0];
+            const probability = prior[i][1];
+            const like = likelihood(theta);
             num += theta * like * probability;
             nf += like * probability;
         }
@@ -103,7 +104,7 @@ export const estimateAbility = (answers:  Array<0 | 1>,
 
     function likelihood(theta: number) {
         return zetas.reduce((acc, zeta, i) => {
-            let irf = itemResponseFunction(theta, zeta);
+            const irf = itemResponseFunction(theta, zeta);
             return answers[i] === 1 ? acc + Math.log(irf) : acc + Math.log(1 - irf);
         }, 1);
     }
@@ -186,7 +187,7 @@ export const findNextItem = (stimuli: Stimulus[],
      * @returns {number} the index of arr
      */
     function findClosest(arr: Array<Stimulus>, target: number){
-        let n = arr.length;
+        const n = arr.length;
         // Corner cases
         if (target <= arr[0].difficulty)
             return 0;
