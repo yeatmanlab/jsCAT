@@ -54,8 +54,8 @@ describe("findNextItem", () => {
     it("correctly suggests the next item", () => {
         const expected = {nextStimulus: s1,
             remainingStimuli: [s3, s2]};
-
-        expect(findNextItem(Array(s1, s2, s3),0,'MFI',true)).toEqual(expected);
+        const received = findNextItem(Array(s1, s2, s3),0,'MFI',true);
+        expect(received).toEqual(expected);
 
     });
 });

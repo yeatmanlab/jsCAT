@@ -140,6 +140,7 @@ export const findNextItem = (stimuli: Stimulus[],
         const stimuliAddFisher = arr.map((element) => ({fisherInformation: fisherInformation(theta,
                 {a: 1, b: element.difficulty, c: 0.5, d: 1}), ...element}));
         stimuliAddFisher.sort((a,b) => b.fisherInformation - a.fisherInformation);
+        stimuliAddFisher.forEach((stimulus: Stimulus) => {delete stimulus['fisherInformation']});
         return {
             nextStimulus: stimuliAddFisher[0],
             remainingStimuli: stimuliAddFisher.slice(1)
