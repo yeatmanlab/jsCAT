@@ -19,7 +19,6 @@ describe("itemResponseFunction", () => {
             itemResponseFunction(0, { a: 0.5, b: 0, c: 0.25, d: 1 }),
             2
         );
-        // Do this another two times for other test values
     });
 });
 
