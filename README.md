@@ -9,15 +9,15 @@ npm i @bdelab/jscat
 
 ## Usage
 ```JavaScript
-import {jsCAT} from '@bdelab/jscat';
+import {normal, estimateAbility, findNextItem} from '@bdelab/jscat';
 
 // declare prior if you choose to use EAP method
-const prior = jsCAT.normal();
+const prior = normal();
 
 // for each adaptive trial, you will use the following functions
-const theta = jsCAT.estimateAbility(answers, zetas, method, minTheta, maxTheta, prior);
+const theta = estimateAbility(answers, zetas, method, minTheta, maxTheta, prior);
 
-const nextStimulus = jsCAT.findNextItem(stimuli, theta, method, deepCopy);
+const nextStimulus = findNextItem(stimuli, theta, method, deepCopy);
 ```
 
 ## References
