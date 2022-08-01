@@ -16,6 +16,13 @@ export interface Stimulus {
  */
 export declare const itemResponseFunction: (theta: number, zeta: Zeta) => number;
 /**
+ * a 3PL Fisher information function
+ * @param theta - ability estimate
+ * @param zeta - item params
+ * @returns {number} - the expected value of the observed information
+ */
+export declare const fisherInformation: (theta: number, zeta: Zeta) => number;
+/**
  * return a Gaussian distribution within a given range
  * @param mean
  * @param stdDev
@@ -50,3 +57,9 @@ export declare const findNextItem: (stimuli: Stimulus[], theta?: number, method?
     nextStimulus: Stimulus;
     remainingStimuli: Stimulus[];
 } | undefined;
+/**
+ * calculate the standard error of mean of ability estimation
+ * @param theta
+ * @param zetas
+ */
+export declare const SEM: (theta: number, zetas: Array<Zeta>) => number;

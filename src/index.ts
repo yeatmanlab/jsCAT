@@ -29,7 +29,7 @@ export const itemResponseFunction = (theta: number, zeta: Zeta) => {
 export const fisherInformation = (theta: number, zeta: Zeta) => {
   const p = itemResponseFunction(theta, zeta);
   const q = 1 - p;
-  return Math.pow(zeta.a, 2) * (q / p) * ((p - zeta.c) / Math.pow(1 - zeta.c, 2));
+  return Math.pow(zeta.a, 2) * (q / p) * (Math.pow(p - zeta.c, 2) / Math.pow(1 - zeta.c, 2));
 }
 
 /**
