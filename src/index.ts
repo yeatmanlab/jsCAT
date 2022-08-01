@@ -1,6 +1,7 @@
 import { minimize_Powell } from 'optimization-js';
 import { cloneDeep } from 'lodash';
 
+
 export type Zeta = { a: number; b: number; c: number; d: number };
 
 export interface Stimulus {
@@ -18,6 +19,18 @@ export interface Stimulus {
 export const itemResponseFunction = (theta: number, zeta: Zeta) => {
   return zeta.c + (zeta.d - zeta.c) / (1 + Math.exp(-zeta.a * (theta - zeta.b)));
 };
+
+/**
+ * a 3PL Fisher information function
+ * @param theta - ability estimate
+ * @param zeta - item params
+ * @returns {number} - the expected value of the observed information
+ */
+export const fisherInformation = (theta: number, zeta: Zeta) => {
+  const p = itemResponseFunction(theta, zeta);
+  const q = 1 - p;
+  return Math.pow(zeta.a, 2) * (q / p) * ((p - zeta.c) / Math.pow(1 - zeta.c, 2));
+}
 
 /**
  * return a Gaussian distribution within a given range
@@ -74,13 +87,13 @@ export const estimateAbility = (
   function estimateAbilityEAP() {
     let num = 0;
     let nf = 0;
-    for (let i = 0; i < prior.length; i++) {
-      const theta = prior[i][0];
-      const probability = prior[i][1];
-      const like = likelihood(theta);
+    let theta, probability, like;
+    prior.forEach((e) => {
+      theta = e[0];
+      probability = e[1];
+      like = likelihood(theta);
       num += theta * like * probability;
-      nf += like * probability;
-    }
+      nf += like * probability;})
     return num / nf;
   }
 
@@ -221,16 +234,15 @@ export const findNextItem = (stimuli: Stimulus[], theta = 0, method = 'MFI', dee
       else return val1;
     }
   }
-
-  /**
-   * a 3PL Fisher information function
-   * @param theta - ability estimate
-   * @param zeta - item params
-   * @returns {number} - the expected value of the observed information
-   */
-  function fisherInformation(theta: number, zeta: Zeta) {
-    const p = itemResponseFunction(theta, zeta);
-    const q = 1 - p;
-    return Math.pow(zeta.a, 2) * (q / p) * ((p - zeta.c) / Math.pow(1 - zeta.c, 2));
-  }
 };
+
+/**
+ * calculate the standard error of mean of ability estimation
+ * @param theta
+ * @param zetas
+ */
+export const SEM = (theta: number, zetas: Array<Zeta>) => {
+  let sum = 0;
+  zetas.forEach(function(zeta) {sum += fisherInformation(theta, zeta)});
+  return 1/Math.sqrt(sum)
+}

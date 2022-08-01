@@ -9,13 +9,15 @@ npm i @bdelab/jscat
 
 ## Usage
 ```JavaScript
-import {normal, estimateAbility, findNextItem} from '@bdelab/jscat';
+import {normal, estimateAbility, findNextItem, SEM} from '@bdelab/jscat';
 
 // declare prior if you choose to use EAP method
 const prior = normal();
 
 // for each adaptive trial, you will use the following functions
 const theta = estimateAbility(answers, zetas, method, minTheta, maxTheta, prior);
+
+const se = SEM(theta, zetas);
 
 const nextStimulus = findNextItem(stimuli, theta, method, deepCopy);
 ```
