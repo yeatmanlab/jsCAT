@@ -87,11 +87,8 @@ export const estimateAbility = (
   function estimateAbilityEAP() {
     let num = 0;
     let nf = 0;
-    let theta, probability, like;
-    prior.forEach((e) => {
-      theta = e[0];
-      probability = e[1];
-      like = likelihood(theta);
+    prior.forEach(([theta, probability]) => {
+      const like = likelihood(theta);
       num += theta * like * probability;
       nf += like * probability;})
     return num / nf;
