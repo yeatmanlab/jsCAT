@@ -1,7 +1,6 @@
 import { minimize_Powell } from 'optimization-js';
 import { cloneDeep } from 'lodash';
 
-
 export type Zeta = { a: number; b: number; c: number; d: number };
 
 export interface Stimulus {
@@ -30,7 +29,7 @@ export const fisherInformation = (theta: number, zeta: Zeta) => {
   const p = itemResponseFunction(theta, zeta);
   const q = 1 - p;
   return Math.pow(zeta.a, 2) * (q / p) * (Math.pow(p - zeta.c, 2) / Math.pow(1 - zeta.c, 2));
-}
+};
 
 /**
  * return a Gaussian distribution within a given range
@@ -90,7 +89,8 @@ export const estimateAbility = (
     prior.forEach(([theta, probability]) => {
       const like = likelihood(theta);
       num += theta * like * probability;
-      nf += like * probability;})
+      nf += like * probability;
+    });
     return num / nf;
   }
 
@@ -130,7 +130,7 @@ export const estimateAbility = (
  */
 export const findNextItem = (stimuli: Stimulus[], theta = 0, method = 'MFI', deepCopy = true) => {
   method = method.toLowerCase();
-  const validMethod: Array<string> = ['mfi', 'random', 'closest', "middle"];
+  const validMethod: Array<string> = ['mfi', 'random', 'closest', 'middle'];
   if (!validMethod.includes(method)) {
     throw new Error('The method you provided is not in the list of valid methods');
   }
@@ -178,12 +178,12 @@ export const findNextItem = (stimuli: Stimulus[], theta = 0, method = 'MFI', dee
       nextStimulus: nextItem,
       remainingStimuli: arr,
     };
-  } else if (method === "random"){
+  } else if (method === 'random') {
     const index = Math.floor(Math.random() * arr.length);
     const nextItem = arr.splice(index, 1)[0];
     return {
       nextStimulus: nextItem,
-      remainingStimuli: arr
+      remainingStimuli: arr,
     };
   }
 
@@ -247,6 +247,8 @@ export const findNextItem = (stimuli: Stimulus[], theta = 0, method = 'MFI', dee
  */
 export const SEM = (theta: number, zetas: Array<Zeta>) => {
   let sum = 0;
-  zetas.forEach(function(zeta) {sum += fisherInformation(theta, zeta)});
-  return 1/Math.sqrt(sum)
-}
+  zetas.forEach(function (zeta) {
+    sum += fisherInformation(theta, zeta);
+  });
+  return 1 / Math.sqrt(sum);
+};
