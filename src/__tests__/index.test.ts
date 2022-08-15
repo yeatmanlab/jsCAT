@@ -50,15 +50,16 @@ describe('findNextItem', () => {
   });
 });
 
-
 describe('SEM', () => {
-    it('correctly calculate the standard error of mean of ability estimate', () => {
-        const received = SEM(-1.551, [{a: 1, b: -0.4473004, c: 0.5, d: 1},
-            {a: 1, b: 2.8692, c: 0.5, d: 1},
-            {a: 1, b: -0.46935, c: 0.5, d: 1},
-            {a: 1, b: -0.5758, c: 0.5, d: 1},
-            {a: 1, b: -1.43012, c: 0.5, d: 1},
-            {a: 1, b: -1.60728, c: 0.5, d: 1}]);
-        expect(1.88).toBeCloseTo(received, 2);
-    });
+  it('correctly calculate the standard error of mean of ability estimate', () => {
+    const received = SEM(-1.551, [
+      { a: 1, b: -0.4473004, c: 0.5, d: 1 },
+      { a: 1, b: 2.8692, c: 0.5, d: 1 },
+      { a: 1, b: -0.46935, c: 0.5, d: 1 },
+      { a: 1, b: -0.5758, c: 0.5, d: 1 },
+      { a: 1, b: -1.43012, c: 0.5, d: 1 },
+      { a: 1, b: -1.60728, c: 0.5, d: 1 },
+    ]);
+    expect(1.88).toBeCloseTo(received, 2);
+  });
 });
