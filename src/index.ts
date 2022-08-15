@@ -130,7 +130,7 @@ export const estimateAbility = (
  */
 export const findNextItem = (stimuli: Stimulus[], theta = 0, method = 'MFI', deepCopy = true) => {
   method = method.toLowerCase();
-  const validMethod: Array<string> = ['mfi', 'random', 'closest'];
+  const validMethod: Array<string> = ['mfi', 'random', 'closest', "middle"];
   if (!validMethod.includes(method)) {
     throw new Error('The method you provided is not in the list of valid methods');
   }
@@ -156,7 +156,7 @@ export const findNextItem = (stimuli: Stimulus[], theta = 0, method = 'MFI', dee
       nextStimulus: stimuliAddFisher[0],
       remainingStimuli: stimuliAddFisher.slice(1),
     };
-  } else if (method === 'random') {
+  } else if (method === 'middle') {
     let index: number;
     if (arr.length < 5) {
       index = Math.floor(arr.length / 2);
@@ -177,6 +177,13 @@ export const findNextItem = (stimuli: Stimulus[], theta = 0, method = 'MFI', dee
     return {
       nextStimulus: nextItem,
       remainingStimuli: arr,
+    };
+  } else if (method === "random"){
+    const index = Math.floor(Math.random() * arr.length);
+    const nextItem = arr.splice(index, 1)[0];
+    return {
+      nextStimulus: nextItem,
+      remainingStimuli: arr
     };
   }
 
