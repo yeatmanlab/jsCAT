@@ -180,8 +180,7 @@ export const findNextItem = (stimuli: Stimulus[], theta = 0, method = 'MFI', dee
     };
   } else if (method === "random"){
     const index = Math.floor(Math.random() * arr.length);
-    const nextItem = arr[index];
-    arr.splice(index, 1);
+    const nextItem = arr.splice(index, 1)[0];
     return {
       nextStimulus: nextItem,
       remainingStimuli: arr
