@@ -1,5 +1,6 @@
-import { itemResponseFunction, estimateAbility, findNextItem, SEM } from '../index';
-import { Stimulus } from '../index';
+import { Cat } from '../index';
+import { itemResponseFunction, fisherInformation } from '../utils';
+import { Stimulus } from '../type';
 
 describe('itemResponseFunction', () => {
   it('correctly calculates the probability', () => {

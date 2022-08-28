@@ -11,13 +11,14 @@ export class Cat {
   public minTheta: number;
   public maxTheta: number;
   public prior: number[][];
-  public zetas: Zeta[];
-  public answers: (0|1)[];
+  private readonly _zetas: Zeta[];
+  private readonly _answers: (0|1)[];
+  private _nItems: number;
   private _theta: number;
   private _seMeasurement: number;
   public nStartItems: number;
   public startSelect: string;
- // TO DO: add zetas, answers, and se, nItems to private
+
   /**
    *
    * @param method - ability estimator, e.g. MLE or EAP, default = 'MLE'
@@ -42,12 +43,15 @@ export class Cat {
 
     this.itemSelect = Cat.validateItemSelect(itemSelect);
 
+    this.startSelect = Cat.validateStartSelect(startSelect);
+
     this.minTheta = minTheta;
     this.maxTheta = maxTheta;
     this.prior = prior;
-    this.zetas = [];
-    this.answers = [];
+    this._zetas = [];
+    this._answers = [];
     this._theta = theta;
+    this._nItems = 0;
     this._seMeasurement = Infinity;
     this.nStartItems = nStartItems;
     this.startSelect = startSelect;
@@ -62,7 +66,15 @@ export class Cat {
   }
 
   public get nItems () {
-    return this.answers.length;
+    return this._answers.length;
+  }
+
+  public get answers(){
+    return this._answers;
+  }
+
+  public get zetas(){
+    return this._zetas;
   }
 
   private static validateMethod(method: string){
@@ -83,7 +95,14 @@ export class Cat {
     return lowerItemSelect
   }
 
-  // TO DO: add validate startSelect ("random" or "middle") in the constructor
+  private static validateStartSelect(startSelect: string){
+    const lowerStartSelect = startSelect.toLowerCase();
+    const validStartSelect: Array<string> = ['random', 'middle']; // TO DO: add staircase
+    if (!validStartSelect.includes(lowerStartSelect)) {
+      throw new Error('The startSelect you provided is not in the list of valid methods');
+    }
+    return lowerStartSelect
+  }
 
   /**
    * use previous response patterns and item params to calculate the estimate ability based on a defined method
@@ -100,14 +119,14 @@ export class Cat {
     method = Cat.validateMethod(method);
 
     zeta = Array.isArray(zeta) ? zeta : [zeta];
-    this.zetas.push(...zeta);
-
     answer = Array.isArray(answer) ? answer : [answer];
-    this.answers.push(...answer);
 
     if (zeta.length !== answer.length) {
       throw new Error('Unmatched length between answers and item params');
     }
+    this._zetas.push(...zeta);
+    this._answers.push(...answer);
+
     if (method === 'eap') {
       this._theta = this.estimateAbilityEAP();
     } else if (method === 'mle') {
@@ -146,9 +165,9 @@ export class Cat {
   }
 
   private likelihood(theta: number) {
-    return this.zetas.reduce((acc, zeta, i) => {
+    return this._zetas.reduce((acc, zeta, i) => {
       const irf = itemResponseFunction(theta, zeta);
-      return this.answers[i] === 1 ? acc + Math.log(irf) : acc + Math.log(1 - irf);
+      return this._answers[i] === 1 ? acc + Math.log(irf) : acc + Math.log(1 - irf);
       }, 1);
   }
 
@@ -156,24 +175,21 @@ export class Cat {
    * calculate the standard error of ability estimation
    */
   private calculateSE() {
-    const sum = this.zetas.reduce((previousValue, zeta) =>
+    const sum = this._zetas.reduce((previousValue, zeta) =>
         previousValue + fisherInformation(this._theta, zeta), 0
     );
     this._seMeasurement = 1 / Math.sqrt(sum);
   }
 
-
-  // TO DO: split conditions to small functions
-
   /**
    * find the next available item from an input array of stimuli based on a selection method
    * @param stimuli - an array of stimulus
-   * @param deepCopy - default deepCopy = true
    * @param itemSelect -
+   * @param deepCopy - default deepCopy = true
    * @returns {nextStimulus: Stimulus,
             remainingStimuli: Array<Stimulus>}
    */
-  public findNextItem(stimuli: Stimulus[], deepCopy: boolean = true, itemSelect: string = this.itemSelect) {
+  public findNextItem(stimuli: Stimulus[], itemSelect: string = this.itemSelect, deepCopy: boolean = true) {
     let arr: Array<Stimulus>;
     let selector = Cat.validateItemSelect(itemSelect);
     if (deepCopy) {
@@ -185,49 +201,66 @@ export class Cat {
     if (this.nItems <= this.nStartItems) {
       selector = this.startSelect
     }
+
     if (selector === 'mfi') {
-      const stimuliAddFisher = arr.map((element) => ({
-        fisherInformation: fisherInformation(this._theta, {a: 1, b: element.difficulty, c: 0.5, d: 1}),
-        ...element,
-      }));
-      stimuliAddFisher.sort((a, b) => b.fisherInformation - a.fisherInformation);
-      stimuliAddFisher.forEach((stimulus: Stimulus) => {
-        delete stimulus['fisherInformation'];
-      });
-      return {
-        nextStimulus: stimuliAddFisher[0],
-        remainingStimuli: stimuliAddFisher.slice(1),
-      };
+      this.selectorMFI(arr);
     } else if (selector === 'middle') { // middle will only be used in startSelect
-      let index: number;
-      if (arr.length < this.nStartItems) {
-        index = Math.floor(arr.length / 2);
-      } else {
-        index = Math.floor(arr.length / 2) + Cat.randomInteger(-Math.floor(this.nStartItems/2), Math.floor(this.nStartItems/2));
-      }
-      const nextItem = arr[index];
-      arr.splice(index, 1);
-      return {
-        nextStimulus: nextItem,
-        remainingStimuli: arr,
-      };
+      this.selectorMiddle(arr);
     } else if (selector === 'closest') {
-      //findClosest requires arr is sorted by difficulty
-      const index = Cat.findClosest(arr, this._theta + 0.481);
-      const nextItem = arr[index];
-      arr.splice(index, 1);
-      return {
-        nextStimulus: nextItem,
-        remainingStimuli: arr,
-      };
+      this.selectorClosest(arr);
     } else if (selector === 'random') {
-      const index = Math.floor(Math.random() * arr.length);
-      const nextItem = arr.splice(index, 1)[0];
-      return {
-        nextStimulus: nextItem,
-        remainingStimuli: arr,
-      };
+      Cat.selectorRandom(arr);
     }
+  }
+
+  private selectorMFI(arr: Stimulus[]){
+    const stimuliAddFisher = arr.map((element: Stimulus) => ({
+      fisherInformation: fisherInformation(this._theta, {a: 1, b: element.difficulty, c: 0.5, d: 1}),
+      ...element,
+    }));
+    stimuliAddFisher.sort((a, b) => b.fisherInformation - a.fisherInformation);
+    stimuliAddFisher.forEach((stimulus: Stimulus) => {
+      delete stimulus['fisherInformation'];
+    });
+    return {
+      nextStimulus: stimuliAddFisher[0],
+      remainingStimuli: stimuliAddFisher.slice(1),
+    };
+  }
+
+  private selectorMiddle(arr: Stimulus[]){
+    let index: number;
+    if (arr.length < this.nStartItems) {
+      index = Math.floor(arr.length / 2);
+    } else {
+      index = Math.floor(arr.length / 2) + Cat.randomInteger(-Math.floor(this.nStartItems/2), Math.floor(this.nStartItems/2));
+    }
+    const nextItem = arr[index];
+    arr.splice(index, 1);
+    return {
+      nextStimulus: nextItem,
+      remainingStimuli: arr,
+    };
+  }
+
+  private selectorClosest(arr: Stimulus[]){
+    //findClosest requires arr is sorted by difficulty
+    const index = Cat.findClosest(arr, this._theta + 0.481);
+    const nextItem = arr[index];
+    arr.splice(index, 1);
+    return {
+      nextStimulus: nextItem,
+      remainingStimuli: arr,
+    };
+  }
+
+  private static selectorRandom(arr: Stimulus[]){
+    const index = Math.floor(Math.random() * arr.length);
+    const nextItem = arr.splice(index, 1)[0];
+    return {
+      nextStimulus: nextItem,
+      remainingStimuli: arr,
+    };
   }
 
     /**
