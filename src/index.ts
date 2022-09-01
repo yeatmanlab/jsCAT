@@ -2,8 +2,21 @@ import { minimize_Powell } from 'optimization-js';
 import { cloneDeep } from 'lodash';
 import {Stimulus, Zeta} from './type';
 import {itemResponseFunction, fisherInformation, normal} from './utils';
+import seedrandom from 'seedrandom';
 
 export const abilityPrior = normal();
+
+export interface CatInput {
+  method?: string;
+  itemSelect?: string;
+  nStartItems?: number;
+  startSelect?: string;
+  theta?: number;
+  minTheta?: number;
+  maxTheta?: number;
+  prior?: number[][];
+  randomSeed?: string | null
+}
 
 export class Cat {
   public method: string;
@@ -18,26 +31,32 @@ export class Cat {
   private _seMeasurement: number;
   public nStartItems: number;
   public startSelect: string;
+  private readonly _rng: Function;
+
 
   /**
-   *
-   * @param method - ability estimator, e.g. MLE or EAP, default = 'MLE'
-   * @param itemSelect - the method of item selection, e.g. "MFI", "random", "closest", default method = 'MFI'
-   * @param theta - initial theta estimate
-   * @param minTheta - lower bound of theta
-   * @param maxTheta - higher bound of theta
-   * @param prior - the prior distribution
-   * @param nStartItems - first n trials to keep non-adaptive selection
-   * @param startSelect - rule to select first n trials
+   * Create a Cat object. This expects an single object parameter with the following keys
+   * @param {{method: string, itemSelect: string, nStartItems: number, startSelect:string, theta: number, minTheta: number, maxTheta: number, prior: number[][]}=} destructuredParam
+   *     method: ability estimator, e.g. MLE or EAP, default = 'MLE'
+   *     itemSelect: the method of item selection, e.g. "MFI", "random", "closest", default method = 'MFI'
+   *     nStartItems: first n trials to keep non-adaptive selection
+   *     startSelect: rule to select first n trials
+   *     theta: initial theta estimate
+   *     minTheta: lower bound of theta
+   *     maxTheta: higher bound of theta
+   *     prior:  the prior distribution
+   *     randomSeed: set a random seed to trace the simulation
    */
-  constructor(method: string = 'MLE',
-              itemSelect: string = 'MFI',
-              theta = 0,
-              minTheta = -4,
+
+  constructor({method = 'MLE',
+              itemSelect = 'MFI',
+              nStartItems =  0,
+              startSelect = 'middle',
+              theta =  0,
+              minTheta =  -4,
               maxTheta = 4,
               prior = abilityPrior,
-              nStartItems = 0,
-              startSelect = 'middle') {
+              randomSeed = null}: CatInput = {}) {
 
     this.method = Cat.validateMethod(method);
 
@@ -54,7 +73,7 @@ export class Cat {
     this._nItems = 0;
     this._seMeasurement = Infinity;
     this.nStartItems = nStartItems;
-    this.startSelect = startSelect;
+    this._rng = (randomSeed === null) ? seedrandom() : seedrandom(randomSeed);
   }
 
   public get theta() {
@@ -183,7 +202,7 @@ export class Cat {
   /**
    * find the next available item from an input array of stimuli based on a selection method
    * @param stimuli - an array of stimulus
-   * @param itemSelect -
+   * @param itemSelect - the item selection method
    * @param deepCopy - default deepCopy = true
    * @returns {nextStimulus: Stimulus,
             remainingStimuli: Array<Stimulus>}
@@ -201,19 +220,18 @@ export class Cat {
       selector = this.startSelect
     }
 
-    if (selector === 'mfi') {
-      return this.selectorMFI(arr);
-    } else if (selector === 'middle') { // middle will only be used in startSelect
+    if (selector === 'middle') { // middle will only be used in startSelect
       return this.selectorMiddle(arr);
     } else if (selector === 'closest') {
       return this.selectorClosest(arr);
     } else if (selector === 'random') {
-      return Cat.selectorRandom(arr);
+      return this.selectorRandom(arr);
+    } else  {
+      return this.selectorMFI(arr);
     }
   }
 
   private selectorMFI(arr: Stimulus[]){
-    console.log(arr);
     const stimuliAddFisher = arr.map((element: Stimulus) => ({
       fisherInformation: fisherInformation(this._theta, {a: 1, b: element.difficulty, c: 0.5, d: 1}),
       ...element,
@@ -222,7 +240,6 @@ export class Cat {
     stimuliAddFisher.forEach((stimulus: Stimulus) => {
       delete stimulus['fisherInformation'];
     });
-    console.log(1);
     return {
       nextStimulus: stimuliAddFisher[0],
       remainingStimuli: stimuliAddFisher.slice(1),
@@ -255,8 +272,9 @@ export class Cat {
     };
   }
 
-  private static selectorRandom(arr: Stimulus[]){
-    const index = Math.floor(Math.random() * arr.length);
+  private selectorRandom(arr: Stimulus[]){
+
+    const index = Math.floor(this._rng() * arr.length);
     const nextItem = arr.splice(index, 1)[0];
     return {
       nextStimulus: nextItem,
