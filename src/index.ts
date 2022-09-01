@@ -23,15 +23,15 @@ export class Cat {
    *
    * @param method - ability estimator, e.g. MLE or EAP, default = 'MLE'
    * @param itemSelect - the method of item selection, e.g. "MFI", "random", "closest", default method = 'MFI'
+   * @param theta - initial theta estimate
    * @param minTheta - lower bound of theta
    * @param maxTheta - higher bound of theta
-   * @param theta - initial theta estimate
    * @param prior - the prior distribution
    * @param nStartItems - first n trials to keep non-adaptive selection
    * @param startSelect - rule to select first n trials
    */
-  constructor(method = 'MLE',
-              itemSelect: 'MFI',
+  constructor(method: string = 'MLE',
+              itemSelect: string = 'MFI',
               theta = 0,
               minTheta = -4,
               maxTheta = 4,
@@ -149,8 +149,7 @@ export class Cat {
 
   private estimateAbilityMLE() {
     const theta0 = [0];
-    const solution = minimize_Powell(this.negLikelihood, theta0);
-
+    const solution = minimize_Powell(this.negLikelihood.bind(this), theta0);
     let theta = solution.argument[0];
     if (theta > this.maxTheta) {
       theta = this.maxTheta;
@@ -168,7 +167,7 @@ export class Cat {
     return this._zetas.reduce((acc, zeta, i) => {
       const irf = itemResponseFunction(theta, zeta);
       return this._answers[i] === 1 ? acc + Math.log(irf) : acc + Math.log(1 - irf);
-      }, 1);
+    }, 1);
   }
 
   /**
@@ -203,17 +202,18 @@ export class Cat {
     }
 
     if (selector === 'mfi') {
-      this.selectorMFI(arr);
+      return this.selectorMFI(arr);
     } else if (selector === 'middle') { // middle will only be used in startSelect
-      this.selectorMiddle(arr);
+      return this.selectorMiddle(arr);
     } else if (selector === 'closest') {
-      this.selectorClosest(arr);
+      return this.selectorClosest(arr);
     } else if (selector === 'random') {
-      Cat.selectorRandom(arr);
+      return Cat.selectorRandom(arr);
     }
   }
 
   private selectorMFI(arr: Stimulus[]){
+    console.log(arr);
     const stimuliAddFisher = arr.map((element: Stimulus) => ({
       fisherInformation: fisherInformation(this._theta, {a: 1, b: element.difficulty, c: 0.5, d: 1}),
       ...element,
@@ -222,6 +222,7 @@ export class Cat {
     stimuliAddFisher.forEach((stimulus: Stimulus) => {
       delete stimulus['fisherInformation'];
     });
+    console.log(1);
     return {
       nextStimulus: stimuliAddFisher[0],
       remainingStimuli: stimuliAddFisher.slice(1),

@@ -1,66 +1,47 @@
 import { Cat } from '../index';
-import { itemResponseFunction, fisherInformation } from '../utils';
 import { Stimulus } from '../type';
 
-describe('itemResponseFunction', () => {
-  it('correctly calculates the probability', () => {
-    expect(0.7234).toBeCloseTo(itemResponseFunction(0, { a: 1, b: -0.3, c: 0.35, d: 1 }), 2);
+describe('Cat', () => {
+    const cat1 = new Cat('MLE', 'MFI');
+    it('constructs an adaptive test', () => {
 
-    expect(0.5).toBeCloseTo(itemResponseFunction(0, { a: 1, b: 0, c: 0, d: 1 }), 2);
+        //const cat1 = new Cat('MLE', 'MFI');
+        expect(cat1.method).toBe('mle');
+        expect(cat1.itemSelect).toBe('mfi');
+    })
 
-    expect(0.625).toBeCloseTo(itemResponseFunction(0, { a: 0.5, b: 0, c: 0.25, d: 1 }), 2);
-  });
-});
+    it('correctly updates ability estimate', () => {
+        const theta = cat1.updateAbilityEstimate([
+            { a: 2.225, b: -1.885, c: 0.21, d: 1 },
+            { a: 1.174, b: -2.411, c: 0.212, d: 1 },
+            { a: 2.104, b: -2.439, c: 0.192, d: 1 }
+        ], [1, 0, 1]);
+        expect(theta).toBeCloseTo(-1.642307, 1)
+    })
 
-describe('estimateAbility', () => {
-  it('correctly estimates the ability', () => {
-    expect(-1.642307).toBeCloseTo(
-      estimateAbility(
-        [1, 0, 1],
-        [
-          { a: 2.225, b: -1.885, c: 0.21, d: 1 },
-          { a: 1.174, b: -2.411, c: 0.212, d: 1 },
-          { a: 2.104, b: -2.439, c: 0.192, d: 1 },
-        ],
-        'MLE',
-      ),
-      2,
-    );
-    /*
-        expect(0.1635256).toBeCloseTo(
-            estimateAbility([1, 1, 1],
-                [{a: 2.225, b: -1.885, c: 0.210, d: 1},
-                    {a: 1.174, b: -2.411, c: 0.212, d: 1},
-                    {a: 2.104, b: -2.439, c: 0.192, d: 1}],
-                'EAP'),
-            2
-        );
-         */
-  });
-});
+    const cat2 = new Cat('MLE', 'MFI');
+    it('correctly updates standard error of mean of ability estimate', () => {
+        const theta = cat2.updateAbilityEstimate([
+            { a: 1, b: -0.4473004, c: 0.5, d: 1 },
+            { a: 1, b: 2.8692328, c: 0.5, d: 1 },
+            { a: 1, b: -0.4693537, c: 0.5, d: 1 },
+            { a: 1, b: -0.5758047, c: 0.5, d: 1 },
+            { a: 1, b: -1.4301283, c: 0.5, d: 1 },
+            { a: 1, b: -1.6072848, c: 0.5, d: 1 },
+            { a: 1, b: 0.5293703, c: 0.5, d: 1 }
+        ], [1, 1, 1, 1, 1, 0, 1]);
+        expect(cat2.seMeasurement).toBeCloseTo(1.455, 1)
+    })
 
-const s1: Stimulus = { difficulty: 0.5, word: 'hello' };
-const s2: Stimulus = { difficulty: 3, word: 'hi' };
-const s3: Stimulus = { difficulty: -1.8, word: 'greeting' };
+    const cat3 = new Cat('MLE', 'MFI');
+    const s1: Stimulus = { difficulty: 0.5, word: 'hello' };
+    const s2: Stimulus = { difficulty: 3, word: 'hi' };
+    const s3: Stimulus = { difficulty: -1.8, word: 'greeting' };
 
-describe('findNextItem', () => {
-  it('correctly suggests the next item', () => {
-    const expected = { nextStimulus: s1, remainingStimuli: [s3, s2] };
-    const received = findNextItem([s1, s2, s3], 0, 'MFI', true);
-    expect(received).toEqual(expected);
-  });
-});
+    it('correctly suggests the next item', () => {
+        const expected = { nextStimulus: s1, remainingStimuli: [s3, s2] };
+        const received = cat3.findNextItem([s1, s2, s3], 'MFI', true);
+        expect(received).toEqual(expected);
+    })
 
-describe('SEM', () => {
-  it('correctly calculate the standard error of mean of ability estimate', () => {
-    const received = SEM(-1.551, [
-      { a: 1, b: -0.4473004, c: 0.5, d: 1 },
-      { a: 1, b: 2.8692, c: 0.5, d: 1 },
-      { a: 1, b: -0.46935, c: 0.5, d: 1 },
-      { a: 1, b: -0.5758, c: 0.5, d: 1 },
-      { a: 1, b: -1.43012, c: 0.5, d: 1 },
-      { a: 1, b: -1.60728, c: 0.5, d: 1 },
-    ]);
-    expect(1.88).toBeCloseTo(received, 2);
-  });
 });
