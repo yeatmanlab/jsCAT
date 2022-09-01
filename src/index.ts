@@ -307,7 +307,7 @@ export class Cat {
           i = mid + 1; // update i
         }
       }
-      // Only single element left after search
+      // Only single element left after sear
       return mid;
     }
 

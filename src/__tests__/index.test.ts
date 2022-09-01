@@ -33,14 +33,27 @@ describe('Cat', () => {
         expect(cat2.seMeasurement).toBeCloseTo(1.455, 1)
     })
 
-    const cat3 = new Cat('MLE', 'MFI');
-    const s1: Stimulus = { difficulty: 0.5, word: 'hello' };
-    const s2: Stimulus = { difficulty: 3, word: 'hi' };
-    const s3: Stimulus = { difficulty: -1.8, word: 'greeting' };
+    it('correctly updates number of items', () => {
+        expect(cat2.nItems).toEqual(7);
+    })
 
-    it('correctly suggests the next item', () => {
-        const expected = { nextStimulus: s1, remainingStimuli: [s3, s2] };
-        const received = cat3.findNextItem([s1, s2, s3], 'MFI', true);
+    const cat3 = new Cat('MLE', 'MFI');
+    const s1: Stimulus = { difficulty: 0.5, word: 'looking' };
+    const s2: Stimulus = { difficulty: 3.5, word: 'opaque' };
+    const s3: Stimulus = { difficulty: 2, word: "right" };
+    const s4: Stimulus = { difficulty: -2.5, word: 'yes' };
+    const s5: Stimulus = { difficulty: -1.8, word: 'mom' };
+    const stimuli = [s1, s2, s3, s4, s5];
+
+    it('correctly suggests the next item (mfi method)', () => {
+        const expected = { nextStimulus: s1, remainingStimuli: [s4, s5, s3, s2] };
+        const received = cat3.findNextItem(stimuli, 'MFI', true);
+        expect(received).toEqual(expected);
+    })
+
+    it('correctly suggests the next item (closest method)', () => {
+        const expected = { nextStimulus: s5, remainingStimuli: [s4, s1, s3, s2] };
+        const received = cat1.findNextItem(stimuli, 'closest', true);
         expect(received).toEqual(expected);
     })
 
