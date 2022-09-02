@@ -31,7 +31,7 @@ export class Cat {
   private _seMeasurement: number;
   public nStartItems: number;
   public startSelect: string;
-  private readonly _rng: Function;
+  private readonly _rng: (...args:any[]) => any;
 
 
   /**
@@ -205,7 +205,7 @@ export class Cat {
    * @returns {nextStimulus: Stimulus,
             remainingStimuli: Array<Stimulus>}
    */
-  public findNextItem(stimuli: Stimulus[], itemSelect: string = this.itemSelect, deepCopy: boolean = true) {
+  public findNextItem(stimuli: Stimulus[], itemSelect: string = this.itemSelect, deepCopy= true) {
     let arr: Array<Stimulus>;
     let selector = Cat.validateItemSelect(itemSelect);
     if (deepCopy) {
