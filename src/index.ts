@@ -1,7 +1,7 @@
 import { minimize_Powell } from 'optimization-js';
 import { cloneDeep } from 'lodash';
 import {Stimulus, Zeta} from './type';
-import {itemResponseFunction, fisherInformation, normal} from './utils';
+import {itemResponseFunction, fisherInformation, normal, findClosest} from './utils';
 import seedrandom from 'seedrandom';
 
 export const abilityPrior = normal();
@@ -32,7 +32,6 @@ export class Cat {
   public nStartItems: number;
   public startSelect: string;
   private readonly _rng: (...args:any[]) => any;
-
 
   /**
    * Create a Cat object. This expects an single object parameter with the following keys
@@ -249,7 +248,7 @@ export class Cat {
     if (arr.length < this.nStartItems) {
       index = Math.floor(arr.length / 2);
     } else {
-      index = Math.floor(arr.length / 2) + Cat.randomInteger(-Math.floor(this.nStartItems/2), Math.floor(this.nStartItems/2));
+      index = Math.floor(arr.length / 2) + this.randomInteger(-Math.floor(this.nStartItems/2), Math.floor(this.nStartItems/2));
     }
     const nextItem = arr[index];
     arr.splice(index, 1);
@@ -261,7 +260,7 @@ export class Cat {
 
   private selectorClosest(arr: Stimulus[]){
     //findClosest requires arr is sorted by difficulty
-    const index = Cat.findClosest(arr, this._theta + 0.481);
+    const index = findClosest(arr, this._theta + 0.481);
     const nextItem = arr[index];
     arr.splice(index, 1);
     return {
@@ -286,49 +285,7 @@ export class Cat {
      * @param max - The maximum of the random number range (include)
      * @returns {number} - random integer within the range
      */
-    private static randomInteger(min: number, max: number) {
-      return Math.floor(Math.random() * (max - min + 1)) + min;
-    }
-
-    /**
-     * find the item in a given array that has the difficulty closest to the target value
-     * @param arr Array<Stimulus> - an array of stimulus
-     * @param target number - ability estimate
-     * @returns {number} the index of arr
-     */
-    private static findClosest(arr: Array<Stimulus>, target: number) {
-      const n = arr.length;
-      // Corner cases
-      if (target <= arr[0].difficulty) return 0;
-      if (target >= arr[n - 1].difficulty) return n - 1;
-      // Doing binary search
-      let i = 0,
-          j = n,
-          mid = 0;
-      while (i < j) {
-        mid = Math.ceil((i + j) / 2);
-        if (arr[mid].difficulty == target) return mid;
-        // If target is less than array
-        // element,then search in left
-        if (target < arr[mid].difficulty) {
-          // If target is greater than previous
-          // to mid, return closest of two
-          if (mid > 0 && target > arr[mid - 1].difficulty) return Cat.getClosest(arr, mid - 1, mid, target);
-          // Repeat for left half
-          j = mid;
-        }
-        // If target is greater than mid
-        else {
-          if (mid < n - 1 && target < arr[mid + 1].difficulty) return Cat.getClosest(arr, mid, mid + 1, target);
-          i = mid + 1; // update i
-        }
-      }
-      // Only single element left after sear
-      return mid;
-    }
-
-    private static getClosest(arr: Array<Stimulus>, val1: number, val2: number, target: number) {
-        if (target - arr[val1].difficulty >= arr[val2].difficulty - target) return val2;
-        else return val1;
+    private randomInteger(min: number, max: number) {
+      return Math.floor(this._rng() * (max - min + 1)) + min;
     }
 }
