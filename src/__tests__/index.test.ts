@@ -2,17 +2,28 @@ import { Cat } from '../index';
 import { Stimulus } from '../type';
 
 describe('Cat', () => {
-    let cat1: Cat, cat2: Cat, cat3: Cat, cat4: Cat;
+    let cat1: Cat, cat2: Cat, cat3: Cat, cat4: Cat, cat5: Cat;
     beforeEach(() => {
         cat1 = new Cat();
-        const theta = cat1.updateAbilityEstimate([
+        const theta1 = cat1.updateAbilityEstimate([
             { a: 2.225, b: -1.885, c: 0.21, d: 1 },
             { a: 1.174, b: -2.411, c: 0.212, d: 1 },
             { a: 2.104, b: -2.439, c: 0.192, d: 1 }
         ], [1, 0, 1]);
-        cat2 = new Cat( {nStartItems: 1, startSelect: "miDdle"});
+
+        cat2 = new Cat( );
+        const theta2 = cat2.updateAbilityEstimate([
+            { a: 1, b: -0.447, c: 0.5, d: 1 },
+            { a: 1, b: 2.869, c: 0.5, d: 1 },
+            { a: 1, b: -0.469, c: 0.5, d: 1 },
+            { a: 1, b: -0.576, c: 0.5, d: 1 },
+            { a: 1, b: -1.430, c: 0.5, d: 1 },
+            { a: 1, b: -1.607, c: 0.5, d: 1 },
+            { a: 1, b: 0.529, c: 0.5, d: 1 }
+        ], [0, 1, 0, 1, 1, 1, 1]);
         cat3 = new Cat();
         cat4 = new Cat({itemSelect:'RANDOM', randomSeed: "test"});
+        cat5 = new Cat( {nStartItems: 1, startSelect: "miDdle"});
     });
 
     const s1: Stimulus = { difficulty: 0.5, word: 'looking' };
@@ -31,17 +42,15 @@ describe('Cat', () => {
         expect(cat1.theta).toBeCloseTo(-1.642307, 1)
     })
 
+    it('correctly updates ability estimate', () => {
+        expect(cat2.theta).toBeCloseTo(-1.272, 1)
+    })
+
     it('correctly updates standard error of mean of ability estimate', () => {
-        const theta = cat2.updateAbilityEstimate([
-            { a: 1, b: -0.4473004, c: 0.5, d: 1 },
-            { a: 1, b: 2.8692328, c: 0.5, d: 1 },
-            { a: 1, b: -0.4693537, c: 0.5, d: 1 },
-            { a: 1, b: -0.5758047, c: 0.5, d: 1 },
-            { a: 1, b: -1.4301283, c: 0.5, d: 1 },
-            { a: 1, b: -1.6072848, c: 0.5, d: 1 },
-            { a: 1, b: 0.5293703, c: 0.5, d: 1 }
-        ], [1, 1, 1, 1, 1, 0, 1]);
-        expect(cat2.seMeasurement).toBeCloseTo(1.455, 1)
+         expect(cat2.seMeasurement).toBeCloseTo(1.710, 1)
+     })
+
+    it('correctly counts number of items', () => {
         expect(cat2.nItems).toEqual(7);
     })
 
@@ -60,7 +69,7 @@ describe('Cat', () => {
 
     it('correctly suggests the next item (middle method)', () => {
         const expected = { nextStimulus: s1, remainingStimuli: [s4, s5, s3, s2] };
-        const received = cat2.findNextItem(stimuli);
+        const received = cat5.findNextItem(stimuli);
         expect(received).toEqual(expected);
     })
 
