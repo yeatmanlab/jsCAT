@@ -5,14 +5,14 @@ describe('Cat', () => {
     let cat1: Cat, cat2: Cat, cat3: Cat, cat4: Cat, cat5: Cat;
     beforeEach(() => {
         cat1 = new Cat();
-        const theta1 = cat1.updateAbilityEstimate([
+        cat1.updateAbilityEstimate([
             { a: 2.225, b: -1.885, c: 0.21, d: 1 },
             { a: 1.174, b: -2.411, c: 0.212, d: 1 },
             { a: 2.104, b: -2.439, c: 0.192, d: 1 }
         ], [1, 0, 1]);
 
         cat2 = new Cat( );
-        const theta2 = cat2.updateAbilityEstimate([
+        cat2.updateAbilityEstimate([
             { a: 1, b: -0.447, c: 0.5, d: 1 },
             { a: 1, b: 2.869, c: 0.5, d: 1 },
             { a: 1, b: -0.469, c: 0.5, d: 1 },

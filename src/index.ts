@@ -128,7 +128,6 @@ export class Cat {
    * @param answer - last response pattern
    * @param zeta - last item param
    * @param method
-   * @returns {number} - the estimate ability based on an estimation method
    */
   public updateAbilityEstimate(
       zeta: Zeta | Zeta[],
@@ -152,7 +151,6 @@ export class Cat {
       this._theta = this.estimateAbilityMLE();
     }
     this.calculateSE();
-    return this._theta;
   }
 
   private estimateAbilityEAP() {
