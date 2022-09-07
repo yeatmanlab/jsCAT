@@ -31,7 +31,7 @@ export class Cat {
   private _seMeasurement: number;
   public nStartItems: number;
   public startSelect: string;
-  private readonly _rng: (...args:any[]) => any;
+  private readonly _rng: ReturnType<seedrandom>;
 
   /**
    * Create a Cat object. This expects an single object parameter with the following keys
