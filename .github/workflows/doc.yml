@@ -14,12 +14,8 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 'lts/*'
-          cache: 'npm'
       - name: Install and Build 🔧
         run: |
-          npm --version
-          npm install -g npm@latest
-          npm --version
           npm ci
           npm run build
           npm run format
