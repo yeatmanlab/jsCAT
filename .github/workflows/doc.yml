@@ -9,11 +9,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout 🛎️
-        uses: actions/checkout@v2
-      - name: Use Node.js 17
-        uses: actions/setup-node@v2
+        uses: actions/checkout@v3
+      - name: Use Node.js 16
+        uses: actions/setup-node@v3
         with:
-          node-version: 'lts/*'
+          node-version: '16.16.0'
           cache: 'npm'
       - name: Install and Build 🔧
         run: |
