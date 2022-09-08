@@ -21,8 +21,7 @@ jobs:
           npm run format
       - name: Generate Docs
         run: |
-          npx typedoc --logLevel Verbose
-          npm run doc
+          npx typedoc
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@v4.2.5
         with:

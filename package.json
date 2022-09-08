@@ -9,7 +9,7 @@
     "build": "tsc",
     "format": "prettier --write \"src/**/*.ts\" \"lib/**/*.js\"",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
-    "doc": "npx typedoc@0.22 --logLevel Verbose",
+    "doc": "npx typedoc",
     "prepare": "npm run build",
     "prepublishOnly": "npm test && npm run lint",
     "preversion": "npm run lint",
