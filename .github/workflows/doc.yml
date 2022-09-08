@@ -20,6 +20,7 @@ jobs:
           npm ci
           npm run build
           npm run format
+          npx typedoc@0.22 --logLevel Verbose
           npm run doc
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@v4.2.5
