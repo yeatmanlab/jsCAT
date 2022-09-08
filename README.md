@@ -9,17 +9,26 @@ npm i @bdelab/jscat
 
 ## Usage
 ```JavaScript
-import {normal, estimateAbility, findNextItem, SEM} from '@bdelab/jscat';
+// import jsCAT
+import { Cat, prior } from '@bdelab/jscat';
 
 // declare prior if you choose to use EAP method
-const prior = normal();
+const currentPrior = normal();
 
-// for each adaptive trial, you will use the following functions
-const theta = estimateAbility(answers, zetas, method, minTheta, maxTheta, prior);
+// create a Cat object 
+cat = CAT({method: 'MLE', itemSelect: 'MFI', nStartItems: 0, theta: 0, minTheta: 4, maxTheta: 4, prior: currentPrior})
 
-const se = SEM(theta, zetas);
+// update the abilitiy estimate by adding test items 
+cat.updateAbilityEstimate(zeta, answer);
 
-const nextStimulus = findNextItem(stimuli, theta, method, deepCopy);
+const currentTheta = cat.theta;
+
+const currentSeMeasurement = cat.seMeasurement;
+
+const numItems = cat.nItems;
+
+// find the next available item from an input array of stimuli based on a selection method
+const nextItem = cat.findNextItem(stimuli, 'MFI')
 ```
 
 ## References
