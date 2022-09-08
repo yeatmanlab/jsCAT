@@ -1,8 +1,8 @@
 name: Build docs
-on: push
-#  push:
-#    tags:
-#      - 'v[0-9]+.[0-9]+.[0-9]+'
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
 jobs:
   build-and-deploy:
     concurrency: ci-${{ github.ref }} # Recommended if you intend to make multiple deployments in quick succession.
