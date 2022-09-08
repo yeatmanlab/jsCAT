@@ -14,13 +14,12 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 'lts/*'
+          cache: 'npm'
       - name: Install and Build 🔧
         run: |
           npm ci
           npm run build
           npm run format
-          npx --version
-          npx typedoc@0.22
           npm run doc
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@v4.2.5
