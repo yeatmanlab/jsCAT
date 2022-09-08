@@ -10,7 +10,7 @@ npm i @bdelab/jscat
 ## Usage
 ```JavaScript
 // import jsCAT
-import { Cat, prior } from '@bdelab/jscat';
+import { Cat, normal } from '@bdelab/jscat';
 
 // declare prior if you choose to use EAP method
 const currentPrior = normal();
