@@ -1,8 +1,8 @@
 name: Build docs
-on:
-  push:
-    tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
+on: push
+#  push:
+#    tags:
+#      - 'v[0-9]+.[0-9]+.[0-9]+'
 jobs:
   build-and-deploy:
     concurrency: ci-${{ github.ref }} # Recommended if you intend to make multiple deployments in quick succession.
@@ -13,10 +13,13 @@ jobs:
       - name: Use Node.js 16
         uses: actions/setup-node@v3
         with:
-          node-version: '16.16.0'
+          node-version: 'lts/*'
           cache: 'npm'
       - name: Install and Build 🔧
         run: |
+          npm --version
+          npm install -g npm@latest
+          npm --version
           npm ci
           npm run build
           npm run format
