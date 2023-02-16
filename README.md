@@ -1,3 +1,6 @@
+[![Test and lint](https://github.com/yeatmanlab/jsCAT/actions/workflows/ci.yml/badge.svg)](https://github.com/yeatmanlab/jsCAT/actions/workflows/ci.yml)
+[![Coverage Status](https://coveralls.io/repos/github/yeatmanlab/jsCAT/badge.svg?branch=main)](https://coveralls.io/github/yeatmanlab/jsCAT?branch=main)
+[![npm version](https://badge.fury.io/js/@bdelab%2Fjscat.svg)](https://badge.fury.io/js/@bdelab%2Fjscat)
 # jsCAT: Computer Adaptive Testing in JavaScript
 A library to support IRT-based computer adaptive testing in JavaScript
 
@@ -16,7 +19,7 @@ import { Cat, normal } from '@bdelab/jscat';
 const currentPrior = normal();
 
 // create a Cat object 
-cat = CAT({method: 'MLE', itemSelect: 'MFI', nStartItems: 0, theta: 0, minTheta: 4, maxTheta: 4, prior: currentPrior})
+cat = new CAT({method: 'MLE', itemSelect: 'MFI', nStartItems: 0, theta: 0, minTheta: -4, maxTheta: 4, prior: currentPrior})
 
 // update the abilitiy estimate by adding test items 
 cat.updateAbilityEstimate(zeta, answer);
