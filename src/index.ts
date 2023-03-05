@@ -157,6 +157,7 @@ export class Cat {
       num += theta * like * probability;
       nf += like * probability;
     });
+
     return num / nf;
   }
 
@@ -193,6 +194,8 @@ export class Cat {
 
   /**
    * find the next available item from an input array of stimuli based on a selection method
+   *
+   * remainingStimuli is sorted by fisher information to reduce the computation complexity for future item selection
    * @param stimuli - an array of stimulus
    * @param itemSelect - the item selection method
    * @param deepCopy - default deepCopy = true
@@ -207,9 +210,13 @@ export class Cat {
     } else {
       arr = stimuli;
     }
-    arr.sort((a: Stimulus, b: Stimulus) => a.difficulty - b.difficulty);
-    if (this.nItems <= this.nStartItems) {
+    if (this.nItems < this.nStartItems) {
       selector = this.startSelect;
+    }
+    if (selector !== 'mfi') {
+      // for mfi, we sort the arr by fisher information in the private function to select the best item,
+      // and then sort by difficulty to return the remainingStimuli
+      arr.sort((a: Stimulus, b: Stimulus) => a.difficulty - b.difficulty);
     }
 
     if (selector === 'middle') {
@@ -235,7 +242,7 @@ export class Cat {
     });
     return {
       nextStimulus: stimuliAddFisher[0],
-      remainingStimuli: stimuliAddFisher.slice(1),
+      remainingStimuli: stimuliAddFisher.slice(1).sort((a: Stimulus, b: Stimulus) => a.difficulty - b.difficulty),
     };
   }
 
