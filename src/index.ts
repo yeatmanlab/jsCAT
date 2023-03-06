@@ -25,7 +25,7 @@ export class Cat {
   public maxTheta: number;
   public prior: number[][];
   private readonly _zetas: Zeta[];
-  private readonly _answers: (0 | 1)[];
+  private readonly _resps: (0 | 1)[];
   private _nItems: number;
   private _theta: number;
   private _seMeasurement: number;
@@ -68,7 +68,7 @@ export class Cat {
     this.maxTheta = maxTheta;
     this.prior = prior;
     this._zetas = [];
-    this._answers = [];
+    this._resps = [];
     this._theta = theta;
     this._nItems = 0;
     this._seMeasurement = Infinity;
@@ -85,11 +85,11 @@ export class Cat {
   }
 
   public get nItems() {
-    return this._answers.length;
+    return this._resps.length;
   }
 
-  public get answers() {
-    return this._answers;
+  public get resps() {
+    return this._resps;
   }
 
   public get zetas() {
@@ -139,7 +139,7 @@ export class Cat {
       throw new Error('Unmatched length between answers and item params');
     }
     this._zetas.push(...zeta);
-    this._answers.push(...answer);
+    this._resps.push(...answer);
 
     if (method === 'eap') {
       this._theta = this.estimateAbilityEAP();
@@ -180,7 +180,7 @@ export class Cat {
   private likelihood(theta: number) {
     return this._zetas.reduce((acc, zeta, i) => {
       const irf = itemResponseFunction(theta, zeta);
-      return this._answers[i] === 1 ? acc + Math.log(irf) : acc + Math.log(1 - irf);
+      return this._resps[i] === 1 ? acc + Math.log(irf) : acc + Math.log(1 - irf);
     }, 1);
   }
 

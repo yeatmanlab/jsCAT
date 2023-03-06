@@ -1,7 +1,6 @@
 import { Cat } from '../index';
 import { Stimulus } from '../type';
 import seedrandom from 'seedrandom';
-import {fisherInformation} from "../utils";
 
 describe('Cat', () => {
   let cat1: Cat, cat2: Cat, cat3: Cat, cat4: Cat, cat5: Cat, cat6: Cat, cat7: Cat;
@@ -84,7 +83,7 @@ describe('Cat', () => {
   });
 
   it('correctly updates answers', () => {
-    expect(cat2.answers).toEqual([0, 1, 0, 1, 1, 1, 1]);
+    expect(cat2.resps).toEqual([0, 1, 0, 1, 1, 1, 1]);
   });
 
   it('correctly updates zatas', () => {
