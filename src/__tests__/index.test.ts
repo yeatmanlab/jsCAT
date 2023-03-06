@@ -1,8 +1,11 @@
 import { Cat } from '../index';
 import { Stimulus } from '../type';
+import seedrandom from 'seedrandom';
+import {fisherInformation} from "../utils";
 
 describe('Cat', () => {
-  let cat1: Cat, cat2: Cat, cat3: Cat, cat4: Cat, cat5: Cat;
+  let cat1: Cat, cat2: Cat, cat3: Cat, cat4: Cat, cat5: Cat, cat6: Cat, cat7: Cat;
+  let rng = seedrandom();
   beforeEach(() => {
     cat1 = new Cat();
     cat1.updateAbilityEstimate(
@@ -27,9 +30,29 @@ describe('Cat', () => {
       ],
       [0, 1, 0, 1, 1, 1, 1],
     );
-    cat3 = new Cat();
-    cat4 = new Cat({ itemSelect: 'RANDOM', randomSeed: 'test' });
+    cat3 = new Cat( { nStartItems: 0 } );
+    const randomSeed = 'test';
+    rng = seedrandom(randomSeed);
+    cat4 = new Cat({ nStartItems: 0, itemSelect: 'RANDOM', randomSeed });
     cat5 = new Cat({ nStartItems: 1, startSelect: 'miDdle' });
+
+    cat6 = new Cat();
+    cat6.updateAbilityEstimate(
+        [
+          { a: 1, b: -4.0, c: 0.5, d: 1 },
+          { a: 1, b: -3.0, c: 0.5, d: 1 },
+        ],
+        [0, 0],
+    );
+
+    cat7 = new Cat({ method: 'eap' });
+    cat7.updateAbilityEstimate(
+        [
+          { a: 1, b: -4.0, c: 0.5, d: 1 },
+          { a: 1, b: -3.0, c: 0.5, d: 1 },
+        ],
+        [0, 0],
+    );
   });
 
   const s1: Stimulus = { difficulty: 0.5, word: 'looking' };
@@ -60,6 +83,22 @@ describe('Cat', () => {
     expect(cat2.nItems).toEqual(7);
   });
 
+  it('correctly updates answers', () => {
+    expect(cat2.answers).toEqual([0, 1, 0, 1, 1, 1, 1]);
+  });
+
+  it('correctly updates zatas', () => {
+    expect(cat2.zetas).toEqual([
+      { a: 1, b: -0.447, c: 0.5, d: 1 },
+      { a: 1, b: 2.869, c: 0.5, d: 1 },
+      { a: 1, b: -0.469, c: 0.5, d: 1 },
+      { a: 1, b: -0.576, c: 0.5, d: 1 },
+      { a: 1, b: -1.43, c: 0.5, d: 1 },
+      { a: 1, b: -1.607, c: 0.5, d: 1 },
+      { a: 1, b: 0.529, c: 0.5, d: 1 },
+    ]);
+  });
+
   it('correctly suggests the next item (closest method)', () => {
     const expected = { nextStimulus: s5, remainingStimuli: [s4, s1, s3, s2] };
     const received = cat1.findNextItem(stimuli, 'closest');
@@ -80,13 +119,48 @@ describe('Cat', () => {
 
   it('correctly suggests the next item (random method)', () => {
     let received;
-    received = cat4.findNextItem(stimuli);
-    expect(received.nextStimulus).toEqual(s1);
-    received = cat4.findNextItem(received.remainingStimuli);
-    expect(received.nextStimulus).toEqual(s3);
-    received = cat4.findNextItem(received.remainingStimuli);
-    expect(received.nextStimulus).toEqual(s5);
-    received = cat4.findNextItem(received.remainingStimuli);
-    expect(received.nextStimulus).toEqual(s2);
+    const stimuliSorted = stimuli.sort((a: Stimulus, b: Stimulus) => a.difficulty - b.difficulty)
+    let index = Math.floor(rng() * stimuliSorted.length);
+    received = cat4.findNextItem(stimuliSorted);
+    expect(received.nextStimulus).toEqual(stimuliSorted[index]);
+
+    for (let i = 0; i < 3; i ++){
+      const remainingStimuli = received.remainingStimuli;
+      index = Math.floor(rng() * remainingStimuli.length);
+      received = cat4.findNextItem(remainingStimuli);
+      expect(received.nextStimulus).toEqual(remainingStimuli[index]);
+    }
   });
+
+  it('correctly updates ability estimate through MLE', () => {
+    expect(cat6.theta).toBeCloseTo(-4.0, 1);
+  });
+
+  it('correctly updates ability estimate through EAP', () => {
+    expect(cat7.theta).toBeCloseTo(0.25, 1);
+  });
+
+  it('should return a error if is invalid action',() => {
+    try {
+      cat7.updateAbilityEstimate(
+          [
+            { a: 1, b: -4.0, c: 0.5, d: 1 },
+            { a: 1, b: -3.0, c: 0.5, d: 1 },
+          ],
+          [0, 0, 0],
+      )
+    } catch (error) {
+      expect(error).toBeInstanceOf(Error);
+    }
+
+  })
+
+  it('should return a error if is invalid action',() => {
+    try {
+      cat7.findNextItem(stimuli, 'coolMethod');
+    } catch (error) {
+      expect(error).toBeInstanceOf(Error);
+    }
+  })
+
 });
