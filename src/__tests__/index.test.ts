@@ -29,7 +29,7 @@ describe('Cat', () => {
       ],
       [0, 1, 0, 1, 1, 1, 1],
     );
-    cat3 = new Cat( { nStartItems: 0 } );
+    cat3 = new Cat({ nStartItems: 0 });
     const randomSeed = 'test';
     rng = seedrandom(randomSeed);
     cat4 = new Cat({ nStartItems: 0, itemSelect: 'RANDOM', randomSeed });
@@ -37,20 +37,20 @@ describe('Cat', () => {
 
     cat6 = new Cat();
     cat6.updateAbilityEstimate(
-        [
-          { a: 1, b: -4.0, c: 0.5, d: 1 },
-          { a: 1, b: -3.0, c: 0.5, d: 1 },
-        ],
-        [0, 0],
+      [
+        { a: 1, b: -4.0, c: 0.5, d: 1 },
+        { a: 1, b: -3.0, c: 0.5, d: 1 },
+      ],
+      [0, 0],
     );
 
     cat7 = new Cat({ method: 'eap' });
     cat7.updateAbilityEstimate(
-        [
-          { a: 1, b: -4.0, c: 0.5, d: 1 },
-          { a: 1, b: -3.0, c: 0.5, d: 1 },
-        ],
-        [0, 0],
+      [
+        { a: 1, b: -4.0, c: 0.5, d: 1 },
+        { a: 1, b: -3.0, c: 0.5, d: 1 },
+      ],
+      [0, 0],
     );
   });
 
@@ -118,12 +118,12 @@ describe('Cat', () => {
 
   it('correctly suggests the next item (random method)', () => {
     let received;
-    const stimuliSorted = stimuli.sort((a: Stimulus, b: Stimulus) => a.difficulty - b.difficulty)
+    const stimuliSorted = stimuli.sort((a: Stimulus, b: Stimulus) => a.difficulty - b.difficulty);
     let index = Math.floor(rng() * stimuliSorted.length);
     received = cat4.findNextItem(stimuliSorted);
     expect(received.nextStimulus).toEqual(stimuliSorted[index]);
 
-    for (let i = 0; i < 3; i ++){
+    for (let i = 0; i < 3; i++) {
       const remainingStimuli = received.remainingStimuli;
       index = Math.floor(rng() * remainingStimuli.length);
       received = cat4.findNextItem(remainingStimuli);
@@ -139,27 +139,25 @@ describe('Cat', () => {
     expect(cat7.theta).toBeCloseTo(0.25, 1);
   });
 
-  it('should return a error if is invalid action',() => {
+  it('should return a error if is invalid action', () => {
     try {
       cat7.updateAbilityEstimate(
-          [
-            { a: 1, b: -4.0, c: 0.5, d: 1 },
-            { a: 1, b: -3.0, c: 0.5, d: 1 },
-          ],
-          [0, 0, 0],
-      )
+        [
+          { a: 1, b: -4.0, c: 0.5, d: 1 },
+          { a: 1, b: -3.0, c: 0.5, d: 1 },
+        ],
+        [0, 0, 0],
+      );
     } catch (error) {
       expect(error).toBeInstanceOf(Error);
     }
+  });
 
-  })
-
-  it('should return a error if is invalid action',() => {
+  it('should return a error if is invalid action', () => {
     try {
       cat7.findNextItem(stimuli, 'coolMethod');
     } catch (error) {
       expect(error).toBeInstanceOf(Error);
     }
-  })
-
+  });
 });
