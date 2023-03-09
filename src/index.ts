@@ -125,8 +125,8 @@ export class Cat {
 
   /**
    * use previous response patterns and item params to calculate the estimate ability based on a defined method
-   * @param answer - last response pattern
    * @param zeta - last item param
+   * @param answer - last response pattern
    * @param method
    */
   public updateAbilityEstimate(zeta: Zeta | Zeta[], answer: (0 | 1) | (0 | 1)[], method: string = this.method) {

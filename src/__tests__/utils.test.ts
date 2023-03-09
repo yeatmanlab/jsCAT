@@ -19,9 +19,23 @@ describe('fisherInformation', () => {
 });
 
 describe('findClosest', () => {
-  it('correctly selects the one item closest to the target', () => {
-    expect(1).toBeCloseTo(
-      findClosest([{ difficulty: 1 }, { difficulty: 4 }, { difficulty: 10 }, { difficulty: 11 }], 5),
+  it('correctly selects the first item if appropriate', () => {
+    expect(0).toBe(findClosest([{ difficulty: 1 }, { difficulty: 4 }, { difficulty: 10 }, { difficulty: 11 }], 0));
+  });
+  it('correctly selects the last item if appropriate', () => {
+    expect(3).toBe(findClosest([{ difficulty: 1 }, { difficulty: 4 }, { difficulty: 10 }, { difficulty: 11 }], 1000));
+  });
+  it('correctly selects a middle item if it equals exactly', () => {
+    expect(2).toBe(findClosest([{ difficulty: 1 }, { difficulty: 4 }, { difficulty: 10 }, { difficulty: 11 }], 10));
+  });
+  it('correctly selects the one item closest to the target if less than', () => {
+    expect(1).toBe(
+      findClosest([{ difficulty: 1.1 }, { difficulty: 4.2 }, { difficulty: 10.3 }, { difficulty: 11.4 }], 5.1),
+    );
+  });
+  it('correctly selects the one item closest to the target if greater than', () => {
+    expect(2).toBe(
+      findClosest([{ difficulty: 1.1 }, { difficulty: 4.2 }, { difficulty: 10.3 }, { difficulty: 11.4 }], 9.1),
     );
   });
 });
