@@ -1,4 +1,6 @@
+import bs from 'binary-search';
 import { Stimulus, Zeta } from './type';
+
 /**
  * calculates the probability that someone with a given ability level theta will answer correctly an item. Uses the 4 parameters logistic model
  * @param theta - ability estimate
@@ -44,42 +46,46 @@ export const normal = (mean = 0, stdDev = 1, min = -4, max = 4, stepSize = 0.1) 
 
 /**
  * find the item in a given array that has the difficulty closest to the target value
- * @param arr Array<Stimulus> - an array of stimulus
+ *
+ * @remarks
+ * The input array of stimuli must be sorted by difficulty.
+ *
+ * @param arr Array<Stimulus> - an array of stimuli sorted by difficulty
  * @param target number - ability estimate
  * @returns {number} the index of arr
  */
 export const findClosest = (arr: Array<Stimulus>, target: number) => {
-  const n = arr.length;
-  // Corner cases
-  if (target <= arr[0].difficulty) return 0;
-  if (target >= arr[n - 1].difficulty) return n - 1;
-  // Doing binary search
-  let i = 0,
-    j = n,
-    mid = 0;
-  while (i < j) {
-    mid = Math.ceil((i + j) / 2);
-    if (arr[mid].difficulty == target) return mid;
-    // If target is less than array
-    // element,then search in left
-    if (target < arr[mid].difficulty) {
-      // If target is greater than previous
-      // to mid, return closest of two
-      if (mid > 0 && target > arr[mid - 1].difficulty) return getClosest(arr, mid - 1, mid, target);
-      // Repeat for left half
-      j = mid;
-    }
-    // If target is greater than mid
-    else {
-      if (mid < n - 1 && target < arr[mid + 1].difficulty) return getClosest(arr, mid, mid + 1, target);
-      i = mid + 1; // update i
+  // Let's consider the edge cases first
+  if (target <= arr[0].difficulty) {
+    return 0;
+  } else if (target >= arr[arr.length - 1].difficulty) {
+    return arr.length - 1;
+  }
+
+  const comparitor = (element: Stimulus, needle: number) => {
+    return element.difficulty - needle;
+  };
+  const indexOfTarget = bs(arr, target, comparitor);
+
+  if (indexOfTarget >= 0) {
+    // `bs` returns a positive integer index if it found an exact match.
+    return indexOfTarget;
+  } else {
+    // If the value is not in the array, then -(index + 1) is returned, where
+    // index is where the value should be inserted into the array to maintain
+    // sorted order. Thus, the target is between the values at
+    const lowIndex = -2 - indexOfTarget;
+    const highIndex = -1 - indexOfTarget;
+
+    // So we simply compare the differences between the target and the high and
+    // low values, respectively
+    const lowDiff = Math.abs(arr[lowIndex].difficulty - target);
+    const highDiff = Math.abs(arr[highIndex].difficulty - target);
+
+    if (lowDiff < highDiff) {
+      return lowIndex;
+    } else {
+      return highIndex;
     }
   }
-  // Only single element left after sear
-  return mid;
-};
-
-const getClosest = (arr: Array<Stimulus>, val1: number, val2: number, target: number) => {
-  if (target - arr[val1].difficulty >= arr[val2].difficulty - target) return val2;
-  else return val1;
 };

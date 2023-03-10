@@ -139,7 +139,7 @@ describe('Cat', () => {
     expect(cat7.theta).toBeCloseTo(0.25, 1);
   });
 
-  it('should return a error if is invalid action', () => {
+  it('should throw a error if zeta and answers do not have matching length', () => {
     try {
       cat7.updateAbilityEstimate(
         [
@@ -153,9 +153,44 @@ describe('Cat', () => {
     }
   });
 
-  it('should return a error if is invalid action', () => {
+  it('should throw a error if method is invalid', () => {
+    try {
+      new Cat({ method: 'coolMethod' });
+    } catch (error) {
+      expect(error).toBeInstanceOf(Error);
+    }
+
+    try {
+      cat7.updateAbilityEstimate(
+        [
+          { a: 1, b: -4.0, c: 0.5, d: 1 },
+          { a: 1, b: -3.0, c: 0.5, d: 1 },
+        ],
+        [0, 0],
+        'coolMethod',
+      );
+    } catch (error) {
+      expect(error).toBeInstanceOf(Error);
+    }
+  });
+
+  it('should throw a error if itemSelect is invalid', () => {
+    try {
+      new Cat({ itemSelect: 'coolMethod' });
+    } catch (error) {
+      expect(error).toBeInstanceOf(Error);
+    }
+
     try {
       cat7.findNextItem(stimuli, 'coolMethod');
+    } catch (error) {
+      expect(error).toBeInstanceOf(Error);
+    }
+  });
+
+  it('should throw a error if startSelect is invalid', () => {
+    try {
+      new Cat({ startSelect: 'coolMethod' });
     } catch (error) {
       expect(error).toBeInstanceOf(Error);
     }
