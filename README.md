@@ -1,17 +1,22 @@
 [![Test and lint](https://github.com/yeatmanlab/jsCAT/actions/workflows/ci.yml/badge.svg)](https://github.com/yeatmanlab/jsCAT/actions/workflows/ci.yml)
 [![Coverage Status](https://coveralls.io/repos/github/yeatmanlab/jsCAT/badge.svg?branch=main)](https://coveralls.io/github/yeatmanlab/jsCAT?branch=main)
 [![npm version](https://badge.fury.io/js/@bdelab%2Fjscat.svg)](https://badge.fury.io/js/@bdelab%2Fjscat)
+
 # jsCAT: Computer Adaptive Testing in JavaScript
+
 A library to support IRT-based computer adaptive testing in JavaScript
 
-## Installation 
-You can install jsCAT from npm with 
+## Installation
+
+You can install jsCAT from npm with
+
 ```bash
 npm i @bdelab/jscat
 ```
 
 ## Usage
-```JavaScript
+
+```js
 // import jsCAT
 import { Cat, normal } from '@bdelab/jscat';
 
@@ -35,6 +40,7 @@ const nextItem = cat.findNextItem(stimuli, 'MFI')
 ```
 
 ## References
+
 Lucas Duailibe, irt-js, (2019), GitHub repository, https://github.com/geekie/irt-js
 
 ## License
