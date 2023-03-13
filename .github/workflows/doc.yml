@@ -10,10 +10,10 @@ jobs:
     steps:
       - name: Checkout 🛎️
         uses: actions/checkout@v3
-      - name: Use Node.js 16
+      - name: Use Node.js 18
         uses: actions/setup-node@v3
         with:
-          node-version: 'lts/*'
+          node-version: 'lts/hydrogen'
       - name: Install and Build 🔧
         run: |
           npm ci
