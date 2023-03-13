@@ -38,3 +38,4 @@ const nextItem = cat.findNextItem(stimuli, 'MFI')
 Lucas Duailibe, irt-js, (2019), GitHub repository, https://github.com/geekie/irt-js
 
 ## License
+jsCAT is distributed under the [ISC license](LICENSE).
