@@ -71,7 +71,7 @@ export class Cat {
     this._resps = [];
     this._theta = theta;
     this._nItems = 0;
-    this._seMeasurement = Infinity;
+    this._seMeasurement = Number.MAX_VALUE;
     this.nStartItems = nStartItems;
     this._rng = randomSeed === null ? seedrandom() : seedrandom(randomSeed);
   }
