@@ -24,7 +24,7 @@ import { Cat, normal } from '@bdelab/jscat';
 const currentPrior = normal();
 
 // create a Cat object 
-cat = new CAT({method: 'MLE', itemSelect: 'MFI', nStartItems: 0, theta: 0, minTheta: -4, maxTheta: 4, prior: currentPrior})
+cat = new CAT({method: 'MLE', itemSelect: 'MFI', nStartItems: 0, theta: 0, minTheta: -6, maxTheta: 6, prior: currentPrior})
 
 // update the abilitiy estimate by adding test items 
 cat.updateAbilityEstimate(zeta, answer);

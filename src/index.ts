@@ -53,8 +53,8 @@ export class Cat {
     nStartItems = 0,
     startSelect = 'middle',
     theta = 0,
-    minTheta = -4,
-    maxTheta = 4,
+    minTheta = -6,
+    maxTheta = 6,
     prior = abilityPrior,
     randomSeed = null,
   }: CatInput = {}) {

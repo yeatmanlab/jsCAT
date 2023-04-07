@@ -132,7 +132,7 @@ describe('Cat', () => {
   });
 
   it('correctly updates ability estimate through MLE', () => {
-    expect(cat6.theta).toBeCloseTo(-4.0, 1);
+    expect(cat6.theta).toBeCloseTo(-6.0, 1);
   });
 
   it('correctly updates ability estimate through EAP', () => {
