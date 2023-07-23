@@ -1,6 +1,6 @@
 {
   "name": "@bdelab/jscat",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "description": "A library to support IRT-based computer adaptive testing in JavaScript",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
