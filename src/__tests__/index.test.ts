@@ -54,11 +54,11 @@ describe('Cat', () => {
     );
   });
 
-  const s1: Stimulus = { difficulty: 0.5, word: 'looking' };
-  const s2: Stimulus = { difficulty: 3.5, word: 'opaque' };
-  const s3: Stimulus = { difficulty: 2, word: 'right' };
-  const s4: Stimulus = { difficulty: -2.5, word: 'yes' };
-  const s5: Stimulus = { difficulty: -1.8, word: 'mom' };
+  const s1: Stimulus = { difficulty: 0.5, c : 0.5, word: 'looking' };
+  const s2: Stimulus = { difficulty: 3.5, c : 0.5, word: 'opaque' };
+  const s3: Stimulus = { difficulty: 2, c : 0.5, word: 'right' };
+  const s4: Stimulus = { difficulty: -2.5, c : 0.5, word: 'yes' };
+  const s5: Stimulus = { difficulty: -1.8, c : 0.5, word: 'mom' };
   const stimuli = [s1, s2, s3, s4, s5];
 
   it('constructs an adaptive test', () => {
