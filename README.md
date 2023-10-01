@@ -36,6 +36,9 @@ const currentSeMeasurement = cat.seMeasurement;
 const numItems = cat.nItems;
 
 // find the next available item from an input array of stimuli based on a selection method
+
+const stimuli = [{difficulty: -3,  item: 'item1'}, {difficulty: -2,  item: 'item2'}]
+
 const nextItem = cat.findNextItem(stimuli, 'MFI')
 ```
 
