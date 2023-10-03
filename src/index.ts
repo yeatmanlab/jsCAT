@@ -233,7 +233,12 @@ export class Cat {
 
   private selectorMFI(arr: Stimulus[]) {
     const stimuliAddFisher = arr.map((element: Stimulus) => ({
-      fisherInformation: fisherInformation(this._theta, { a: element.a || 1, b: element.difficulty || 0, c: element.c || 0, d: element.d || 1 }),
+      fisherInformation: fisherInformation(this._theta, {
+        a: element.a || 1,
+        b: element.difficulty || 0,
+        c: element.c || 0,
+        d: element.d || 1,
+      }),
       ...element,
     }));
 
