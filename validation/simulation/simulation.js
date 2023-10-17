@@ -50,7 +50,7 @@ async function simulatorMatrix(respMatrix, itemSelect, testLength, iteration) {
   const simulationResults = [];
   for (let i = 0; i < respMatrix.length; i++) {
     if (i % 25 === 0) {
-      console.log("number of people", i);
+      // console.log("number of people", i);
     }
     simulationResults.push(
       ...await simulatorResponse(respMatrix[i], itemSelect, testLength, iteration)
@@ -60,19 +60,19 @@ async function simulatorMatrix(respMatrix, itemSelect, testLength, iteration) {
 }
 
 async function shuffleAnswerRobot(resp, iterations) {
-  console.log("simulation start");
+  // console.log("simulation start");
   const simulationResults = [];
   for (let i = 0; i < iterations; i++) {
     store.session.set(corpusAll, "corpusAll");
     const list1 = await simulatorMatrix(resp, "mfi", 55, i);
     store.session.set(corpusAll, "corpusAll");
-    console.log(store.session("corpusAll"));
+    // console.log(store.session("corpusAll"));
     const list2 = await simulatorMatrix(resp, "random", 55, i);
 
     simulationResults.push(...list1);
     simulationResults.push(...list2);
   }
-  console.log("simulation complete");
+  // console.log("simulation complete");
   return simulationResults;
 }
 
@@ -85,4 +85,4 @@ function convertListToCSV(list) {
 
 const csvContent = await convertListToCSV(await shuffleAnswerRobot(answerRobot, 1));
 
-export const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+// export const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
