@@ -42,6 +42,14 @@ const stimuli = [{difficulty: -3,  item: 'item1'}, {difficulty: -2,  item: 'item
 const nextItem = cat.findNextItem(stimuli, 'MFI');
 ```
 
+## Validations
+### Validation of theta estimate and theta standard error 
+![img.png](img.png)
+
+### Validation of MFI algorithm 
+![img_1.png](img_1.png)
+
+
 ## References
 
 Lucas Duailibe, irt-js, (2019), GitHub repository, https://github.com/geekie/irt-js
