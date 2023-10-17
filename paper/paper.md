@@ -9,16 +9,18 @@ authors:
       affiliation: 1
     - name: Jason D. Yeatman
       orcid: 0000-0002-2686-1293
-      affiliation: "1, 2"
+      affiliation: "1, 2, 3"
     - name: Adam Richie-Halford
       orcid: 0000-0001-9276-9084
       affiliation: "1, 2"
 affiliations:
-  - name: # TODO (Anya) Add GSE affiliation
-    index: 1
-  - name: # TODO (Anya) Add DBP affiliation
+  - name: Stanford University Graduate School of Education
+    index: 1 
+  - name: Stanford University School of Medicine, Division of Developmental Behavioral Pediatrics
     index: 2
-date: 13 March 2023
+  - name: Stanford University Department of Psychology
+    index: 3
+date: 5 October 2023
 bibliography: paper.bib
 ---
 
@@ -33,13 +35,11 @@ bibliography: paper.bib
 
 # Summary
 
-jsCAT is a JavaScript library to support a fully client-side adaptive testing
-environment. Computerized Adaptive Testing (CAT) is a type of assessment that
-uses computer algorithms to dynamically adjust the difficulty of questions based
-on a test-taker's performance. Although CAT has been widely researched and
-applied in areas such as education and psychology (e.g., GRE and Duolingo),
-designing a CAT solution suitable for large-scale school administration remains
-a challenge. Imagine we are administering 500 children in a school at the same
+jsCAT is a JavaScript library to support fully client-side computerized adaptive testing. Computerized Adaptive Testing 
+is an approach to assessment that uses an algorithm to select the most informative item to present to a test-taker 
+based on their previous responses. Although CAT has been widely researched and applied in areas such as education 
+and psychology (e.g., GRE and Duolingo), designing a CAT solution suitable for large-scale school administration 
+remains a challenge. Imagine we are administering 500 children in a school at the same
 time, where reliable wifi is not guaranteed at all times, which means that we
 should minimize data communications between the client and servers to prevent
 disruptions. Most existing adaptive testing solutions, written in R or Python,
