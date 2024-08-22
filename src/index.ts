@@ -107,7 +107,7 @@ export class Cat {
 
   private static validateItemSelect(itemSelect: string) {
     const lowerItemSelect = itemSelect.toLowerCase();
-    const validItemSelect: Array<string> = ['mfi', 'random', 'closest'];
+    const validItemSelect: Array<string> = ['mfi', 'random', 'closest', 'fixed'];
     if (!validItemSelect.includes(lowerItemSelect)) {
       throw new Error('The itemSelector you provided is not in the list of valid methods');
     }
@@ -226,6 +226,8 @@ export class Cat {
       return this.selectorClosest(arr);
     } else if (selector === 'random') {
       return this.selectorRandom(arr);
+    } else if (selector === 'fixed') {
+      return this.selectorFixed(arr);
     } else {
       return this.selectorMFI(arr);
     }
@@ -283,6 +285,26 @@ export class Cat {
   private selectorRandom(arr: Stimulus[]) {
     const index = Math.floor(this._rng() * arr.length);
     const nextItem = arr.splice(index, 1)[0];
+    return {
+      nextStimulus: nextItem,
+      remainingStimuli: arr,
+    };
+  }
+
+  /**
+   * Picks the next item in line from the given list of stimuli.
+   * It grabs the first item from the list, removes it, and then returns it along with the rest of the list.
+   *
+   * @param arr - The list of stimuli to choose from.
+   * @returns {Object} - An object with the next item and the updated list.
+   * @returns {Stimulus} return.nextStimulus - The item that was picked from the list.
+   * @returns {Stimulus[]} return.remainingStimuli - The list of what's left after picking the item.
+   */
+  private selectorFixed(arr: Stimulus[]) {
+    const nextItem = arr.shift();
+    if (nextItem === undefined) {
+      throw new Error('No items left in the array to select.');
+    }
     return {
       nextStimulus: nextItem,
       remainingStimuli: arr,
