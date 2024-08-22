@@ -116,7 +116,7 @@ export class Cat {
 
   private static validateStartSelect(startSelect: string) {
     const lowerStartSelect = startSelect.toLowerCase();
-    const validStartSelect: Array<string> = ['random', 'middle']; // TO DO: add staircase
+    const validStartSelect: Array<string> = ['random', 'middle', 'fixed']; // TO DO: add staircase
     if (!validStartSelect.includes(lowerStartSelect)) {
       throw new Error('The startSelect you provided is not in the list of valid methods');
     }
@@ -213,9 +213,10 @@ export class Cat {
     if (this.nItems < this.nStartItems) {
       selector = this.startSelect;
     }
-    if (selector !== 'mfi') {
+    if (selector !== 'mfi' && selector !== 'fixed') {
       // for mfi, we sort the arr by fisher information in the private function to select the best item,
       // and then sort by difficulty to return the remainingStimuli
+      // for fixed, we want to keep the corpus order as input
       arr.sort((a: Stimulus, b: Stimulus) => a.difficulty - b.difficulty);
     }
 
