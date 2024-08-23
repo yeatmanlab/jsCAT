@@ -53,7 +53,7 @@ describe('Cat', () => {
       [0, 0],
     );
 
-    cat8 = new Cat({ nStartItems: 0, itemSelect: 'FIXED'});
+    cat8 = new Cat({ nStartItems: 0, itemSelect: 'FIXED' });
   });
 
   const s1: Stimulus = { difficulty: 0.5, c: 0.5, word: 'looking' };

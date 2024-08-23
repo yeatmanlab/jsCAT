@@ -302,10 +302,7 @@ export class Cat {
    * @returns {Stimulus[]} return.remainingStimuli - The list of what's left after picking the item.
    */
   private selectorFixed(arr: Stimulus[]) {
-    const nextItem = arr.shift();
-    if (nextItem === undefined) {
-      throw new Error('No items left in the array to select.');
-    }
+    const nextItem = arr.shift() ?? null;
     return {
       nextStimulus: nextItem,
       remainingStimuli: arr,
