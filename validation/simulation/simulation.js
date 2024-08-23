@@ -82,7 +82,7 @@ function convertListToCSV(list) {
   const rows = list.map(obj => keys.map(key => obj[key]).join(',')).join('\n');
   return header + rows;
 }
-
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const csvContent = await convertListToCSV(await shuffleAnswerRobot(answerRobot, 1));
 
 // export const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });

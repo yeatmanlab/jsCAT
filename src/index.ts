@@ -107,7 +107,7 @@ export class Cat {
 
   private static validateItemSelect(itemSelect: string) {
     const lowerItemSelect = itemSelect.toLowerCase();
-    const validItemSelect: Array<string> = ['mfi', 'random', 'closest'];
+    const validItemSelect: Array<string> = ['mfi', 'random', 'closest', 'fixed'];
     if (!validItemSelect.includes(lowerItemSelect)) {
       throw new Error('The itemSelector you provided is not in the list of valid methods');
     }
@@ -116,7 +116,7 @@ export class Cat {
 
   private static validateStartSelect(startSelect: string) {
     const lowerStartSelect = startSelect.toLowerCase();
-    const validStartSelect: Array<string> = ['random', 'middle']; // TO DO: add staircase
+    const validStartSelect: Array<string> = ['random', 'middle', 'fixed']; // TO DO: add staircase
     if (!validStartSelect.includes(lowerStartSelect)) {
       throw new Error('The startSelect you provided is not in the list of valid methods');
     }
@@ -213,9 +213,10 @@ export class Cat {
     if (this.nItems < this.nStartItems) {
       selector = this.startSelect;
     }
-    if (selector !== 'mfi') {
+    if (selector !== 'mfi' && selector !== 'fixed') {
       // for mfi, we sort the arr by fisher information in the private function to select the best item,
       // and then sort by difficulty to return the remainingStimuli
+      // for fixed, we want to keep the corpus order as input
       arr.sort((a: Stimulus, b: Stimulus) => a.difficulty - b.difficulty);
     }
 
@@ -226,6 +227,8 @@ export class Cat {
       return this.selectorClosest(arr);
     } else if (selector === 'random') {
       return this.selectorRandom(arr);
+    } else if (selector === 'fixed') {
+      return this.selectorFixed(arr);
     } else {
       return this.selectorMFI(arr);
     }
@@ -283,6 +286,23 @@ export class Cat {
   private selectorRandom(arr: Stimulus[]) {
     const index = Math.floor(this._rng() * arr.length);
     const nextItem = arr.splice(index, 1)[0];
+    return {
+      nextStimulus: nextItem,
+      remainingStimuli: arr,
+    };
+  }
+
+  /**
+   * Picks the next item in line from the given list of stimuli.
+   * It grabs the first item from the list, removes it, and then returns it along with the rest of the list.
+   *
+   * @param arr - The list of stimuli to choose from.
+   * @returns {Object} - An object with the next item and the updated list.
+   * @returns {Stimulus} return.nextStimulus - The item that was picked from the list.
+   * @returns {Stimulus[]} return.remainingStimuli - The list of what's left after picking the item.
+   */
+  private selectorFixed(arr: Stimulus[]) {
+    const nextItem = arr.shift() ?? null;
     return {
       nextStimulus: nextItem,
       remainingStimuli: arr,

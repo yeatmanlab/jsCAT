@@ -3,7 +3,7 @@ import { Stimulus } from '../type';
 import seedrandom from 'seedrandom';
 
 describe('Cat', () => {
-  let cat1: Cat, cat2: Cat, cat3: Cat, cat4: Cat, cat5: Cat, cat6: Cat, cat7: Cat;
+  let cat1: Cat, cat2: Cat, cat3: Cat, cat4: Cat, cat5: Cat, cat6: Cat, cat7: Cat, cat8: Cat;
   let rng = seedrandom();
   beforeEach(() => {
     cat1 = new Cat();
@@ -52,6 +52,8 @@ describe('Cat', () => {
       ],
       [0, 0],
     );
+
+    cat8 = new Cat({ nStartItems: 0, itemSelect: 'FIXED' });
   });
 
   const s1: Stimulus = { difficulty: 0.5, c: 0.5, word: 'looking' };
@@ -113,6 +115,13 @@ describe('Cat', () => {
   it('correctly suggests the next item (middle method)', () => {
     const expected = { nextStimulus: s1, remainingStimuli: [s4, s5, s3, s2] };
     const received = cat5.findNextItem(stimuli);
+    expect(received).toEqual(expected);
+  });
+
+  it('correctly suggests the next item (fixed method)', () => {
+    expect(cat8.itemSelect).toBe('fixed');
+    const expected = { nextStimulus: s1, remainingStimuli: [s2, s3, s4, s5] };
+    const received = cat8.findNextItem(stimuli);
     expect(received).toEqual(expected);
   });
 
