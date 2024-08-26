@@ -1,4 +1,4 @@
-import { Clowder } from '../Clowder';
+import { Clowder } from '../clowder';
 import { Stimulus } from '../type';
 import { CatInput } from '../index';
 
