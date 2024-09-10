@@ -125,11 +125,13 @@ export class Clowder {
     this.seenItems.push(...previousItems);
 
     const itemsAndAnswers = _zip(previousItems, previousAnswers) as [Stimulus, 0 | 1][];
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const validatedItemsAndAnswers = itemsAndAnswers.filter(([item, _answer]) => this.corpora.validated.includes(item));
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const unvalidatedItemsAndAnswers = itemsAndAnswers.filter(([item, _answer]) =>
       this.corpora.unvalidated.includes(item),
     );
-
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const invalidItems = itemsAndAnswers.filter(([item, _answer]) => {
       return !this.corpora.validated.includes(item) && !this.corpora.unvalidated.includes(item);
     });
@@ -143,9 +145,11 @@ export class Clowder {
         )} ${invalidItems}`,
       );
     }
-
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const validatedStimuli = validatedItemsAndAnswers.map(([stim, _]) => stim);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const unvalidatedStimuli = unvalidatedItemsAndAnswers.map(([stim, _]) => stim);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const validatedAnswers = validatedItemsAndAnswers.map(([_, answer]) => answer);
 
     // Remove previous items from the remainingItems
