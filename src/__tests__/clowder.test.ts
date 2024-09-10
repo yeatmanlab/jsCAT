@@ -1,4 +1,4 @@
-import { Clowder, ClowderInput } from '../Clowder';
+import { Clowder, ClowderInput } from '../clowder';
 import { Stimulus } from '../type';
 
 // Mocking Stimulus
