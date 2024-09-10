@@ -1,5 +1,5 @@
 import bs from 'binary-search';
-import { Stimulus, Zeta } from './type';
+import { Stimulus, Zeta, ZetaExplicit, ZetaImplicit } from './type';
 
 /**
  * calculates the probability that someone with a given ability level theta will answer correctly an item. Uses the 4 parameters logistic model
@@ -8,7 +8,16 @@ import { Stimulus, Zeta } from './type';
  * @returns {number} the probability
  */
 export const itemResponseFunction = (theta: number, zeta: Zeta) => {
-  return zeta.c + (zeta.d - zeta.c) / (1 + Math.exp(-zeta.a * (theta - zeta.b)));
+  if ((zeta as ZetaImplicit).a) {
+    const _zeta = zeta as ZetaImplicit;
+    return _zeta.c + (_zeta.d - _zeta.c) / (1 + Math.exp(-_zeta.a * (theta - _zeta.b)));
+  } else {
+    const _zeta = zeta as ZetaExplicit;
+    return (
+      _zeta.guessing +
+      (_zeta.slipping - _zeta.guessing) / (1 + Math.exp(-_zeta.discrimination * (theta - _zeta.difficulty)))
+    );
+  }
 };
 
 /**
@@ -20,7 +29,15 @@ export const itemResponseFunction = (theta: number, zeta: Zeta) => {
 export const fisherInformation = (theta: number, zeta: Zeta) => {
   const p = itemResponseFunction(theta, zeta);
   const q = 1 - p;
-  return Math.pow(zeta.a, 2) * (q / p) * (Math.pow(p - zeta.c, 2) / Math.pow(1 - zeta.c, 2));
+  if ((zeta as ZetaImplicit).a) {
+    const _zeta = zeta as ZetaImplicit;
+    return Math.pow(_zeta.a, 2) * (q / p) * (Math.pow(p - _zeta.c, 2) / Math.pow(1 - _zeta.c, 2));
+  } else {
+    const _zeta = zeta as ZetaExplicit;
+    return (
+      Math.pow(_zeta.discrimination, 2) * (q / p) * (Math.pow(p - _zeta.guessing, 2) / Math.pow(1 - _zeta.guessing, 2))
+    );
+  }
 };
 
 /**

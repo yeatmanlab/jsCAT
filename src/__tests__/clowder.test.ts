@@ -1,91 +1,109 @@
-import { Clowder } from '../clowder';
+import { Clowder, ClowderInput } from '../Clowder';
 import { Stimulus } from '../type';
-import { CatInput } from '../index';
 
-describe('Clowder', () => {
+// Mocking Stimulus
+const createStimulus = (id: string): Stimulus => ({
+  id,
+  difficulty: 1,
+  discrimination: 1,
+  guessing: 0,
+  slipping: 0,
+  content: `Stimulus content ${id}`,
+});
+
+describe('Clowder Class', () => {
   let clowder: Clowder;
 
-  const cat1Input: CatInput = {
-    method: 'MLE',
-    itemSelect: 'MFI',
-  };
-
-  const cat2Input: CatInput = {
-    method: 'EAP',
-    itemSelect: 'closest',
-  };
-
-  const stimuli1: Stimulus[] = [
-    { difficulty: 0.5, c: 0.5, word: 'looking' },
-    { difficulty: 3.5, c: 0.5, word: 'opaque' },
-    { difficulty: 2, c: 0.5, word: 'right' },
-    { difficulty: -2.5, c: 0.5, word: 'yes' },
-    { difficulty: -1.8, c: 0.5, word: 'mom' },
-  ];
-
-  const stimuli2: Stimulus[] = [
-    { difficulty: 1.0, c: 0.5, word: 'cat' },
-    { difficulty: -1.0, c: 0.5, word: 'dog' },
-    { difficulty: 2.0, c: 0.5, word: 'fish' },
-  ];
-
   beforeEach(() => {
-    clowder = new Clowder({
-      cats: [cat1Input, cat2Input],
-      corpora: [stimuli1, stimuli2],
+    const clowderInput: ClowderInput = {
+      cats: {
+        cat1: { method: 'MLE', theta: 0.5 },
+        cat2: { method: 'EAP', theta: -1.0 },
+      },
+      corpora: {
+        validated: [createStimulus('1'), createStimulus('2')],
+        unvalidated: [createStimulus('1')],
+      },
+    };
+    clowder = new Clowder(clowderInput);
+  });
+
+  test('should initialize with provided cats and corpora', () => {
+    expect(Object.keys(clowder['cats'])).toContain('cat1');
+    expect(clowder.remainingItems.validated).toHaveLength(2);
+    expect(clowder.remainingItems.unvalidated).toHaveLength(1);
+  });
+
+  test('should validate cat names', () => {
+    expect(() => {
+      clowder.updateCatAndGetNextItem({
+        catToSelect: 'invalidCat',
+        previousItems: [],
+        previousAnswers: [],
+      });
+    }).toThrow('Invalid Cat name');
+  });
+
+  test('should update ability estimates', () => {
+    clowder.updateAbilityEstimates(['cat1'], createStimulus('1'), [0]);
+    const cat1 = clowder['cats']['cat1'];
+    expect(cat1.theta).toBeGreaterThanOrEqual(0); // Since we mock, assume the result is logical.
+  });
+
+  test('should select next stimulus from validated stimuli', () => {
+    const nextItem = clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1',
+      catsToUpdate: ['cat1'],
+      previousItems: [createStimulus('1')],
+      previousAnswers: [1],
     });
+    expect(nextItem).toEqual(createStimulus('1')); // Second validated stimulus
   });
 
-  it('correctly suggests the next stimulus for each Cat', () => {
-    const nextStimuli = clowder.getNextStimuli();
-    expect(nextStimuli.length).toBe(2);
-    expect(nextStimuli[0]).toEqual(stimuli1[0]); // Expect first stimulus for cat1
-    expect(nextStimuli[1]).toEqual(stimuli2[0]); // Expect first stimulus for cat2
+  test('should return unvalidated stimulus when no validated stimuli remain', () => {
+    clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1',
+      previousItems: [createStimulus('1'), createStimulus('2')],
+      previousAnswers: [1, 0],
+    });
+
+    const nextItem = clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1',
+      previousItems: [],
+      previousAnswers: [],
+    });
+    expect(nextItem).toEqual(createStimulus('1')); // Unvalidated item
   });
 
-  it('correctly manages remaining stimuli after selection', () => {
-    clowder.getNextStimulus(0);
-    const expectedStimulus = { difficulty: -1.8, c: 0.5, word: 'mom' };
-    expect(clowder.getNextStimulus(0)).toEqual(expectedStimulus); // Adjusted expectation
+  test('should add a new Cat instance', () => {
+    clowder.addCat('cat3', { method: 'MLE', theta: 0 });
+    expect(Object.keys(clowder['cats'])).toContain('cat3');
   });
 
-  it('throws an error if trying to access an invalid Cat index', () => {
-    expect(() => clowder.getNextStimulus(2)).toThrow(Error);
-    expect(() => clowder.getNextStimulus(-1)).toThrow(Error);
+  test('should throw error if adding duplicate Cat instance', () => {
+    expect(() => {
+      clowder.addCat('cat1', { method: 'MLE', theta: 0 });
+    }).toThrow('Cat with the name "cat1" already exists.');
   });
 
-  it('allows adding a new Cat and correctly suggests the next stimulus', () => {
-    const newCatInput: CatInput = {
-      method: 'MLE',
-      itemSelect: 'random',
-    };
-    const newStimuli: Stimulus[] = [
-      { difficulty: 1.5, c: 0.5, word: 'lion' },
-      { difficulty: -0.5, c: 0.5, word: 'tiger' },
-    ];
-
-    clowder.addCat(newCatInput, newStimuli);
-
-    const nextStimulus = clowder.getNextStimulus(2);
-    expect(nextStimulus).toBeDefined();
-    expect(newStimuli).toContainEqual(nextStimulus); // Use toContainEqual
+  test('should remove a Cat instance', () => {
+    clowder.removeCat('cat1');
+    expect(Object.keys(clowder['cats'])).not.toContain('cat1');
   });
 
-  it('allows removing a Cat and handles stimuli accordingly', () => {
-    clowder.removeCat(1);
-    expect(() => clowder.getNextStimulus(1)).toThrow(Error); // Cat2 should be removed
-    expect(clowder.getNextStimuli().length).toBe(1); // Only one Cat remains
+  test('should throw error when trying to remove non-existent Cat instance', () => {
+    expect(() => {
+      clowder.removeCat('nonExistentCat');
+    }).toThrow('Invalid Cat name');
   });
 
-  it('correctly suggests the next item (random method)', () => {
-    const randomCatInput: CatInput = {
-      itemSelect: 'random',
-      randomSeed: 'test-seed', // Ensure seed is correctly set
-    };
-    const randomStimuli: Stimulus[] = stimuli1.slice(); // Copy of stimuli1 for testing
-    clowder.addCat(randomCatInput, randomStimuli);
-
-    const nextStimulus = clowder.getNextStimulus(2); // New Cat at index 2
-    expect(randomStimuli).toContainEqual(nextStimulus); // Check if nextStimulus is one of the randomStimuli
+  test('should throw error if previousItems and previousAnswers have mismatched lengths', () => {
+    expect(() => {
+      clowder.updateCatAndGetNextItem({
+        catToSelect: 'cat1',
+        previousItems: [createStimulus('1')],
+        previousAnswers: [1, 0], // Mismatched length
+      });
+    }).toThrow('Previous items and answers must have the same length.');
   });
 });

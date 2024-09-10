@@ -199,8 +199,7 @@ export class Cat {
    * @param stimuli - an array of stimulus
    * @param itemSelect - the item selection method
    * @param deepCopy - default deepCopy = true
-   * @returns {nextStimulus: Stimulus,
-            remainingStimuli: Array<Stimulus>}
+   * @returns {nextStimulus: Stimulus, remainingStimuli: Array<Stimulus>}
    */
   public findNextItem(stimuli: Stimulus[], itemSelect: string = this.itemSelect, deepCopy = true) {
     let arr: Array<Stimulus>;
@@ -302,7 +301,7 @@ export class Cat {
    * @returns {Stimulus[]} return.remainingStimuli - The list of what's left after picking the item.
    */
   private selectorFixed(arr: Stimulus[]) {
-    const nextItem = arr.shift() ?? null;
+    const nextItem = arr.shift();
     return {
       nextStimulus: nextItem,
       remainingStimuli: arr,

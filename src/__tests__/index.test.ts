@@ -1,17 +1,33 @@
 import { Cat } from '../index';
-import { Stimulus } from '../type';
+import { zetaKeyMap, Stimulus, ZetaImplicit, ZetaExplicit } from '../type';
 import seedrandom from 'seedrandom';
+import _mapKeys from 'lodash/mapKeys';
+
+// Convert ZetaImplicit to ZetaExplicit
+const convertZetaImplicitToExplicit = (zeta: ZetaImplicit): ZetaExplicit => {
+  const explicitZeta = _mapKeys(zeta, (value, key) => {
+    return zetaKeyMap[key as keyof typeof zetaKeyMap];
+  }) as ZetaExplicit;
+
+  return {
+    discrimination: explicitZeta.discrimination,
+    difficulty: explicitZeta.difficulty,
+    guessing: explicitZeta.guessing,
+    slipping: explicitZeta.slipping,
+  };
+};
 
 describe('Cat', () => {
   let cat1: Cat, cat2: Cat, cat3: Cat, cat4: Cat, cat5: Cat, cat6: Cat, cat7: Cat, cat8: Cat;
   let rng = seedrandom();
+
   beforeEach(() => {
     cat1 = new Cat();
     cat1.updateAbilityEstimate(
       [
-        { a: 2.225, b: -1.885, c: 0.21, d: 1 },
-        { a: 1.174, b: -2.411, c: 0.212, d: 1 },
-        { a: 2.104, b: -2.439, c: 0.192, d: 1 },
+        convertZetaImplicitToExplicit({ a: 2.225, b: -1.885, c: 0.21, d: 1 }),
+        convertZetaImplicitToExplicit({ a: 1.174, b: -2.411, c: 0.212, d: 1 }),
+        convertZetaImplicitToExplicit({ a: 2.104, b: -2.439, c: 0.192, d: 1 }),
       ],
       [1, 0, 1],
     );
@@ -19,13 +35,13 @@ describe('Cat', () => {
     cat2 = new Cat();
     cat2.updateAbilityEstimate(
       [
-        { a: 1, b: -0.447, c: 0.5, d: 1 },
-        { a: 1, b: 2.869, c: 0.5, d: 1 },
-        { a: 1, b: -0.469, c: 0.5, d: 1 },
-        { a: 1, b: -0.576, c: 0.5, d: 1 },
-        { a: 1, b: -1.43, c: 0.5, d: 1 },
-        { a: 1, b: -1.607, c: 0.5, d: 1 },
-        { a: 1, b: 0.529, c: 0.5, d: 1 },
+        convertZetaImplicitToExplicit({ a: 1, b: -0.447, c: 0.5, d: 1 }),
+        convertZetaImplicitToExplicit({ a: 1, b: 2.869, c: 0.5, d: 1 }),
+        convertZetaImplicitToExplicit({ a: 1, b: -0.469, c: 0.5, d: 1 }),
+        convertZetaImplicitToExplicit({ a: 1, b: -0.576, c: 0.5, d: 1 }),
+        convertZetaImplicitToExplicit({ a: 1, b: -1.43, c: 0.5, d: 1 }),
+        convertZetaImplicitToExplicit({ a: 1, b: -1.607, c: 0.5, d: 1 }),
+        convertZetaImplicitToExplicit({ a: 1, b: 0.529, c: 0.5, d: 1 }),
       ],
       [0, 1, 0, 1, 1, 1, 1],
     );
@@ -33,13 +49,13 @@ describe('Cat', () => {
     const randomSeed = 'test';
     rng = seedrandom(randomSeed);
     cat4 = new Cat({ nStartItems: 0, itemSelect: 'RANDOM', randomSeed });
-    cat5 = new Cat({ nStartItems: 1, startSelect: 'miDdle' });
+    cat5 = new Cat({ nStartItems: 1, startSelect: 'miDdle' }); // ask
 
     cat6 = new Cat();
     cat6.updateAbilityEstimate(
       [
-        { a: 1, b: -4.0, c: 0.5, d: 1 },
-        { a: 1, b: -3.0, c: 0.5, d: 1 },
+        convertZetaImplicitToExplicit({ a: 1, b: -4.0, c: 0.5, d: 1 }),
+        convertZetaImplicitToExplicit({ a: 1, b: -3.0, c: 0.5, d: 1 }),
       ],
       [0, 0],
     );
@@ -47,8 +63,8 @@ describe('Cat', () => {
     cat7 = new Cat({ method: 'eap' });
     cat7.updateAbilityEstimate(
       [
-        { a: 1, b: -4.0, c: 0.5, d: 1 },
-        { a: 1, b: -3.0, c: 0.5, d: 1 },
+        convertZetaImplicitToExplicit({ a: 1, b: -4.0, c: 0.5, d: 1 }),
+        convertZetaImplicitToExplicit({ a: 1, b: -3.0, c: 0.5, d: 1 }),
       ],
       [0, 0],
     );
@@ -56,11 +72,11 @@ describe('Cat', () => {
     cat8 = new Cat({ nStartItems: 0, itemSelect: 'FIXED' });
   });
 
-  const s1: Stimulus = { difficulty: 0.5, c: 0.5, word: 'looking' };
-  const s2: Stimulus = { difficulty: 3.5, c: 0.5, word: 'opaque' };
-  const s3: Stimulus = { difficulty: 2, c: 0.5, word: 'right' };
-  const s4: Stimulus = { difficulty: -2.5, c: 0.5, word: 'yes' };
-  const s5: Stimulus = { difficulty: -1.8, c: 0.5, word: 'mom' };
+  const s1: Stimulus = { difficulty: 0.5, guessing: 0.5, discrimination: 1, slipping: 1, word: 'looking' };
+  const s2: Stimulus = { difficulty: 3.5, guessing: 0.5, discrimination: 1, slipping: 1, word: 'opaque' };
+  const s3: Stimulus = { difficulty: 2, guessing: 0.5, discrimination: 1, slipping: 1, word: 'right' };
+  const s4: Stimulus = { difficulty: -2.5, guessing: 0.5, discrimination: 1, slipping: 1, word: 'yes' };
+  const s5: Stimulus = { difficulty: -1.8, guessing: 0.5, discrimination: 1, slipping: 1, word: 'mom' };
   const stimuli = [s1, s2, s3, s4, s5];
 
   it('constructs an adaptive test', () => {
@@ -88,15 +104,15 @@ describe('Cat', () => {
     expect(cat2.resps).toEqual([0, 1, 0, 1, 1, 1, 1]);
   });
 
-  it('correctly updates zatas', () => {
+  it('correctly updates zetas', () => {
     expect(cat2.zetas).toEqual([
-      { a: 1, b: -0.447, c: 0.5, d: 1 },
-      { a: 1, b: 2.869, c: 0.5, d: 1 },
-      { a: 1, b: -0.469, c: 0.5, d: 1 },
-      { a: 1, b: -0.576, c: 0.5, d: 1 },
-      { a: 1, b: -1.43, c: 0.5, d: 1 },
-      { a: 1, b: -1.607, c: 0.5, d: 1 },
-      { a: 1, b: 0.529, c: 0.5, d: 1 },
+      convertZetaImplicitToExplicit({ a: 1, b: -0.447, c: 0.5, d: 1 }),
+      convertZetaImplicitToExplicit({ a: 1, b: 2.869, c: 0.5, d: 1 }),
+      convertZetaImplicitToExplicit({ a: 1, b: -0.469, c: 0.5, d: 1 }),
+      convertZetaImplicitToExplicit({ a: 1, b: -0.576, c: 0.5, d: 1 }),
+      convertZetaImplicitToExplicit({ a: 1, b: -1.43, c: 0.5, d: 1 }),
+      convertZetaImplicitToExplicit({ a: 1, b: -1.607, c: 0.5, d: 1 }),
+      convertZetaImplicitToExplicit({ a: 1, b: 0.529, c: 0.5, d: 1 }),
     ]);
   });
 
@@ -127,7 +143,7 @@ describe('Cat', () => {
 
   it('correctly suggests the next item (random method)', () => {
     let received;
-    const stimuliSorted = stimuli.sort((a: Stimulus, b: Stimulus) => a.difficulty - b.difficulty);
+    const stimuliSorted = stimuli.sort((a: Stimulus, b: Stimulus) => a.difficulty - b.difficulty); // ask
     let index = Math.floor(rng() * stimuliSorted.length);
     received = cat4.findNextItem(stimuliSorted);
     expect(received.nextStimulus).toEqual(stimuliSorted[index]);
@@ -148,12 +164,12 @@ describe('Cat', () => {
     expect(cat7.theta).toBeCloseTo(0.25, 1);
   });
 
-  it('should throw a error if zeta and answers do not have matching length', () => {
+  it('should throw an error if zeta and answers do not have matching length', () => {
     try {
       cat7.updateAbilityEstimate(
         [
-          { a: 1, b: -4.0, c: 0.5, d: 1 },
-          { a: 1, b: -3.0, c: 0.5, d: 1 },
+          convertZetaImplicitToExplicit({ a: 1, b: -4.0, c: 0.5, d: 1 }),
+          convertZetaImplicitToExplicit({ a: 1, b: -3.0, c: 0.5, d: 1 }),
         ],
         [0, 0, 0],
       );
@@ -162,7 +178,7 @@ describe('Cat', () => {
     }
   });
 
-  it('should throw a error if method is invalid', () => {
+  it('should throw an error if method is invalid', () => {
     try {
       new Cat({ method: 'coolMethod' });
     } catch (error) {
@@ -172,8 +188,8 @@ describe('Cat', () => {
     try {
       cat7.updateAbilityEstimate(
         [
-          { a: 1, b: -4.0, c: 0.5, d: 1 },
-          { a: 1, b: -3.0, c: 0.5, d: 1 },
+          convertZetaImplicitToExplicit({ a: 1, b: -4.0, c: 0.5, d: 1 }),
+          convertZetaImplicitToExplicit({ a: 1, b: -3.0, c: 0.5, d: 1 }),
         ],
         [0, 0],
         'coolMethod',
@@ -183,7 +199,7 @@ describe('Cat', () => {
     }
   });
 
-  it('should throw a error if itemSelect is invalid', () => {
+  it('should throw an error if itemSelect is invalid', () => {
     try {
       new Cat({ itemSelect: 'coolMethod' });
     } catch (error) {
@@ -197,11 +213,17 @@ describe('Cat', () => {
     }
   });
 
-  it('should throw a error if startSelect is invalid', () => {
+  it('should throw an error if startSelect is invalid', () => {
     try {
       new Cat({ startSelect: 'coolMethod' });
     } catch (error) {
       expect(error).toBeInstanceOf(Error);
     }
+  });
+
+  it('should return undefined if there are no input items', () => {
+    const cat10 = new Cat();
+    const { nextStimulus } = cat10.findNextItem([]);
+    expect(nextStimulus).toBeUndefined();
   });
 });
