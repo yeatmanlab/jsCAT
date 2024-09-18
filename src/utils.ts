@@ -6,6 +6,10 @@ import _invert from 'lodash/invert';
 import _mapKeys from 'lodash/mapKeys';
 
 // TODO: Document this
+/**
+ * A constant map from the symbolic item parameter names to their semantic
+ * counterparts.
+ */
 export const ZETA_KEY_MAP = {
   a: 'discrimination',
   b: 'difficulty',
@@ -13,7 +17,12 @@ export const ZETA_KEY_MAP = {
   d: 'slipping',
 };
 
-// TODO: Document this
+/**
+ * Return default item parameters (i.e., zeta)
+ *
+ * @param {'symbolic' | 'semantic'} desiredFormat - The desired format for the output zeta object.
+ * @returns {Zeta} the default zeta object in the specified format.
+ */
 export const defaultZeta = (desiredFormat: 'symbolic' | 'semantic' = 'symbolic'): Zeta => {
   const defaultZeta: Zeta = {
     a: 1,
@@ -25,7 +34,15 @@ export const defaultZeta = (desiredFormat: 'symbolic' | 'semantic' = 'symbolic')
   return convertZeta(defaultZeta, desiredFormat);
 };
 
-// TODO: Document this
+/**
+ * Validates the item (a.k.a. zeta) parameters, prohibiting redundant keys and
+ * optionally requiring all parameters.
+ *
+ * @param {Zeta} zeta - The zeta parameters to validate.
+ * @param {boolean} requireAll - If `true`, ensures that all required keys are present. Default is `false`.
+ *
+ * @throws {Error} Will throw an error if any of the validation rules are violated.
+ */
 export const validateZetaParams = (zeta: Zeta, requireAll = false): void => {
   if (zeta.a !== undefined && zeta.discrimination !== undefined) {
     throw new Error('This item has both an `a` key and `discrimination` key. Please provide only one.');
@@ -62,7 +79,20 @@ export const validateZetaParams = (zeta: Zeta, requireAll = false): void => {
   }
 };
 
-// TODO: Document this
+/**
+ * Fills in default zeta parameters for any missing keys in the provided zeta object.
+ *
+ * @remarks
+ * This function merges the provided zeta object with the default zeta object, converting
+ * the keys to the desired format if specified. If no desired format is provided, the
+ * keys will remain in their original format.
+ *
+ * @param {Zeta} zeta - The zeta parameters to fill in defaults for.
+ * @param {'symbolic' | 'semantic'} desiredFormat - The desired format for the output zeta object. Default is 'symbolic'.
+ *
+ * @returns A new zeta object with default values filled in for any missing keys,
+ *   and converted to the desired format if specified.
+ */
 export const fillZetaDefaults = (zeta: Zeta, desiredFormat: 'symbolic' | 'semantic' = 'symbolic'): Zeta => {
   return {
     ...defaultZeta(desiredFormat),
