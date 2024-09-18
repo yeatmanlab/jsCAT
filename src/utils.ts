@@ -5,13 +5,15 @@ import _intersection from 'lodash/intersection';
 import _invert from 'lodash/invert';
 import _mapKeys from 'lodash/mapKeys';
 
-export const zetaKeyMap = {
+// TODO: Document this
+export const ZETA_KEY_MAP = {
   a: 'discrimination',
   b: 'difficulty',
   c: 'guessing',
   d: 'slipping',
 };
 
+// TODO: Document this
 export const defaultZeta = (desiredFormat: 'symbolic' | 'semantic' = 'symbolic'): Zeta => {
   const defaultZeta: Zeta = {
     a: 1,
@@ -23,6 +25,7 @@ export const defaultZeta = (desiredFormat: 'symbolic' | 'semantic' = 'symbolic')
   return convertZeta(defaultZeta, desiredFormat);
 };
 
+// TODO: Document this
 export const validateZetaParams = (zeta: Zeta, requireAll = false): void => {
   if (zeta.a !== undefined && zeta.discrimination !== undefined) {
     throw new Error('This item has both an `a` key and `discrimination` key. Please provide only one.');
@@ -42,23 +45,24 @@ export const validateZetaParams = (zeta: Zeta, requireAll = false): void => {
 
   if (requireAll) {
     if (zeta.a === undefined && zeta.discrimination === undefined) {
-      throw new Error('This item is missing an `a` or `discrimination` key.');
+      throw new Error('This item is missing the key `a` or `discrimination`.');
     }
 
     if (zeta.b === undefined && zeta.difficulty === undefined) {
-      throw new Error('This item is missing a `b` or `difficulty` key.');
+      throw new Error('This item is missing the key `b` or `difficulty`.');
     }
 
     if (zeta.c === undefined && zeta.guessing === undefined) {
-      throw new Error('This item is missing a `c` or `guessing` key.');
+      throw new Error('This item is missing the key `c` or `guessing`.');
     }
 
     if (zeta.d === undefined && zeta.slipping === undefined) {
-      throw new Error('This item is missing a `d` or `slipping` key.');
+      throw new Error('This item is missing the key `d` or `slipping`.');
     }
   }
 };
 
+// TODO: Document this
 export const fillZetaDefaults = (zeta: Zeta, desiredFormat: 'symbolic' | 'semantic' = 'symbolic'): Zeta => {
   return {
     ...defaultZeta(desiredFormat),
@@ -66,6 +70,7 @@ export const fillZetaDefaults = (zeta: Zeta, desiredFormat: 'symbolic' | 'semant
   };
 };
 
+// TODO: Document this
 export const convertZeta = (zeta: Zeta, desiredFormat: 'symbolic' | 'semantic'): Zeta => {
   if (!['symbolic', 'semantic'].includes(desiredFormat)) {
     throw new Error(`Invalid desired format. Expected 'symbolic' or'semantic'. Received ${desiredFormat} instead.`);
@@ -73,15 +78,15 @@ export const convertZeta = (zeta: Zeta, desiredFormat: 'symbolic' | 'semantic'):
 
   return _mapKeys(zeta, (value, key) => {
     if (desiredFormat === 'symbolic') {
-      const inverseMap = _invert(zetaKeyMap);
+      const inverseMap = _invert(ZETA_KEY_MAP);
       if (key in inverseMap) {
         return inverseMap[key];
       } else {
         return key;
       }
     } else {
-      if (key in zetaKeyMap) {
-        return zetaKeyMap[key as keyof typeof zetaKeyMap];
+      if (key in ZETA_KEY_MAP) {
+        return ZETA_KEY_MAP[key as keyof typeof ZETA_KEY_MAP];
       } else {
         return key;
       }
@@ -181,7 +186,8 @@ export const findClosest = (inputStimuli: Array<Stimulus>, target: number) => {
   }
 };
 
-export const validateCorpora = (corpus: MultiZetaStimulus[]): void => {
+// TODO: Document this
+export const validateCorpus = (corpus: MultiZetaStimulus[]): void => {
   const zetaCatMapsArray = corpus.map((item) => item.zetas);
   for (const zetaCatMaps of zetaCatMapsArray) {
     const intersection = _intersection(zetaCatMaps);
@@ -189,4 +195,15 @@ export const validateCorpora = (corpus: MultiZetaStimulus[]): void => {
       throw new Error(`The cat names ${intersection.join(', ')} are present in multiple corpora.`);
     }
   }
+};
+
+// TODO: Document this
+export const filterItemsByCatParameterAvailability = (items: MultiZetaStimulus[], catName: string) => {
+  const paramsExist = items.filter((item) => item.zetas.some((zetaCatMap) => zetaCatMap.cats.includes(catName)));
+  const paramsMissing = items.filter((item) => !item.zetas.some((zetaCatMap) => zetaCatMap.cats.includes(catName)));
+
+  return {
+    available: paramsExist,
+    missing: paramsMissing,
+  };
 };

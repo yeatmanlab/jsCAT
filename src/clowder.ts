@@ -1,10 +1,11 @@
 import { Cat, CatInput } from './index';
 import { MultiZetaStimulus, Stimulus, Zeta, ZetaCatMap } from './type';
 import _cloneDeep from 'lodash/cloneDeep';
+import _isEqual from 'lodash/isEqual';
 import _mapValues from 'lodash/mapValues';
 import _unzip from 'lodash/unzip';
 import _zip from 'lodash/zip';
-import { validateCorpora } from './utils';
+import { filterItemsByCatParameterAvailability, validateCorpus } from './utils';
 
 export interface ClowderInput {
   // An object containing Cat configurations for each Cat instance.
@@ -12,12 +13,12 @@ export interface ClowderInput {
     [name: string]: CatInput;
   };
   // An object containing arrays of stimuli for each corpus.
-  corpora: MultiZetaStimulus[];
+  corpus: MultiZetaStimulus[];
 }
 
 export class Clowder {
   private cats: { [name: string]: Cat };
-  private corpora: MultiZetaStimulus[];
+  private _corpus: MultiZetaStimulus[];
   public remainingItems: MultiZetaStimulus[];
   public seenItems: Stimulus[];
 
@@ -25,19 +26,23 @@ export class Clowder {
    * Create a Clowder object.
    * @param {ClowderInput} input - An object containing arrays of Cat configurations and corpora.
    */
-  constructor({ cats, corpora }: ClowderInput) {
+  constructor({ cats, corpus }: ClowderInput) {
     // TODO: Need to pass in numItemsRequired so that we know when to stop providing new items.
     this.cats = _mapValues(cats, (catInput) => new Cat(catInput));
     this.seenItems = [];
-    validateCorpora(corpora);
-    this.corpora = corpora;
-    this.remainingItems = _cloneDeep(corpora);
+    validateCorpus(corpus);
+    this._corpus = corpus;
+    this.remainingItems = _cloneDeep(corpus);
   }
 
   private _validateCatName(catName: string): void {
     if (!Object.prototype.hasOwnProperty.call(this.cats, catName)) {
       throw new Error(`Invalid Cat name. Expected one of ${Object.keys(this.cats).join(', ')}. Received ${catName}.`);
     }
+  }
+
+  public get corpus() {
+    return this._corpus;
   }
 
   public get theta() {
@@ -104,8 +109,8 @@ export class Clowder {
   }: {
     catToSelect: string;
     catsToUpdate?: string | string[];
-    items: MultiZetaStimulus[];
-    answers: (0 | 1) | (0 | 1)[];
+    items?: MultiZetaStimulus | MultiZetaStimulus[];
+    answers?: (0 | 1) | (0 | 1)[];
     method?: string;
     itemSelect?: string;
   }): Stimulus | undefined {
@@ -154,40 +159,56 @@ export class Clowder {
       this.cats[catName].updateAbilityEstimate(zetas, answers, method);
     }
 
-    // TODO: Before we explicityly differentiated between validated and unvalidated stimuli.
-    // Now, we need to dynamically calculate the unvalidated stimuli by looking at the remaining items
-    // that do not have a zeta associated with the catToSelect.
+    // Now, we need to dynamically calculate the stimuli available for selection by `catToSelect`.
+    // We inspect the remaining items and find ones that have zeta parameters for `catToSelect`
 
-    // TODO: These functions do not exist.
-    const validatedRemainingItems = filterRemainingItemsForThisCat('validated');
-    const unvalidatedRemainingItems = filterRemainingItemsForThisCat('unvalidated');
-    const validatedCatInput = validatedRemainingItems.map((stim) => putStimuliInExpectedFormat);
+    const { available, missing } = filterItemsByCatParameterAvailability(this.remainingItems, catToSelect);
+
+    // The cat expects an array of Stimulus objects, with the zeta parameters
+    // spread at the top-level of each Stimulus object. So we need to convert
+    // the MultiZetaStimulus array to an array of Stimulus objects.
+    const availableCatInput = available.map((item) => {
+      const { zetas, ...rest } = item;
+      const zetasForCat = zetas.find((zeta: ZetaCatMap) => zeta.cats.includes(catToSelect));
+      return {
+        ...(zetasForCat?.zeta ?? {}),
+        ...rest,
+      };
+    });
 
     // Use the catForSelect to determine the next stimulus
     const cat = this.cats[catToSelect];
-    const { nextStimulus } = cat.findNextItem(validatedCatInput, itemSelect);
+    const { nextStimulus } = cat.findNextItem(availableCatInput, itemSelect);
+
+    // Again `nextStimulus` will be a Stimulus object, or `undefined` if no further validated stimuli are available.
+    // We need to convert the Stimulus object back to a MultiZetaStimulus object to return to the user.
+    const returnStimulus: MultiZetaStimulus | undefined = available.find((stim) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { zetas, ...rest } = stim;
+      return _isEqual(rest, nextStimulus);
+    });
 
     // Added some logic to mix in the unvalidated stimuli if needed.
-    if (unvalidatedRemainingItems.length === 0) {
+    if (missing.length === 0) {
       // If there are no more unvalidated stimuli, we only have validated items left.
       // Use the Cat to find the next item. The Cat may return undefined if all validated items have been seen.
-      return nextStimulus;
-    } else if (validatedRemainingItems.length === 0) {
+      return returnStimulus;
+    } else if (available.length === 0) {
       // In this case, there are no more validated items left. Choose an unvalidated item at random.
-      return unvalidatedRemainingItems[Math.floor(Math.random() * unvalidatedRemainingItems.length)];
+      return missing[Math.floor(Math.random() * missing.length)];
     } else {
       // In this case, there are both validated and unvalidated items left.
       // We need to randomly insert unvalidated items
       const numRemaining = {
-        validated: validatedRemainingItems.length,
-        unvalidated: unvalidatedRemainingItems.length,
+        available: available.length,
+        missing: missing.length,
       };
       const random = Math.random();
 
-      if (random < numRemaining.unvalidated / (numRemaining.validated + numRemaining.unvalidated)) {
-        return unvalidatedRemainingItems[Math.floor(Math.random() * unvalidatedRemainingItems.length)];
+      if (random < numRemaining.missing / (numRemaining.available + numRemaining.missing)) {
+        return missing[Math.floor(Math.random() * missing.length)];
       } else {
-        return nextStimulus;
+        return returnStimulus;
       }
     }
   }
