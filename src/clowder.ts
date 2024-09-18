@@ -80,6 +80,7 @@ export class Clowder {
    * @param {Stimulus[]} [input.items=[]] - An array of previously presented stimuli.
    * @param {(0 | 1) | (0 | 1)[]} [input.answers=[]] - An array of answers (0 or 1) corresponding to `items`.
    * @param {string} [input.method] - Optional method for updating ability estimates (if applicable).
+   * @param {string} [input.itemSelect] - Optional item selection method (if applicable).
    *
    * @returns {Stimulus | undefined} - The next stimulus to present, or `undefined` if no further validated stimuli are available.
    *
@@ -99,12 +100,14 @@ export class Clowder {
     items = [],
     answers = [],
     method,
+    itemSelect,
   }: {
     catToSelect: string;
     catsToUpdate?: string | string[];
     items: MultiZetaStimulus[];
     answers: (0 | 1) | (0 | 1)[];
     method?: string;
+    itemSelect?: string;
   }): Stimulus | undefined {
     // Validate all cat names
     this._validateCatName(catToSelect);
@@ -151,29 +154,38 @@ export class Clowder {
       this.cats[catName].updateAbilityEstimate(zetas, answers, method);
     }
 
+    // TODO: Before we explicityly differentiated between validated and unvalidated stimuli.
+    // Now, we need to dynamically calculate the unvalidated stimuli by looking at the remaining items
+    // that do not have a zeta associated with the catToSelect.
+
+    // TODO: These functions do not exist.
+    const validatedRemainingItems = filterRemainingItemsForThisCat('validated');
+    const unvalidatedRemainingItems = filterRemainingItemsForThisCat('unvalidated');
+    const validatedCatInput = validatedRemainingItems.map((stim) => putStimuliInExpectedFormat);
+
     // Use the catForSelect to determine the next stimulus
     const cat = this.cats[catToSelect];
-    const { nextStimulus } = cat.findNextItem(this.remainingItems.validated);
+    const { nextStimulus } = cat.findNextItem(validatedCatInput, itemSelect);
 
     // Added some logic to mix in the unvalidated stimuli if needed.
-    if (this.remainingItems.unvalidated.length === 0) {
+    if (unvalidatedRemainingItems.length === 0) {
       // If there are no more unvalidated stimuli, we only have validated items left.
       // Use the Cat to find the next item. The Cat may return undefined if all validated items have been seen.
       return nextStimulus;
-    } else if (this.remainingItems.validated.length === 0) {
+    } else if (validatedRemainingItems.length === 0) {
       // In this case, there are no more validated items left. Choose an unvalidated item at random.
-      return this.remainingItems.unvalidated[Math.floor(Math.random() * this.remainingItems.unvalidated.length)];
+      return unvalidatedRemainingItems[Math.floor(Math.random() * unvalidatedRemainingItems.length)];
     } else {
       // In this case, there are both validated and unvalidated items left.
       // We need to randomly insert unvalidated items
       const numRemaining = {
-        validated: this.remainingItems.validated.length,
-        unvalidated: this.remainingItems.unvalidated.length,
+        validated: validatedRemainingItems.length,
+        unvalidated: unvalidatedRemainingItems.length,
       };
       const random = Math.random();
 
       if (random < numRemaining.unvalidated / (numRemaining.validated + numRemaining.unvalidated)) {
-        return this.remainingItems.unvalidated[Math.floor(Math.random() * this.remainingItems.unvalidated.length)];
+        return unvalidatedRemainingItems[Math.floor(Math.random() * unvalidatedRemainingItems.length)];
       } else {
         return nextStimulus;
       }
