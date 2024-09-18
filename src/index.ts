@@ -1,7 +1,15 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { minimize_Powell } from 'optimization-js';
 import { cloneDeep } from 'lodash';
 import { Stimulus, Zeta } from './type';
-import { itemResponseFunction, fisherInformation, normal, findClosest } from './utils';
+import {
+  itemResponseFunction,
+  fisherInformation,
+  normal,
+  findClosest,
+  validateZetaParams,
+  fillZetaDefaults,
+} from './utils';
 import seedrandom from 'seedrandom';
 
 export const abilityPrior = normal();
@@ -26,7 +34,6 @@ export class Cat {
   public prior: number[][];
   private readonly _zetas: Zeta[];
   private readonly _resps: (0 | 1)[];
-  private _nItems: number;
   private _theta: number;
   private _seMeasurement: number;
   public nStartItems: number;
@@ -70,7 +77,6 @@ export class Cat {
     this._zetas = [];
     this._resps = [];
     this._theta = theta;
-    this._nItems = 0;
     this._seMeasurement = Number.MAX_VALUE;
     this.nStartItems = nStartItems;
     this._rng = randomSeed === null ? seedrandom() : seedrandom(randomSeed);
@@ -84,6 +90,9 @@ export class Cat {
     return this._seMeasurement;
   }
 
+  /**
+   * Return the number of items that have been observed so far.
+   */
   public get nItems() {
     return this._resps.length;
   }
@@ -134,6 +143,8 @@ export class Cat {
 
     zeta = Array.isArray(zeta) ? zeta : [zeta];
     answer = Array.isArray(answer) ? answer : [answer];
+
+    zeta.forEach((z) => validateZetaParams(z, true));
 
     if (zeta.length !== answer.length) {
       throw new Error('Unmatched length between answers and item params');
@@ -209,6 +220,9 @@ export class Cat {
     } else {
       arr = stimuli;
     }
+
+    arr = arr.map((stim) => fillZetaDefaults(stim, 'semantic'));
+
     if (this.nItems < this.nStartItems) {
       selector = this.startSelect;
     }
@@ -216,7 +230,7 @@ export class Cat {
       // for mfi, we sort the arr by fisher information in the private function to select the best item,
       // and then sort by difficulty to return the remainingStimuli
       // for fixed, we want to keep the corpus order as input
-      arr.sort((a: Stimulus, b: Stimulus) => a.difficulty - b.difficulty);
+      arr.sort((a: Stimulus, b: Stimulus) => a.difficulty! - b.difficulty!);
     }
 
     if (selector === 'middle') {
@@ -233,14 +247,10 @@ export class Cat {
     }
   }
 
-  private selectorMFI(arr: Stimulus[]) {
-    const stimuliAddFisher = arr.map((element: Stimulus) => ({
-      fisherInformation: fisherInformation(this._theta, {
-        a: element.a || 1,
-        b: element.difficulty || 0,
-        c: element.c || 0,
-        d: element.d || 1,
-      }),
+  private selectorMFI(inputStimuli: Stimulus[]) {
+    const stimuli = inputStimuli.map((stim) => fillZetaDefaults(stim, 'semantic'));
+    const stimuliAddFisher = stimuli.map((element: Stimulus) => ({
+      fisherInformation: fisherInformation(this._theta, fillZetaDefaults(element, 'symbolic')),
       ...element,
     }));
 
@@ -250,7 +260,7 @@ export class Cat {
     });
     return {
       nextStimulus: stimuliAddFisher[0],
-      remainingStimuli: stimuliAddFisher.slice(1).sort((a: Stimulus, b: Stimulus) => a.difficulty - b.difficulty),
+      remainingStimuli: stimuliAddFisher.slice(1).sort((a: Stimulus, b: Stimulus) => a.difficulty! - b.difficulty!),
     };
   }
 
