@@ -125,6 +125,7 @@ export class Clowder {
     // Validate all cat names
     this._validateCatName(catToSelect);
     catsToUpdate = Array.isArray(catsToUpdate) ? catsToUpdate : [catsToUpdate];
+
     catsToUpdate.forEach((cat) => {
       this._validateCatName(cat);
     });

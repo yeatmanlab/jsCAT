@@ -1,3 +1,4 @@
+import { Cat } from '..';
 import { Clowder, ClowderInput } from '../clowder';
 import { MultiZetaStimulus, Zeta, ZetaCatMap } from '../type';
 import { defaultZeta } from '../utils';
@@ -70,6 +71,23 @@ describe('Clowder Class', () => {
     );
   });
 
+  it.each`
+    property
+    ${'theta'}
+    ${'seMeasurement'}
+    ${'nItems'}
+    ${'resps'}
+    ${'zetas'}
+  `("accesses the '$property' property of each cat", ({ property }) => {
+    clowder.updateAbilityEstimates(['cat1'], createStimulus('1'), [0]);
+    clowder.updateAbilityEstimates(['cat2'], createStimulus('1'), [1]);
+    const expected = {
+      cat1: clowder.cats['cat1'][property as keyof Cat],
+      cat2: clowder.cats['cat2'][property as keyof Cat],
+    };
+    expect(clowder[property as keyof Clowder]).toEqual(expected);
+  });
+
   // test('should select next stimulus from validated stimuli', () => {
   //   const nextItem = clowder.updateCatAndGetNextItem({
   //     catToSelect: 'cat1',
@@ -95,7 +113,7 @@ describe('Clowder Class', () => {
   //   expect(nextItem).toEqual(createStimulus('1')); // Unvalidated item
   // });
 
-  test('should throw error if items and answers have mismatched lengths', () => {
+  it('throws an error if items and answers have mismatched lengths', () => {
     expect(() => {
       clowder.updateCatAndGetNextItem({
         catToSelect: 'cat1',
@@ -103,5 +121,22 @@ describe('Clowder Class', () => {
         answers: [1, 0], // Mismatched length
       });
     }).toThrow('Previous items and answers must have the same length.');
+  });
+
+  it('throws an error if catToSelect is invalid', () => {
+    expect(() => {
+      clowder.updateCatAndGetNextItem({
+        catToSelect: 'invalidCatName',
+      });
+    }).toThrow('Invalid Cat name. Expected one of cat1, cat2. Received invalidCatName.');
+  });
+
+  it('throws an error if any of catsToUpdate is invalid', () => {
+    expect(() => {
+      clowder.updateCatAndGetNextItem({
+        catToSelect: 'cat1',
+        catsToUpdate: ['invalidCatName', 'cat2'],
+      });
+    }).toThrow('Invalid Cat name. Expected one of cat1, cat2. Received invalidCatName.');
   });
 });
