@@ -5,7 +5,7 @@ import _isEqual from 'lodash/isEqual';
 import _mapValues from 'lodash/mapValues';
 import _unzip from 'lodash/unzip';
 import _zip from 'lodash/zip';
-import { filterItemsByCatParameterAvailability, validateCorpus } from './utils';
+import { filterItemsByCatParameterAvailability, checkNoDuplicateCatNames } from './utils';
 
 export interface ClowderInput {
   // An object containing Cat configurations for each Cat instance.
@@ -30,7 +30,7 @@ export class Clowder {
     // TODO: Need to pass in numItemsRequired so that we know when to stop providing new items.
     this.cats = _mapValues(cats, (catInput) => new Cat(catInput));
     this.seenItems = [];
-    validateCorpus(corpus);
+    checkNoDuplicateCatNames(corpus);
     this._corpus = corpus;
     this.remainingItems = _cloneDeep(corpus);
   }

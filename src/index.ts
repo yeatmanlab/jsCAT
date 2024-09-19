@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { minimize_Powell } from 'optimization-js';
-import { cloneDeep } from 'lodash';
 import { Stimulus, Zeta } from './type';
 import {
   itemResponseFunction,
@@ -11,6 +10,8 @@ import {
   fillZetaDefaults,
 } from './utils';
 import seedrandom from 'seedrandom';
+import _clamp from 'lodash/clamp';
+import _cloneDeep from 'lodash/cloneDeep';
 
 export const abilityPrior = normal();
 
@@ -175,13 +176,8 @@ export class Cat {
   private estimateAbilityMLE() {
     const theta0 = [0];
     const solution = minimize_Powell(this.negLikelihood.bind(this), theta0);
-    let theta = solution.argument[0];
-    if (theta > this.maxTheta) {
-      theta = this.maxTheta;
-    } else if (theta < this.minTheta) {
-      theta = this.minTheta;
-    }
-    return theta;
+    const theta = solution.argument[0];
+    return _clamp(theta, this.minTheta, this.maxTheta);
   }
 
   private negLikelihood(thetaArray: Array<number>) {
@@ -216,7 +212,7 @@ export class Cat {
     let arr: Array<Stimulus>;
     let selector = Cat.validateItemSelect(itemSelect);
     if (deepCopy) {
-      arr = cloneDeep(stimuli);
+      arr = _cloneDeep(stimuli);
     } else {
       arr = stimuli;
     }
@@ -266,13 +262,12 @@ export class Cat {
 
   private selectorMiddle(arr: Stimulus[]) {
     let index: number;
-    if (arr.length < this.nStartItems) {
-      index = Math.floor(arr.length / 2);
-    } else {
-      index =
-        Math.floor(arr.length / 2) +
-        this.randomInteger(-Math.floor(this.nStartItems / 2), Math.floor(this.nStartItems / 2));
+    index = Math.floor(arr.length / 2);
+
+    if (arr.length >= this.nStartItems) {
+      index += this.randomInteger(-Math.floor(this.nStartItems / 2), Math.floor(this.nStartItems / 2));
     }
+
     const nextItem = arr[index];
     arr.splice(index, 1);
     return {

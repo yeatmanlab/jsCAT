@@ -1,4 +1,4 @@
-import { Stimulus, Zeta } from '../type';
+import { MultiZetaStimulus, Stimulus, Zeta } from '../type';
 import {
   itemResponseFunction,
   fisherInformation,
@@ -8,6 +8,8 @@ import {
   defaultZeta,
   fillZetaDefaults,
   convertZeta,
+  checkNoDuplicateCatNames,
+  filterItemsByCatParameterAvailability,
 } from '../utils';
 import _omit from 'lodash/omit';
 
@@ -258,4 +260,122 @@ describe('convertZeta', () => {
   });
 });
 
-// TODO: Write tests for validateCorpus and filterItemsByCatParameterAvailability
+describe('checkNoDuplicateCatNames', () => {
+  it('should throw an error when a cat name is present in multiple zetas', () => {
+    const corpus: MultiZetaStimulus[] = [
+      {
+        stimulus: 'Item 1',
+        zetas: [
+          { cats: ['Model A', 'Model B'], zeta: { a: 1, b: 0.5, c: 0.2, d: 0.8 } },
+          { cats: ['Model C'], zeta: { a: 2, b: 0.7, c: 0.3, d: 0.9 } },
+          { cats: ['Model C'], zeta: { a: 1, b: 2, c: 0.3, d: 0.9 } },
+        ],
+      },
+      {
+        stimulus: 'Item 2',
+        zetas: [{ cats: ['Model A', 'Model C'], zeta: { a: 2.5, b: 0.8, c: 0.35, d: 0.95 } }],
+      },
+    ];
+    expect(() => checkNoDuplicateCatNames(corpus)).toThrowError('The cat names Model C are present in multiple corpora.');
+  });
+
+  it('should not throw an error when a cat name is not present in multiple corpora', () => {
+    const items: MultiZetaStimulus[] = [
+      {
+        stimulus: 'Item 1',
+        zetas: [
+          { cats: ['Model A', 'Model B'], zeta: { a: 1, b: 0.5, c: 0.2, d: 0.8 } },
+          { cats: ['Model C'], zeta: { a: 2, b: 0.7, c: 0.3, d: 0.9 } },
+        ],
+      },
+      {
+        stimulus: 'Item 2',
+        zetas: [{ cats: ['Model B', 'Model C'], zeta: { a: 2.5, b: 0.8, c: 0.35, d: 0.95 } }],
+      },
+    ];
+
+    expect(() => checkNoDuplicateCatNames(items)).not.toThrowError();
+  });
+
+  it('should handle an empty corpus without throwing an error', () => {
+    const emptyCorpus: MultiZetaStimulus[] = [];
+
+    expect(() => checkNoDuplicateCatNames(emptyCorpus)).not.toThrowError();
+  });
+});
+
+describe('filterItemsByCatParameterAvailability', () => {
+  it('returns an empty "available" array when no items match the catname', () => {
+    const items: MultiZetaStimulus[] = [
+      {
+        stimulus: 'Item 1',
+        zetas: [
+          { cats: ['Model A', 'Model B'], zeta: { a: 1, b: 0.5, c: 0.2, d: 0.8 } },
+          { cats: ['Model C'], zeta: { a: 2, b: 0.7, c: 0.3, d: 0.9 } },
+        ],
+      },
+      {
+        stimulus: 'Item 2',
+        zetas: [{ cats: ['Model B', 'Model C'], zeta: { a: 2.5, b: 0.8, c: 0.35, d: 0.95 } }],
+      },
+    ];
+
+    const result = filterItemsByCatParameterAvailability(items, 'Model D');
+
+    expect(result.available).toEqual([]);
+    expect(result.missing).toEqual(items);
+  });
+
+  it('returns empty missing array when all items match the catname', () => {
+    const items: MultiZetaStimulus[] = [
+      {
+        stimulus: 'Item 1',
+        zetas: [
+          { cats: ['Model A', 'Model B'], zeta: { a: 1, b: 0.5, c: 0.2, d: 0.8 } },
+          { cats: ['Model A'], zeta: { a: 2, b: 0.7, c: 0.3, d: 0.9 } },
+        ],
+      },
+      {
+        stimulus: 'Item 2',
+        zetas: [
+          { cats: ['Model A', 'Model C'], zeta: { a: 2.5, b: 0.8, c: 0.35, d: 0.95 } },
+          { cats: ['Model A'], zeta: { a: 3, b: 0.9, c: 0.4, d: 0.99 } },
+        ],
+      },
+    ];
+
+    const result = filterItemsByCatParameterAvailability(items, 'Model A');
+
+    expect(result.missing).toEqual([]);
+    expect(result.available).toEqual(items);
+  });
+
+  it('separates items based on matching catnames', () => {
+    const items: MultiZetaStimulus[] = [
+      {
+        stimulus: 'Item 1',
+        zetas: [
+          { cats: ['Model A', 'Model B'], zeta: { a: 1, b: 0.5, c: 0.2, d: 0.8 } },
+          { cats: ['Model C'], zeta: { a: 2, b: 0.7, c: 0.3, d: 0.9 } },
+        ],
+      },
+      {
+        stimulus: 'Item 2',
+        zetas: [{ cats: ['Model B', 'Model C'], zeta: { a: 2.5, b: 0.8, c: 0.35, d: 0.95 } }],
+      },
+      {
+        stimulus: 'Item 3',
+        zetas: [{ cats: ['Model A'], zeta: { a: 3, b: 0.9, c: 0.4, d: 0.99 } }],
+      },
+    ];
+
+    const result = filterItemsByCatParameterAvailability(items, 'Model A');
+
+    // Assert
+    expect(result.available.length).toBe(2);
+    expect(result.available[0].stimulus).toBe('Item 1');
+    expect(result.available[1].stimulus).toBe('Item 3');
+    expect(result.missing.length).toBe(1);
+    expect(result.missing[0].stimulus).toBe('Item 2');
+  });
+});

@@ -5,7 +5,7 @@ import seedrandom from 'seedrandom';
 import { convertZeta } from '../utils';
 
 for (const format of ['symbolic', 'semantic'] as Array<'symbolic' | 'semantic'>) {
-  describe('Cat with explicit zeta', () => {
+  describe(`Cat with ${format} zeta`, () => {
     let cat1: Cat, cat2: Cat, cat3: Cat, cat4: Cat, cat5: Cat, cat6: Cat, cat7: Cat, cat8: Cat;
     let rng = seedrandom();
 
@@ -37,7 +37,7 @@ for (const format of ['symbolic', 'semantic'] as Array<'symbolic' | 'semantic'>)
       const randomSeed = 'test';
       rng = seedrandom(randomSeed);
       cat4 = new Cat({ nStartItems: 0, itemSelect: 'RANDOM', randomSeed });
-      cat5 = new Cat({ nStartItems: 1, startSelect: 'miDdle' }); // ask
+      cat5 = new Cat({ nStartItems: 1, startSelect: 'miDdle' });
 
       cat6 = new Cat();
       cat6.updateAbilityEstimate(
@@ -60,6 +60,13 @@ for (const format of ['symbolic', 'semantic'] as Array<'symbolic' | 'semantic'>)
     const s4: Stimulus = { difficulty: -2.5, guessing: 0.5, discrimination: 1, slipping: 1, word: 'yes' };
     const s5: Stimulus = { difficulty: -1.8, guessing: 0.5, discrimination: 1, slipping: 1, word: 'mom' };
     const stimuli = [s1, s2, s3, s4, s5];
+
+    it('can update an ability estimate using only a single item and answer', () => {
+      const cat = new Cat();
+      cat.updateAbilityEstimate(s1, 1);
+      expect(cat.nItems).toEqual(1);
+      expect(cat.theta).toBeCloseTo(4.572, 1);
+    });
 
     it('constructs an adaptive test', () => {
       expect(cat1.method).toBe('mle');
@@ -98,42 +105,62 @@ for (const format of ['symbolic', 'semantic'] as Array<'symbolic' | 'semantic'>)
       ]);
     });
 
-    it('correctly suggests the next item (closest method)', () => {
+    it.each`
+      deepCopy
+      ${true}
+      ${false}
+    `("correctly suggests the next item (closest method) with deepCopy='$deepCopy'", ({ deepCopy }) => {
       const expected = { nextStimulus: s5, remainingStimuli: [s4, s1, s3, s2] };
-      const received = cat1.findNextItem(stimuli, 'closest');
+      const received = cat1.findNextItem(stimuli, 'closest', deepCopy);
       expect(received).toEqual(expected);
     });
 
-    it('correctly suggests the next item (mfi method)', () => {
+    it.each`
+      deepCopy
+      ${true}
+      ${false}
+    `("correctly suggests the next item (mfi method) with deepCopy='$deepCopy'", ({ deepCopy }) => {
       const expected = { nextStimulus: s1, remainingStimuli: [s4, s5, s3, s2] };
-      const received = cat3.findNextItem(stimuli, 'MFI');
+      const received = cat3.findNextItem(stimuli, 'MFI', deepCopy);
       expect(received).toEqual(expected);
     });
 
-    it('correctly suggests the next item (middle method)', () => {
+    it.each`
+      deepCopy
+      ${true}
+      ${false}
+    `("correctly suggests the next item (middle method) with deepCopy='$deepCopy'", ({ deepCopy }) => {
       const expected = { nextStimulus: s1, remainingStimuli: [s4, s5, s3, s2] };
-      const received = cat5.findNextItem(stimuli);
+      const received = cat5.findNextItem(stimuli, undefined, deepCopy);
       expect(received).toEqual(expected);
     });
 
-    it('correctly suggests the next item (fixed method)', () => {
+    it.each`
+      deepCopy
+      ${true}
+      ${false}
+    `("correctly suggests the next item (fixed method) with deepCopy='$deepCopy'", ({ deepCopy }) => {
       expect(cat8.itemSelect).toBe('fixed');
       const expected = { nextStimulus: s1, remainingStimuli: [s2, s3, s4, s5] };
-      const received = cat8.findNextItem(stimuli);
+      const received = cat8.findNextItem(stimuli, undefined, deepCopy);
       expect(received).toEqual(expected);
     });
 
-    it('correctly suggests the next item (random method)', () => {
+    it.each`
+      deepCopy
+      ${true}
+      ${false}
+    `("correctly suggests the next item (random method) with deepCopy='$deepCopy'", ({ deepCopy }) => {
       let received;
       const stimuliSorted = stimuli.sort((a: Stimulus, b: Stimulus) => a.difficulty! - b.difficulty!); // ask
       let index = Math.floor(rng() * stimuliSorted.length);
-      received = cat4.findNextItem(stimuliSorted);
+      received = cat4.findNextItem(stimuliSorted, undefined, deepCopy);
       expect(received.nextStimulus).toEqual(stimuliSorted[index]);
 
       for (let i = 0; i < 3; i++) {
         const remainingStimuli = received.remainingStimuli;
         index = Math.floor(rng() * remainingStimuli.length);
-        received = cat4.findNextItem(remainingStimuli);
+        received = cat4.findNextItem(remainingStimuli, undefined, deepCopy);
         expect(received.nextStimulus).toEqual(remainingStimuli[index]);
       }
     });

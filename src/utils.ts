@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import bs from 'binary-search';
 import { MultiZetaStimulus, Stimulus, Zeta, ZetaSymbolic } from './type';
-import _intersection from 'lodash/intersection';
+import _flatten from 'lodash/flatten';
 import _invert from 'lodash/invert';
 import _mapKeys from 'lodash/mapKeys';
+import _union from 'lodash/union';
+import _uniq from 'lodash/uniq';
 
 // TODO: Document this
 /**
@@ -100,7 +102,24 @@ export const fillZetaDefaults = (zeta: Zeta, desiredFormat: 'symbolic' | 'semant
   };
 };
 
-// TODO: Document this
+/**
+ * Converts zeta parameters between symbolic and semantic formats.
+ *
+ * @remarks
+ * This function takes a zeta object and a desired format as input. It converts
+ * the keys of the zeta object from their current format to the desired format.
+ * If the desired format is 'symbolic', the function maps the keys to their
+ * symbolic counterparts using the `ZETA_KEY_MAP`. If the desired format is
+ * 'semantic', the function maps the keys to their semantic counterparts using
+ * the inverse of `ZETA_KEY_MAP`.
+ *
+ * @param {Zeta} zeta - The zeta parameters to convert.
+ * @param {'symbolic' | 'semantic'} desiredFormat - The desired format for the output zeta object. Must be either 'symbolic' or 'semantic'.
+ *
+ * @throws {Error} - Will throw an error if the desired format is not 'symbolic' or 'semantic'.
+ *
+ * @returns {Zeta} A new zeta object with keys converted to the desired format.
+ */
 export const convertZeta = (zeta: Zeta, desiredFormat: 'symbolic' | 'semantic'): Zeta => {
   if (!['symbolic', 'semantic'].includes(desiredFormat)) {
     throw new Error(`Invalid desired format. Expected 'symbolic' or'semantic'. Received ${desiredFormat} instead.`);
@@ -125,9 +144,11 @@ export const convertZeta = (zeta: Zeta, desiredFormat: 'symbolic' | 'semantic'):
 };
 
 /**
- * calculates the probability that someone with a given ability level theta will answer correctly an item. Uses the 4 parameters logistic model
- * @param theta - ability estimate
- * @param zeta - item params
+ * Calculates the probability that someone with a given ability level theta will
+ * answer correctly an item. Uses the 4 parameters logistic model
+ *
+ * @param {number} theta - ability estimate
+ * @param {Zeta} zeta - item params
  * @returns {number} the probability
  */
 export const itemResponseFunction = (theta: number, zeta: Zeta) => {
@@ -136,9 +157,10 @@ export const itemResponseFunction = (theta: number, zeta: Zeta) => {
 };
 
 /**
- * a 3PL Fisher information function
- * @param theta - ability estimate
- * @param zeta - item params
+ * A 3PL Fisher information function
+ *
+ * @param {number} theta - ability estimate
+ * @param {Zeta} zeta - item params
  * @returns {number} - the expected value of the observed information
  */
 export const fisherInformation = (theta: number, zeta: Zeta) => {
@@ -149,12 +171,13 @@ export const fisherInformation = (theta: number, zeta: Zeta) => {
 };
 
 /**
- * return a Gaussian distribution within a given range
- * @param mean
- * @param stdDev
- * @param min
- * @param max
- * @param stepSize - the quantization (step size) of the internal table, default = 0.1
+ * Return a Gaussian distribution within a given range
+ *
+ * @param {number} mean
+ * @param {number} stdDev
+ * @param {number} min
+ * @param {number} max
+ * @param {number} stepSize - the quantization (step size) of the internal table, default = 0.1
  * @returns {Array<[number, number]>} - a normal distribution
  */
 export const normal = (mean = 0, stdDev = 1, min = -4, max = 4, stepSize = 0.1) => {
@@ -170,13 +193,13 @@ export const normal = (mean = 0, stdDev = 1, min = -4, max = 4, stepSize = 0.1) 
 };
 
 /**
- * find the item in a given array that has the difficulty closest to the target value
+ * Find the item in a given array that has the difficulty closest to the target value
  *
  * @remarks
  * The input array of stimuli must be sorted by difficulty.
  *
- * @param stimuli Array<Stimulus> - an array of stimuli sorted by difficulty
- * @param target number - ability estimate
+ * @param {Stimulus[]} inputStimuli - an array of stimuli sorted by difficulty
+ * @param {number} target - ability estimate
  * @returns {number} the index of stimuli
  */
 export const findClosest = (inputStimuli: Array<Stimulus>, target: number) => {
@@ -216,18 +239,100 @@ export const findClosest = (inputStimuli: Array<Stimulus>, target: number) => {
   }
 };
 
-// TODO: Document this
-export const validateCorpus = (corpus: MultiZetaStimulus[]): void => {
+/**
+ * Validates a corpus of multi-zeta stimuli to ensure that no cat names are
+ * duplicated.
+ *
+ * @remarks
+ * This function takes an array of `MultiZetaStimulus` objects, where each
+ * object represents an item containing item parameters (zetas) associated with
+ * different CAT models. The function checks for any duplicate cat names across
+ * each item's array of zeta values. It throws an error if any are found.
+ *
+ * @param {MultiZetaStimulus[]} corpus - An array of `MultiZetaStimulus` objects representing the corpora to validate.
+ *
+ * @throws {Error} - Throws an error if any duplicate cat names are found across the corpora.
+ */
+export const checkNoDuplicateCatNames = (corpus: MultiZetaStimulus[]): void => {
   const zetaCatMapsArray = corpus.map((item) => item.zetas);
   for (const zetaCatMaps of zetaCatMapsArray) {
-    const intersection = _intersection(zetaCatMaps);
-    if (intersection.length > 0) {
-      throw new Error(`The cat names ${intersection.join(', ')} are present in multiple corpora.`);
+    const cats = zetaCatMaps.map(({ cats }) => cats);
+
+    // Check to see if there are any duplicate names by comparing the union
+    // (which removed duplicates) to the flattened array.
+    const union = _union(...cats);
+    const flattened = _flatten(cats);
+
+    if (union.length !== flattened.length) {
+      // If there are duplicates, remove the first occurence of each cat name in
+      // the union array from the flattened array. The remaining items in the
+      // flattened array should contain the duplicated cat names.
+      for (const cat of union) {
+        const idx = flattened.findIndex((c) => c === cat);
+        if (idx >= 0) {
+          flattened.splice(idx, 1);
+        }
+      }
+
+      throw new Error(`The cat names ${_uniq(flattened).join(', ')} are present in multiple corpora.`);
     }
   }
 };
 
-// TODO: Document this
+/**
+ * Filters a list of multi-zeta stimuli based on the availability of model parameters for a specific CAT.
+ *
+ * This function takes an array of `MultiZetaStimulus` objects and a `catName` as input. It then filters
+ * the items based on whether the specified CAT model parameter is present in the item's zeta values.
+ * The function returns an object containing two arrays: `available` and `missing`. The `available` array
+ * contains items where the specified CAT model parameter is present, while the `missing` array contains
+ * items where the parameter is not present.
+ *
+ * @param {MultiZetaStimulus[]} items - An array of `MultiZetaStimulus` objects representing the stimuli to filter.
+ * @param {string} catName - The name of the CAT model parameter to check for.
+ *
+ * @returns An object with two arrays: `available` and `missing`.
+ *
+ * @example
+ * ```typescript
+ * const items: MultiZetaStimulus[] = [
+ *   {
+ *     stimulus: 'Item 1',
+ *     zetas: [
+ *       { cats: ['Model A', 'Model B'], zeta: { a: 1, b: 0.5, c: 0.2, d: 0.8 } },
+ *       { cats: ['Model C'], zeta: { a: 2, b: 0.7, c: 0.3, d: 0.9 } },
+ *     ],
+ *   },
+ *   {
+ *     stimulus: 'Item 2',
+ *     zetas: [
+ *       { cats: ['Model B', 'Model C'], zeta: { a: 2.5, b: 0.8, c: 0.35, d: 0.95 } },
+ *     ],
+ *   },
+ * ];
+ *
+ * const result = filterItemsByCatParameterAvailability(items, 'Model A');
+ * console.log(result.available);
+ * // Output: [
+ * //   {
+ * //     stimulus: 'Item 1',
+ * //     zetas: [
+ * //       { cats: ['Model A', 'Model B'], zeta: { a: 1, b: 0.5, c: 0.2, d: 0.8 } },
+ * //       { cats: ['Model C'], zeta: { a: 2, b: 0.7, c: 0.3, d: 0.9 } },
+ * //     ],
+ * //   },
+ * // ]
+ * console.log(result.missing);
+ * // Output: [
+ * //   {
+ * //     stimulus: 'Item 2',
+ * //     zetas: [
+ * //       { cats: ['Model B', 'Model C'], zeta: { a: 2.5, b: 0.8, c: 0.35, d: 0.95 } },
+ * //     ],
+ * //   },
+ * // ]
+ * ```
+ */
 export const filterItemsByCatParameterAvailability = (items: MultiZetaStimulus[], catName: string) => {
   const paramsExist = items.filter((item) => item.zetas.some((zetaCatMap) => zetaCatMap.cats.includes(catName)));
   const paramsMissing = items.filter((item) => !item.zetas.some((zetaCatMap) => zetaCatMap.cats.includes(catName)));
