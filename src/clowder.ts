@@ -17,10 +17,10 @@ export interface ClowderInput {
 }
 
 export class Clowder {
-  private cats: { [name: string]: Cat };
+  private _cats: { [name: string]: Cat };
   private _corpus: MultiZetaStimulus[];
   public remainingItems: MultiZetaStimulus[];
-  public seenItems: Stimulus[];
+  private _seenItems: Stimulus[];
 
   /**
    * Create a Clowder object.
@@ -28,21 +28,29 @@ export class Clowder {
    */
   constructor({ cats, corpus }: ClowderInput) {
     // TODO: Need to pass in numItemsRequired so that we know when to stop providing new items.
-    this.cats = _mapValues(cats, (catInput) => new Cat(catInput));
-    this.seenItems = [];
+    this._cats = _mapValues(cats, (catInput) => new Cat(catInput));
+    this._seenItems = [];
     checkNoDuplicateCatNames(corpus);
     this._corpus = corpus;
     this.remainingItems = _cloneDeep(corpus);
   }
 
   private _validateCatName(catName: string): void {
-    if (!Object.prototype.hasOwnProperty.call(this.cats, catName)) {
-      throw new Error(`Invalid Cat name. Expected one of ${Object.keys(this.cats).join(', ')}. Received ${catName}.`);
+    if (!Object.prototype.hasOwnProperty.call(this._cats, catName)) {
+      throw new Error(`Invalid Cat name. Expected one of ${Object.keys(this._cats).join(', ')}. Received ${catName}.`);
     }
   }
 
   public get corpus() {
     return this._corpus;
+  }
+
+  public get cats() {
+    return this._cats;
+  }
+
+  public get seenItems() {
+    return this._seenItems;
   }
 
   public get theta() {
@@ -131,7 +139,7 @@ export class Clowder {
     }
 
     // Update the seenItems with the provided previous items
-    this.seenItems.push(...items);
+    this._seenItems.push(...items);
 
     // Remove the seenItems from the remainingItems
     this.remainingItems = this.remainingItems.filter((stim) => !items.includes(stim));

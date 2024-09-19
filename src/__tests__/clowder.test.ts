@@ -2,6 +2,12 @@ import { Clowder, ClowderInput } from '../clowder';
 import { MultiZetaStimulus, Zeta, ZetaCatMap } from '../type';
 import { defaultZeta } from '../utils';
 
+const createStimulus = (id: string) => ({
+  ...defaultZeta(),
+  id,
+  content: `Stimulus content ${id}`,
+});
+
 const createMultiZetaStimulus = (id: string, zetas: ZetaCatMap[]): MultiZetaStimulus => ({
   id,
   content: `Multi-Zeta Stimulus content ${id}`,
@@ -33,25 +39,36 @@ describe('Clowder Class', () => {
     clowder = new Clowder(clowderInput);
   });
 
-  test('should initialize with provided cats and corpora', () => {
-    expect(Object.keys(clowder['cats'])).toContain('cat1');
-    expect(clowder.remainingItems).toHaveLength(2);
-    expect(clowder.corpus).toHaveLength(1);
+  it('initializes with provided cats and corpora', () => {
+    expect(Object.keys(clowder.cats)).toContain('cat1');
+    expect(clowder.remainingItems).toHaveLength(5);
+    expect(clowder.corpus).toHaveLength(5);
+    expect(clowder.seenItems).toHaveLength(0);
   });
 
-  test('should validate cat names', () => {
+  it('validates cat names', () => {
     expect(() => {
       clowder.updateCatAndGetNextItem({
         catToSelect: 'invalidCat',
       });
-    }).toThrow('Invalid Cat name');
+    }).toThrowError('Invalid Cat name');
   });
 
-  // test('should update ability estimates', () => {
-  //   clowder.updateAbilityEstimates(['cat1'], createStimulus('1'), [0]);
-  //   const cat1 = clowder['cats']['cat1'];
-  //   expect(cat1.theta).toBeGreaterThanOrEqual(0); // Since we mock, assume the result is logical.
-  // });
+  it('updates ability estimates only for the named cats', () => {
+    const origTheta1 = clowder.cats.cat1.theta;
+    const origTheta2 = clowder.cats.cat2.theta;
+
+    clowder.updateAbilityEstimates(['cat1'], createStimulus('1'), [0]);
+
+    expect(clowder.cats.cat1.theta).not.toBe(origTheta1);
+    expect(clowder.cats.cat2.theta).toBe(origTheta2);
+  });
+
+  it('throws an error when updating ability estimates for an invalid cat', () => {
+    expect(() => clowder.updateAbilityEstimates(['invalidCatName'], createStimulus('1'), [0])).toThrowError(
+      'Invalid Cat name. Expected one of cat1, cat2. Received invalidCatName.',
+    );
+  });
 
   // test('should select next stimulus from validated stimuli', () => {
   //   const nextItem = clowder.updateCatAndGetNextItem({
@@ -78,7 +95,7 @@ describe('Clowder Class', () => {
   //   expect(nextItem).toEqual(createStimulus('1')); // Unvalidated item
   // });
 
-  test('should throw error if previousItems and previousAnswers have mismatched lengths', () => {
+  test('should throw error if items and answers have mismatched lengths', () => {
     expect(() => {
       clowder.updateCatAndGetNextItem({
         catToSelect: 'cat1',
