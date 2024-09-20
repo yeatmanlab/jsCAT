@@ -7,7 +7,7 @@ import seedrandom from 'seedrandom';
 import _clamp from 'lodash/clamp';
 import _cloneDeep from 'lodash/cloneDeep';
 
-export const abilityPrior = normal();
+const abilityPrior = normal();
 
 export interface CatInput {
   method?: string;
