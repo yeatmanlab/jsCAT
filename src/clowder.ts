@@ -1,11 +1,14 @@
 import { Cat, CatInput } from './index';
 import { MultiZetaStimulus, Stimulus, Zeta, ZetaCatMap } from './type';
+import { filterItemsByCatParameterAvailability, checkNoDuplicateCatNames } from './utils';
 import _cloneDeep from 'lodash/cloneDeep';
+import _differenceWith from 'lodash/differenceWith';
 import _isEqual from 'lodash/isEqual';
 import _mapValues from 'lodash/mapValues';
+import _omit from 'lodash/omit';
 import _unzip from 'lodash/unzip';
 import _zip from 'lodash/zip';
-import { filterItemsByCatParameterAvailability, checkNoDuplicateCatNames } from './utils';
+import seedrandom from 'seedrandom';
 
 export interface ClowderInput {
   /**
@@ -19,6 +22,10 @@ export interface ClowderInput {
    * An object containing arrays of stimuli for each corpus.
    */
   corpus: MultiZetaStimulus[];
+  /**
+   * A random seed for reproducibility. If not provided, a random seed will be generated.
+   */
+  randomSeed?: string | null;
 }
 
 /**
@@ -32,8 +39,9 @@ export interface ClowderInput {
 export class Clowder {
   private _cats: { [name: string]: Cat };
   private _corpus: MultiZetaStimulus[];
-  public remainingItems: MultiZetaStimulus[];
+  private _remainingItems: MultiZetaStimulus[];
   private _seenItems: Stimulus[];
+  private readonly _rng: ReturnType<seedrandom>;
 
   /**
    * Create a Clowder object.
@@ -44,7 +52,7 @@ export class Clowder {
    *
    * @throws {Error} - Throws an error if any item in the corpus has duplicated IRT parameters for any Cat name.
    */
-  constructor({ cats, corpus }: ClowderInput) {
+  constructor({ cats, corpus, randomSeed = null }: ClowderInput) {
     // TODO: Need to pass in numItemsRequired so that we know when to stop
     // providing new items. This may depend on the cat name. For instance,
     // perhaps numItemsRequired should be an object with cat names as keys and
@@ -53,7 +61,8 @@ export class Clowder {
     this._seenItems = [];
     checkNoDuplicateCatNames(corpus);
     this._corpus = corpus;
-    this.remainingItems = _cloneDeep(corpus);
+    this._remainingItems = _cloneDeep(corpus);
+    this._rng = randomSeed === null ? seedrandom() : seedrandom(randomSeed);
   }
 
   /**
@@ -71,6 +80,13 @@ export class Clowder {
   }
 
   /**
+   * The named Cat instances that this Clowder manages.
+   */
+  public get cats() {
+    return this._cats;
+  }
+
+  /**
    * The corpus that was provided to this Clowder when it was created.
    */
   public get corpus() {
@@ -78,10 +94,10 @@ export class Clowder {
   }
 
   /**
-   * The named Cat instances that this Clowder manages.
+   * The subset of the input corpus that this Clowder has not yet "seen".
    */
-  public get cats() {
-    return this._cats;
+  public get remainingItems() {
+    return this._remainingItems;
   }
 
   /**
@@ -221,8 +237,8 @@ export class Clowder {
     // Update the seenItems with the provided previous items
     this._seenItems.push(...items);
 
-    // Remove the seenItems from the remainingItems
-    this.remainingItems = this.remainingItems.filter((stim) => !items.includes(stim));
+    // Remove the provided previous items from the remainingItems
+    this._remainingItems = _differenceWith(this._remainingItems, items, _isEqual);
 
     // Create a new zip array of items and answers. This will be useful in
     // filtering operations below. It ensures that items and their corresponding
@@ -264,7 +280,7 @@ export class Clowder {
     // Now, we need to dynamically calculate the stimuli available for selection by `catToSelect`.
     // We inspect the remaining items and find ones that have zeta parameters for `catToSelect`
 
-    const { available, missing } = filterItemsByCatParameterAvailability(this.remainingItems, catToSelect);
+    const { available, missing } = filterItemsByCatParameterAvailability(this._remainingItems, catToSelect);
 
     // The cat expects an array of Stimulus objects, with the zeta parameters
     // spread at the top-level of each Stimulus object. So we need to convert
@@ -281,13 +297,23 @@ export class Clowder {
     // Use the catForSelect to determine the next stimulus
     const cat = this.cats[catToSelect];
     const { nextStimulus } = cat.findNextItem(availableCatInput, itemSelect);
+    const nextStimulusWithoutZeta = _omit(nextStimulus, [
+      'a',
+      'b',
+      'c',
+      'd',
+      'discrimination',
+      'difficulty',
+      'guessing',
+      'slipping',
+    ]);
 
     // Again `nextStimulus` will be a Stimulus object, or `undefined` if no further validated stimuli are available.
     // We need to convert the Stimulus object back to a MultiZetaStimulus object to return to the user.
     const returnStimulus: MultiZetaStimulus | undefined = available.find((stim) => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { zetas, ...rest } = stim;
-      return _isEqual(rest, nextStimulus);
+      return _isEqual(rest, nextStimulusWithoutZeta);
     });
 
     if (missing.length === 0) {
@@ -296,7 +322,7 @@ export class Clowder {
       return returnStimulus;
     } else if (available.length === 0) {
       // In this case, there are no more validated items left. Choose an unvalidated item at random.
-      return missing[Math.floor(Math.random() * missing.length)];
+      return missing[Math.floor(this._rng() * missing.length)];
     } else {
       // In this case, there are both validated and unvalidated items left.
       // We randomly insert unvalidated items
@@ -311,7 +337,7 @@ export class Clowder {
       const random = Math.random();
 
       if (random < numRemaining.missing / (numRemaining.available + numRemaining.missing)) {
-        return missing[Math.floor(Math.random() * missing.length)];
+        return missing[Math.floor(this._rng() * missing.length)];
       } else {
         return returnStimulus;
       }

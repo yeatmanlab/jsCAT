@@ -288,7 +288,7 @@ export class Cat {
   }
 
   private selectorRandom(arr: Stimulus[]) {
-    const index = Math.floor(this._rng() * arr.length);
+    const index = this.randomInteger(0, arr.length - 1);
     const nextItem = arr.splice(index, 1)[0];
     return {
       nextStimulus: nextItem,

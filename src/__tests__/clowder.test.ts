@@ -47,6 +47,27 @@ describe('Clowder Class', () => {
     expect(clowder.seenItems).toHaveLength(0);
   });
 
+  it('throws an error when given an invalid corpus', () => {
+    expect(() => {
+      const corpus: MultiZetaStimulus[] = [
+        {
+          stimulus: 'Item 1',
+          zetas: [
+            { cats: ['Model A', 'Model B'], zeta: { a: 1, b: 0.5, c: 0.2, d: 0.8 } },
+            { cats: ['Model C'], zeta: { a: 2, b: 0.7, c: 0.3, d: 0.9 } },
+            { cats: ['Model C'], zeta: { a: 1, b: 2, c: 0.3, d: 0.9 } },
+          ],
+        },
+        {
+          stimulus: 'Item 2',
+          zetas: [{ cats: ['Model A', 'Model C'], zeta: { a: 2.5, b: 0.8, c: 0.35, d: 0.95 } }],
+        },
+      ];
+
+      new Clowder({ cats: { cat1: {} }, corpus });
+    }).toThrowError('The cat names Model C are present in multiple corpora.');
+  });
+
   it('validates cat names', () => {
     expect(() => {
       clowder.updateCatAndGetNextItem({
@@ -88,31 +109,6 @@ describe('Clowder Class', () => {
     expect(clowder[property as keyof Clowder]).toEqual(expected);
   });
 
-  // test('should select next stimulus from validated stimuli', () => {
-  //   const nextItem = clowder.updateCatAndGetNextItem({
-  //     catToSelect: 'cat1',
-  //     catsToUpdate: ['cat1'],
-  //     previousItems: [createStimulus('1')],
-  //     previousAnswers: [1],
-  //   });
-  //   expect(nextItem).toEqual(createStimulus('1')); // Second validated stimulus
-  // });
-
-  // test('should return unvalidated stimulus when no validated stimuli remain', () => {
-  //   clowder.updateCatAndGetNextItem({
-  //     catToSelect: 'cat1',
-  //     previousItems: [createStimulus('1'), createStimulus('2')],
-  //     previousAnswers: [1, 0],
-  //   });
-
-  //   const nextItem = clowder.updateCatAndGetNextItem({
-  //     catToSelect: 'cat1',
-  //     previousItems: [],
-  //     previousAnswers: [],
-  //   });
-  //   expect(nextItem).toEqual(createStimulus('1')); // Unvalidated item
-  // });
-
   it('throws an error if items and answers have mismatched lengths', () => {
     expect(() => {
       clowder.updateCatAndGetNextItem({
@@ -138,5 +134,54 @@ describe('Clowder Class', () => {
         catsToUpdate: ['invalidCatName', 'cat2'],
       });
     }).toThrow('Invalid Cat name. Expected one of cat1, cat2. Received invalidCatName.');
+  });
+
+  it('updates seen and remaining items', () => {
+    clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat2',
+      catsToUpdate: ['cat1', 'cat2'],
+      items: [clowder.corpus[0], clowder.corpus[1], clowder.corpus[2]],
+      answers: [1, 1, 1],
+    });
+
+    expect(clowder.seenItems).toHaveLength(3);
+    expect(clowder.remainingItems).toHaveLength(2);
+  });
+
+  it('should select an item that has not yet been seen', () => {
+    const nextItem = clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat2',
+      catsToUpdate: ['cat1', 'cat2'],
+      items: [clowder.corpus[0], clowder.corpus[1], clowder.corpus[2]],
+      answers: [1, 1, 1],
+    });
+
+    expect([clowder.corpus[3], clowder.corpus[4]]).toContainEqual(nextItem); // Third validated stimulus
+  });
+
+  it('should select a validated item if validated items are present and randomlySelectUnvalidated is false', () => {
+    // TODO: Implement this test
+    expect(1).toBe(0);
+  });
+
+  it('should select an unvalidated item if no validated items remain', () => {
+    // TODO: Implement this test
+    expect(1).toBe(0);
+  });
+
+  it('should correctly update ability estimates during the updateCatAndGetNextItem method', () => {
+    // TODO: Implement this test
+    expect(1).toBe(0);
+  });
+
+  it('should randomly choose between validated and unvalidated items if randomlySelectUnvalidated is true', () => {
+    // TODO: Implement this test
+    // Pass in a random seed for reproducibility
+    expect(1).toBe(0);
+  });
+
+  it('should return undefined if no more items remain', () => {
+    // TODO: Implement this test
+    expect(1).toBe(0);
   });
 });
