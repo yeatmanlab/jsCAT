@@ -289,7 +289,8 @@ export class Clowder {
       const { zetas, ...rest } = item;
       const zetasForCat = zetas.find((zeta: ZetaCatMap) => zeta.cats.includes(catToSelect));
       return {
-        ...(zetasForCat?.zeta ?? {}),
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        ...zetasForCat!.zeta,
         ...rest,
       };
     });

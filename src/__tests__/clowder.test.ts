@@ -2,6 +2,7 @@ import { Cat } from '../cat';
 import { Clowder, ClowderInput } from '../clowder';
 import { MultiZetaStimulus, Zeta, ZetaCatMap } from '../type';
 import { defaultZeta } from '../corpus';
+import _uniq from 'lodash/uniq';
 
 const createStimulus = (id: string) => ({
   ...defaultZeta(),
@@ -160,28 +161,120 @@ describe('Clowder Class', () => {
   });
 
   it('should select a validated item if validated items are present and randomlySelectUnvalidated is false', () => {
-    // TODO: Implement this test
-    expect(1).toBe(0);
+    const clowderInput: ClowderInput = {
+      cats: {
+        cat1: { method: 'MLE', theta: 0.5 },
+        cat2: { method: 'EAP', theta: -1.0 },
+      },
+      corpus: [
+        createMultiZetaStimulus('0', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('1', [createZetaCatMap(['cat2'])]),
+      ],
+    };
+    const clowder = new Clowder(clowderInput);
+
+    const nextItem = clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1',
+      randomlySelectUnvalidated: false,
+    });
+    expect(nextItem?.id).toBe('0');
   });
 
   it('should select an unvalidated item if no validated items remain', () => {
-    // TODO: Implement this test
-    expect(1).toBe(0);
+    const clowderInput: ClowderInput = {
+      cats: {
+        cat1: { method: 'MLE', theta: 0.5 },
+      },
+      corpus: [
+        createMultiZetaStimulus('0', [createZetaCatMap([])]),
+        createMultiZetaStimulus('1', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('2', [createZetaCatMap([])]),
+      ],
+    };
+    const clowder = new Clowder(clowderInput);
+
+    const nextItem = clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1',
+      catsToUpdate: ['cat1'],
+      items: [clowder.corpus[1]],
+      answers: [1],
+    });
+    expect(nextItem).toBeDefined();
+    expect(['0', '2']).toContain(nextItem?.id);
   });
 
   it('should correctly update ability estimates during the updateCatAndGetNextItem method', () => {
-    // TODO: Implement this test
-    expect(1).toBe(0);
+    const originalTheta = clowder.cats.cat1.theta;
+    clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1',
+      catsToUpdate: ['cat1'],
+      items: [clowder.corpus[0]],
+      answers: [1],
+    });
+    expect(clowder.cats.cat1.theta).not.toBe(originalTheta);
   });
 
   it('should randomly choose between validated and unvalidated items if randomlySelectUnvalidated is true', () => {
-    // TODO: Implement this test
-    // Pass in a random seed for reproducibility
-    expect(1).toBe(0);
+    const clowderInput: ClowderInput = {
+      cats: {
+        cat1: { method: 'MLE', theta: 0.5 },
+      },
+      corpus: [
+        createMultiZetaStimulus('0', [createZetaCatMap(['cat1'])]), // Validated item
+        createMultiZetaStimulus('1', [createZetaCatMap([])]), // Unvalidated item
+        createMultiZetaStimulus('2', [createZetaCatMap([])]), // Unvalidated item
+        createMultiZetaStimulus('3', [createZetaCatMap([])]), // Validated item
+      ],
+      randomSeed: 'randomSeed',
+    };
+    const clowder = new Clowder(clowderInput);
+
+    const nextItems = Array(20)
+      .fill('-1')
+      .map(() => {
+        return clowder.updateCatAndGetNextItem({
+          catToSelect: 'cat1',
+          randomlySelectUnvalidated: true,
+        });
+      });
+
+    const itemsId = nextItems.map((item) => item?.id);
+
+    expect(nextItems).toBeDefined();
+    expect(_uniq(itemsId)).toEqual(expect.arrayContaining(['0', '1', '2', '3'])); // Could be validated or unvalidated
   });
 
   it('should return undefined if no more items remain', () => {
-    // TODO: Implement this test
-    expect(1).toBe(0);
+    clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1',
+      items: clowder.remainingItems,
+      answers: [1, 0, 1, 1, 0], // Exhaust all items
+    });
+
+    const nextItem = clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1',
+    });
+    expect(nextItem).toBeUndefined();
+  });
+
+  it('can receive one item and answer as an input', () => {
+    const nextItem = clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1',
+      items: clowder.corpus[0],
+      answers: 1,
+    });
+    expect(nextItem).toBeDefined();
+  });
+
+  it('can receive only one catToUpdate', () => {
+    const originalTheta = clowder.cats.cat1.theta;
+    const nextItem = clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1',
+      catsToUpdate: 'cat1',
+      items: clowder.corpus[0],
+      answers: 1,
+    });
+    expect(nextItem).toBeDefined();
+    expect(clowder.cats.cat1.theta).not.toBe(originalTheta);
   });
 });
