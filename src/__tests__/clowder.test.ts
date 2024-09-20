@@ -1,7 +1,7 @@
-import { Cat } from '..';
+import { Cat } from '../cat';
 import { Clowder, ClowderInput } from '../clowder';
 import { MultiZetaStimulus, Zeta, ZetaCatMap } from '../type';
-import { defaultZeta } from '../utils';
+import { defaultZeta } from '../corpus';
 
 const createStimulus = (id: string) => ({
   ...defaultZeta(),

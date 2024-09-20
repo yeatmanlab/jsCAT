@@ -2,7 +2,7 @@
 import { Cat } from '../index';
 import { Stimulus } from '../type';
 import seedrandom from 'seedrandom';
-import { convertZeta } from '../utils';
+import { convertZeta } from '../corpus';
 
 for (const format of ['symbolic', 'semantic'] as Array<'symbolic' | 'semantic'>) {
   describe(`Cat with ${format} zeta`, () => {

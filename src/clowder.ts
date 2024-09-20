@@ -1,6 +1,6 @@
-import { Cat, CatInput } from './index';
+import { Cat, CatInput } from './cat';
 import { MultiZetaStimulus, Stimulus, Zeta, ZetaCatMap } from './type';
-import { filterItemsByCatParameterAvailability, checkNoDuplicateCatNames } from './utils';
+import { filterItemsByCatParameterAvailability, checkNoDuplicateCatNames } from './corpus';
 import _cloneDeep from 'lodash/cloneDeep';
 import _differenceWith from 'lodash/differenceWith';
 import _isEqual from 'lodash/isEqual';
