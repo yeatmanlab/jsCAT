@@ -8,14 +8,27 @@ import _zip from 'lodash/zip';
 import { filterItemsByCatParameterAvailability, checkNoDuplicateCatNames } from './utils';
 
 export interface ClowderInput {
-  // An object containing Cat configurations for each Cat instance.
+  /**
+   * An object containing Cat configurations for each Cat instance.
+   * Keys correspond to Cat names, while values correspond to Cat configurations.
+   */
   cats: {
     [name: string]: CatInput;
   };
-  // An object containing arrays of stimuli for each corpus.
+  /**
+   * An object containing arrays of stimuli for each corpus.
+   */
   corpus: MultiZetaStimulus[];
 }
 
+/**
+ * The Clowder class is responsible for managing a collection of Cat instances
+ * along with a corpus of stimuli.  It maintains a list of named Cat instances
+ * and a corpus where each item in the coprpus may have IRT parameters
+ * corresponding to each named Cat. Clowder provides methods for updating the
+ * ability estimates of each of its Cats, and selecting the next item to present
+ * to the participant.
+ */
 export class Clowder {
   private _cats: { [name: string]: Cat };
   private _corpus: MultiZetaStimulus[];
@@ -24,10 +37,18 @@ export class Clowder {
 
   /**
    * Create a Clowder object.
+   *
    * @param {ClowderInput} input - An object containing arrays of Cat configurations and corpora.
+   * @param {CatInput[]} input.cats - An object containing Cat configurations for each Cat instance.
+   * @param {MultiZetaStimulus[]} input.corpus - An array of stimuli representing each corpus.
+   *
+   * @throws {Error} - Throws an error if any item in the corpus has duplicated IRT parameters for any Cat name.
    */
   constructor({ cats, corpus }: ClowderInput) {
-    // TODO: Need to pass in numItemsRequired so that we know when to stop providing new items.
+    // TODO: Need to pass in numItemsRequired so that we know when to stop
+    // providing new items. This may depend on the cat name. For instance,
+    // perhaps numItemsRequired should be an object with cat names as keys and
+    // numItemsRequired as values.
     this._cats = _mapValues(cats, (catInput) => new Cat(catInput));
     this._seenItems = [];
     checkNoDuplicateCatNames(corpus);
@@ -35,44 +56,86 @@ export class Clowder {
     this.remainingItems = _cloneDeep(corpus);
   }
 
+  /**
+   * Validate the provided Cat name against the existing Cat instances.
+   * Throw an error if the Cat name is not found.
+   *
+   * @param {string} catName - The name of the Cat instance to validate.
+   *
+   * @throws {Error} - Throws an error if the provided Cat name is not found among the existing Cat instances.
+   */
   private _validateCatName(catName: string): void {
     if (!Object.prototype.hasOwnProperty.call(this._cats, catName)) {
       throw new Error(`Invalid Cat name. Expected one of ${Object.keys(this._cats).join(', ')}. Received ${catName}.`);
     }
   }
 
+  /**
+   * The corpus that was provided to this Clowder when it was created.
+   */
   public get corpus() {
     return this._corpus;
   }
 
+  /**
+   * The named Cat instances that this Clowder manages.
+   */
   public get cats() {
     return this._cats;
   }
 
+  /**
+   * The subset of the input corpus that this Clowder has "seen" so far.
+   */
   public get seenItems() {
     return this._seenItems;
   }
 
+  /**
+   * The theta estimates for each Cat instance.
+   */
   public get theta() {
     return _mapValues(this.cats, (cat) => cat.theta);
   }
 
+  /**
+   * The standard error of measurement estimates for each Cat instance.
+   */
   public get seMeasurement() {
     return _mapValues(this.cats, (cat) => cat.seMeasurement);
   }
 
+  /**
+   * The number of items presented to each Cat instance.
+   */
   public get nItems() {
     return _mapValues(this.cats, (cat) => cat.nItems);
   }
 
+  /**
+   * The responses received by each Cat instance.
+   */
   public get resps() {
     return _mapValues(this.cats, (cat) => cat.resps);
   }
 
+  /**
+   * The zeta (item parameters) received by each Cat instance.
+   */
   public get zetas() {
     return _mapValues(this.cats, (cat) => cat.zetas);
   }
 
+  /**
+   * Updates the ability estimates for the specified Cat instances.
+   *
+   * @param {string[]} catNames - The names of the Cat instances to update.
+   * @param {Zeta | Zeta[]} zeta - The item parameter(s) (zeta) for the given stimuli.
+   * @param {(0 | 1) | (0 | 1)[]} answer - The corresponding answer(s) (0 or 1) for the given stimuli.
+   * @param {string} [method] - Optional method for updating ability estimates. If none is provided, it will use the default method for each Cat instance.
+   *
+   * @throws {Error} If any `catName` is not found among the existing Cat instances.
+   */
   public updateAbilityEstimates(catNames: string[], zeta: Zeta | Zeta[], answer: (0 | 1) | (0 | 1)[], method?: string) {
     catNames.forEach((catName) => {
       this._validateCatName(catName);
@@ -83,7 +146,7 @@ export class Clowder {
   }
 
   /**
-   * Updates the ability estimates for the specified `catsToUpdate` and selects the next stimulus for the `catToSelect`.
+   * Update the ability estimates for the specified `catsToUpdate` and select the next stimulus for the `catToSelect`.
    * This function processes previous items and answers, updates internal state, and selects the next stimulus
    * based on the remaining stimuli and `catToSelect`.
    *
@@ -94,6 +157,7 @@ export class Clowder {
    * @param {(0 | 1) | (0 | 1)[]} [input.answers=[]] - An array of answers (0 or 1) corresponding to `items`.
    * @param {string} [input.method] - Optional method for updating ability estimates (if applicable).
    * @param {string} [input.itemSelect] - Optional item selection method (if applicable).
+   * @param {boolean} [input.randomlySelectUnvalidated=false] - Optional flag indicating whether to randomly select an unvalidated item for `catToSelect`.
    *
    * @returns {Stimulus | undefined} - The next stimulus to present, or `undefined` if no further validated stimuli are available.
    *
@@ -101,11 +165,15 @@ export class Clowder {
    * @throws {Error} If any `items` are not found in the Clowder's corpora (validated or unvalidated).
    *
    * The function operates in several steps:
-   * 1. Validates the `catToSelect` and `catsToUpdate`.
-   * 2. Ensures `items` and `answers` arrays are properly formatted.
-   * 3. Updates the internal list of seen items.
-   * 4. Updates the ability estimates for the `catsToUpdate`.
-   * 5. Selects the next stimulus for `catToSelect`, considering validated and unvalidated stimuli.
+   * 1. Validate:
+   *    a. Validates the `catToSelect` and `catsToUpdate`.
+   *    b. Ensures `items` and `answers` arrays are properly formatted.
+   * 2. Update:
+   *    a. Updates the internal list of seen items.
+   *    b. Updates the ability estimates for the `catsToUpdate`.
+   * 3. Select:
+   *    a. Selects the next item using `catToSelect`, considering only remaining items that are valid for that cat.
+   *    b. If desired, randomly selects an unvalidated item for catToSelect.
    */
   public updateCatAndGetNextItem({
     catToSelect,
@@ -114,6 +182,7 @@ export class Clowder {
     answers = [],
     method,
     itemSelect,
+    randomlySelectUnvalidated = false,
   }: {
     catToSelect: string;
     catsToUpdate?: string | string[];
@@ -121,11 +190,17 @@ export class Clowder {
     answers?: (0 | 1) | (0 | 1)[];
     method?: string;
     itemSelect?: string;
+    randomlySelectUnvalidated?: boolean;
   }): Stimulus | undefined {
-    // Validate all cat names
-    this._validateCatName(catToSelect);
-    catsToUpdate = Array.isArray(catsToUpdate) ? catsToUpdate : [catsToUpdate];
+    //           +----------+
+    // ----------| Validate |----------|
+    //           +----------+
 
+    // Validate catToSelect
+    this._validateCatName(catToSelect);
+
+    // Convert catsToUpdate to array and validate each name
+    catsToUpdate = Array.isArray(catsToUpdate) ? catsToUpdate : [catsToUpdate];
     catsToUpdate.forEach((cat) => {
       this._validateCatName(cat);
     });
@@ -139,34 +214,52 @@ export class Clowder {
       throw new Error('Previous items and answers must have the same length.');
     }
 
+    //           +----------+
+    // ----------|  Update  |----------|
+    //           +----------+
+
     // Update the seenItems with the provided previous items
     this._seenItems.push(...items);
 
     // Remove the seenItems from the remainingItems
     this.remainingItems = this.remainingItems.filter((stim) => !items.includes(stim));
 
+    // Create a new zip array of items and answers. This will be useful in
+    // filtering operations below. It ensures that items and their corresponding
+    // answers "stay together."
     const itemsAndAnswers = _zip(items, answers) as [Stimulus, 0 | 1][];
 
     // Update the ability estimate for all cats
     for (const catName of catsToUpdate) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const itemsAndAnswersForCat = itemsAndAnswers.filter(([stim, _answer]) => {
+      const itemsAndAnswersForCat = itemsAndAnswers.filter(([stim]) => {
+        // We are dealing with a single item in this function.  This single item
+        // has an array of zeta parameters for a bunch of different Cats.  We
+        // need to determine if `catName` is present in that list.  So we first
+        // reduce the zetas to get all of the applicabe cat names.
         const allCats = stim.zetas.reduce((acc: string[], { cats }: { cats: string }) => {
           return [...acc, ...cats];
         }, []);
+
+        // Then we simply check if `catName` is present in this reduction.
         return allCats.includes(catName);
       });
 
+      // Now that we have the subset of items that can apply to this cat,
+      // retrieve only the item parameters that apply to this cat.
       const zetasAndAnswersForCat = itemsAndAnswersForCat.map(([stim, _answer]) => {
         const { zetas } = stim;
         const zetaForCat = zetas.find((zeta: ZetaCatMap) => zeta.cats.includes(catName));
         return [zetaForCat.zeta, _answer];
       });
 
-      // Extract the cat to update ability estimate
+      // Finally, unzip the zetas and answers and feed them into the cat's updateAbilityEstimate method.
       const [zetas, answers] = _unzip(zetasAndAnswersForCat);
       this.cats[catName].updateAbilityEstimate(zetas, answers, method);
     }
+
+    //           +----------+
+    // ----------|  Select  |----------|
+    //           +----------+
 
     // Now, we need to dynamically calculate the stimuli available for selection by `catToSelect`.
     // We inspect the remaining items and find ones that have zeta parameters for `catToSelect`
@@ -197,7 +290,6 @@ export class Clowder {
       return _isEqual(rest, nextStimulus);
     });
 
-    // Added some logic to mix in the unvalidated stimuli if needed.
     if (missing.length === 0) {
       // If there are no more unvalidated stimuli, we only have validated items left.
       // Use the Cat to find the next item. The Cat may return undefined if all validated items have been seen.
@@ -207,7 +299,11 @@ export class Clowder {
       return missing[Math.floor(Math.random() * missing.length)];
     } else {
       // In this case, there are both validated and unvalidated items left.
-      // We need to randomly insert unvalidated items
+      // We randomly insert unvalidated items
+      if (!randomlySelectUnvalidated) {
+        return returnStimulus;
+      }
+
       const numRemaining = {
         available: available.length,
         missing: missing.length,

@@ -276,7 +276,9 @@ describe('checkNoDuplicateCatNames', () => {
         zetas: [{ cats: ['Model A', 'Model C'], zeta: { a: 2.5, b: 0.8, c: 0.35, d: 0.95 } }],
       },
     ];
-    expect(() => checkNoDuplicateCatNames(corpus)).toThrowError('The cat names Model C are present in multiple corpora.');
+    expect(() => checkNoDuplicateCatNames(corpus)).toThrowError(
+      'The cat names Model C are present in multiple corpora.',
+    );
   });
 
   it('should not throw an error when a cat name is not present in multiple corpora', () => {
