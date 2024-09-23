@@ -1,5 +1,5 @@
 import { Cat, CatInput } from './cat';
-import { MultiZetaStimulus, Stimulus, Zeta, ZetaCatMap } from './type';
+import { CatMap, MultiZetaStimulus, Stimulus, Zeta, ZetaCatMap } from './type';
 import { filterItemsByCatParameterAvailability, checkNoDuplicateCatNames } from './corpus';
 import _cloneDeep from 'lodash/cloneDeep';
 import _differenceWith from 'lodash/differenceWith';
@@ -15,9 +15,7 @@ export interface ClowderInput {
    * An object containing Cat configurations for each Cat instance.
    * Keys correspond to Cat names, while values correspond to Cat configurations.
    */
-  cats: {
-    [name: string]: CatInput;
-  };
+  cats: CatMap<CatInput>;
   /**
    * An object containing arrays of stimuli for each corpus.
    */
@@ -37,7 +35,7 @@ export interface ClowderInput {
  * to the participant.
  */
 export class Clowder {
-  private _cats: { [name: string]: Cat };
+  private _cats: CatMap<Cat>;
   private _corpus: MultiZetaStimulus[];
   private _remainingItems: MultiZetaStimulus[];
   private _seenItems: Stimulus[];
@@ -47,7 +45,7 @@ export class Clowder {
    * Create a Clowder object.
    *
    * @param {ClowderInput} input - An object containing arrays of Cat configurations and corpora.
-   * @param {CatInput[]} input.cats - An object containing Cat configurations for each Cat instance.
+   * @param {CatMap<CatInput>} input.cats - An object containing Cat configurations for each Cat instance.
    * @param {MultiZetaStimulus[]} input.corpus - An array of stimuli representing each corpus.
    *
    * @throws {Error} - Throws an error if any item in the corpus has duplicated IRT parameters for any Cat name.
