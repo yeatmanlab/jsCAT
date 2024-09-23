@@ -6,13 +6,13 @@ import { CatMap } from './type';
  */
 export interface EarlyStoppingInput {
   /** Number of items to wait for before triggering early stopping */
-  patience: CatMap<number>;
+  patience?: CatMap<number>;
   /** Tolerance for standard error of measurement drop */
-  tolerance: CatMap<number>;
+  tolerance?: CatMap<number>;
   /** Number of items to require before stopping */
-  requiredItems: CatMap<number>;
+  requiredItems?: CatMap<number>;
   /** Stop if the standard error of measurement drops below this level */
-  seMeasurementThreshold: CatMap<number>;
+  seMeasurementThreshold?: CatMap<number>;
 }
 
 /**
@@ -27,7 +27,7 @@ export abstract class EarlyStopping {
   protected _nItems: CatMap<number>;
   protected _seMeasurements: CatMap<number[]>;
 
-  constructor({ patience, tolerance, requiredItems, seMeasurementThreshold }: EarlyStoppingInput) {
+  constructor({ patience = {}, tolerance = {}, requiredItems = {}, seMeasurementThreshold = {} }: EarlyStoppingInput) {
     this._patience = patience;
     this._tolerance = tolerance;
     this._requiredItems = requiredItems;
@@ -55,6 +55,14 @@ export abstract class EarlyStopping {
 
   public get earlyStop() {
     return this._earlyStop;
+  }
+
+  public get nItems() {
+    return this._nItems;
+  }
+
+  public get seMeasurements() {
+    return this._seMeasurements;
   }
 
   /**
@@ -89,9 +97,11 @@ export class StopOnSEMeasurementPlateau extends EarlyStopping {
   public update(cats: CatMap<Cat>, catToEvaluate: string) {
     super._updateCats(cats);
 
-    const seMeasurements = this._seMeasurements[catToEvaluate];
-    const patience = this._patience[catToEvaluate];
-    const tolerance = this._tolerance[catToEvaluate];
+    const seMeasurements = this._seMeasurements[catToEvaluate] ?? [];
+
+    // Use MAX_SAFE_INTEGER and MAX_VALUE to prevent early stopping if the `catToEvaluate` is missing from the cats map.
+    const patience = this._patience[catToEvaluate] ?? Number.MAX_SAFE_INTEGER;
+    const tolerance = this._tolerance[catToEvaluate] ?? Number.MAX_VALUE;
 
     if (seMeasurements.length >= patience) {
       const mean = seMeasurements.slice(-patience).reduce((sum, se) => sum + se, 0) / patience;
@@ -111,8 +121,8 @@ export class StopAfterNItems extends EarlyStopping {
   public update(cats: CatMap<Cat>, catToEvaluate: string) {
     super._updateCats(cats);
 
-    const requiredItems = this._requiredItems[catToEvaluate];
-    const nItems = this._nItems[catToEvaluate];
+    const requiredItems = this._requiredItems[catToEvaluate] ?? Number.MAX_SAFE_INTEGER;
+    const nItems = this._nItems[catToEvaluate] ?? 0;
 
     if (nItems >= requiredItems) {
       this._earlyStop = true;
@@ -127,10 +137,10 @@ export class StopIfSEMeasurementBelowThreshold extends EarlyStopping {
   public update(cats: CatMap<Cat>, catToEvaluate: string) {
     super._updateCats(cats);
 
-    const seMeasurements = this._seMeasurements[catToEvaluate];
-    const seThreshold = this._seMeasurementThreshold[catToEvaluate];
-    const patience = this._patience[catToEvaluate];
-    const tolerance = this._tolerance[catToEvaluate];
+    const seMeasurements = this._seMeasurements[catToEvaluate] ?? [];
+    const seThreshold = this._seMeasurementThreshold[catToEvaluate] ?? 0;
+    const patience = this._patience[catToEvaluate] ?? 1;
+    const tolerance = this._tolerance[catToEvaluate] ?? 0;
 
     if (seMeasurements.length >= patience) {
       const withinTolerance = seMeasurements.slice(-patience).every((se) => Math.abs(se - seThreshold) <= tolerance);
