@@ -2,6 +2,7 @@
 import { MultiZetaStimulus, Stimulus, Zeta } from './type';
 import _flatten from 'lodash/flatten';
 import _invert from 'lodash/invert';
+import _isEmpty from 'lodash/isEmpty';
 import _mapKeys from 'lodash/mapKeys';
 import _union from 'lodash/union';
 import _uniq from 'lodash/uniq';
@@ -286,7 +287,7 @@ export const prepareClowderCorpus = (
           zeta: convertZeta(zeta, itemParameterFormat),
         };
       })
-      .filter((zeta) => zeta !== null); // ask if --- Filter null values
+      .filter((zeta) => !_isEmpty(zeta)); // ask if --- Filter null values
 
     // Create the MultiZetaStimulus structure without the category keys
     const cleanItem = _omit(

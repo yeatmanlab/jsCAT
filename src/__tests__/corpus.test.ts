@@ -322,110 +322,110 @@ describe('filterItemsByCatParameterAvailability', () => {
     expect(result.missing.length).toBe(1);
     expect(result.missing[0].stimulus).toBe('Item 2');
   });
+});
 
-  describe('prepareClowderCorpus', () => {
-    it('converts a Stimulus array to a MultiZetaStimulus array with symbolic format', () => {
-      const items: Stimulus[] = [
-        {
-          'cat1.a': 1,
-          'cat1.b': 2,
-          'cat1.c': 3,
-          'cat1.d': 4,
-          'foo.a': 5,
-          'foo.b': 6,
-          'foo.c': 7,
-          'foo.d': 8,
-          stimulus: 'stim0',
-          type: 'jspsychHtmlMultiResponse',
-        },
-      ];
+describe('prepareClowderCorpus', () => {
+  it('converts a Stimulus array to a MultiZetaStimulus array with symbolic format', () => {
+    const items: Stimulus[] = [
+      {
+        'cat1.a': 1,
+        'cat1.b': 2,
+        'cat1.c': 3,
+        'cat1.d': 4,
+        'foo.a': 5,
+        'foo.b': 6,
+        'foo.c': 7,
+        'foo.d': 8,
+        stimulus: 'stim0',
+        type: 'jspsychHtmlMultiResponse',
+      },
+    ];
 
-      const result = prepareClowderCorpus(items, ['cat1', 'foo'], '.');
+    const result = prepareClowderCorpus(items, ['cat1', 'foo'], '.');
 
-      expect(result).toEqual([
-        {
-          stimulus: 'stim0',
-          type: 'jspsychHtmlMultiResponse',
-          zetas: [
-            {
-              cats: ['cat1'],
-              zeta: { a: 1, b: 2, c: 3, d: 4 },
-            },
-            {
-              cats: ['foo'],
-              zeta: { a: 5, b: 6, c: 7, d: 8 },
-            },
-          ],
-        },
-      ]);
-    });
+    expect(result).toEqual([
+      {
+        stimulus: 'stim0',
+        type: 'jspsychHtmlMultiResponse',
+        zetas: [
+          {
+            cats: ['cat1'],
+            zeta: { a: 1, b: 2, c: 3, d: 4 },
+          },
+          {
+            cats: ['foo'],
+            zeta: { a: 5, b: 6, c: 7, d: 8 },
+          },
+        ],
+      },
+    ]);
+  });
 
-    it('converts a Stimulus array to a MultiZetaStimulus array with semantic format', () => {
-      const items: Stimulus[] = [
-        {
-          'cat1.a': 1,
-          'cat1.b': 2,
-          'cat1.c': 3,
-          'cat1.d': 4,
-          'foo.a': 5,
-          'foo.b': 6,
-          'foo.c': 7,
-          'foo.d': 8,
-          stimulus: 'stim0',
-          type: 'jspsychHtmlMultiResponse',
-        },
-      ];
+  it('converts a Stimulus array to a MultiZetaStimulus array with semantic format', () => {
+    const items: Stimulus[] = [
+      {
+        'cat1.a': 1,
+        'cat1.b': 2,
+        'cat1.c': 3,
+        'cat1.d': 4,
+        'foo.a': 5,
+        'foo.b': 6,
+        'foo.c': 7,
+        'foo.d': 8,
+        stimulus: 'stim0',
+        type: 'jspsychHtmlMultiResponse',
+      },
+    ];
 
-      const result = prepareClowderCorpus(items, ['cat1', 'foo'], '.', 'semantic');
+    const result = prepareClowderCorpus(items, ['cat1', 'foo'], '.', 'semantic');
 
-      expect(result).toEqual([
-        {
-          stimulus: 'stim0',
-          type: 'jspsychHtmlMultiResponse',
-          zetas: [
-            {
-              cats: ['cat1'],
-              zeta: { discrimination: 1, difficulty: 2, guessing: 3, slipping: 4 },
-            },
-            {
-              cats: ['foo'],
-              zeta: { discrimination: 5, difficulty: 6, guessing: 7, slipping: 8 },
-            },
-          ],
-        },
-      ]);
-    });
+    expect(result).toEqual([
+      {
+        stimulus: 'stim0',
+        type: 'jspsychHtmlMultiResponse',
+        zetas: [
+          {
+            cats: ['cat1'],
+            zeta: { discrimination: 1, difficulty: 2, guessing: 3, slipping: 4 },
+          },
+          {
+            cats: ['foo'],
+            zeta: { discrimination: 5, difficulty: 6, guessing: 7, slipping: 8 },
+          },
+        ],
+      },
+    ]);
+  });
 
-    it('handles cases with different delimiters', () => {
-      const items: Stimulus[] = [
-        {
-          cat1_a: 1,
-          cat1_b: 2,
-          foo_a: 5,
-          foo_b: 6,
-          stimulus: 'stim1',
-          type: 'jspsychHtmlMultiResponse',
-        },
-      ];
+  it('handles cases with different delimiters', () => {
+    const items: Stimulus[] = [
+      {
+        cat1_a: 1,
+        cat1_b: 2,
+        foo_a: 5,
+        foo_b: 6,
+        stimulus: 'stim1',
+        type: 'jspsychHtmlMultiResponse',
+      },
+    ];
 
-      const result = prepareClowderCorpus(items, ['cat1', 'foo'], '_', 'symbolic');
+    const result = prepareClowderCorpus(items, ['cat1', 'foo'], '_', 'symbolic');
 
-      expect(result).toEqual([
-        {
-          stimulus: 'stim1',
-          type: 'jspsychHtmlMultiResponse',
-          zetas: [
-            {
-              cats: ['cat1'],
-              zeta: { a: 1, b: 2 },
-            },
-            {
-              cats: ['foo'],
-              zeta: { a: 5, b: 6 },
-            },
-          ],
-        },
-      ]);
-    });
+    expect(result).toEqual([
+      {
+        stimulus: 'stim1',
+        type: 'jspsychHtmlMultiResponse',
+        zetas: [
+          {
+            cats: ['cat1'],
+            zeta: { a: 1, b: 2 },
+          },
+          {
+            cats: ['foo'],
+            zeta: { a: 5, b: 6 },
+          },
+        ],
+      },
+    ]);
   });
 });
