@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { MultiZetaStimulus, Zeta } from './type';
+import { MultiZetaStimulus, Stimulus, Zeta } from './type';
 import _flatten from 'lodash/flatten';
 import _invert from 'lodash/invert';
 import _mapKeys from 'lodash/mapKeys';
 import _union from 'lodash/union';
 import _uniq from 'lodash/uniq';
+import _omit from 'lodash/omit';
 
 /**
  * A constant map from the symbolic item parameter names to their semantic
@@ -243,4 +244,59 @@ export const filterItemsByCatParameterAvailability = (items: MultiZetaStimulus[]
     available: paramsExist,
     missing: paramsMissing,
   };
+};
+
+/**
+ * Converts an array of Stimulus objects into an array of MultiZetaStimulus objects.
+ * The user specifies cat names and a delimiter to identify and group parameters.
+ *
+ * @param {Stimulus[]} items - An array of stimuli, where each stimulus contains parameters
+ *   for different CAT instances.
+ * @param {string[]} catNames - A list of CAT names to be mapped to their corresponding zeta values.
+ * @param {string} delimiter - A delimiter used to separate CAT instance names from the parameter keys in the stimulus object.
+ * @param {'symbolic' | 'semantic'} itemParameterFormat - Defines the format to convert zeta values ('symbolic' or 'semantic').
+ * @returns {MultiZetaStimulus[]} - An array of MultiZetaStimulus objects, each containing
+ *   the cleaned stimulus and associated zeta values for each CAT instance.
+ *
+ * This function iterates through each stimulus, extracts parameters relevant to the specified
+ * CAT instances, converts them to the desired format, and returns a cleaned structure of stimuli
+ * with the associated zeta values.
+ */
+export const prepareClowderCorpus = (
+  items: Stimulus[],
+  catNames: string[],
+  delimiter: '.' | string,
+  itemParameterFormat: 'symbolic' | 'semantic' = 'symbolic',
+): MultiZetaStimulus[] => {
+  return items.map((item) => {
+    const zetas = catNames
+      .map((cat) => {
+        const zeta: Zeta = {};
+
+        // Extract parameters that match the category
+        Object.keys(item).forEach((key) => {
+          if (key.startsWith(cat + delimiter)) {
+            const paramKey = key.split(delimiter)[1];
+            zeta[paramKey as keyof Zeta] = item[key];
+          }
+        });
+
+        return {
+          cats: [cat],
+          zeta: convertZeta(zeta, itemParameterFormat),
+        };
+      })
+      .filter((zeta) => zeta !== null); // ask if --- Filter null values
+
+    // Create the MultiZetaStimulus structure without the category keys
+    const cleanItem = _omit(
+      item,
+      Object.keys(item).filter((key) => catNames.some((cat) => key.startsWith(cat + delimiter))),
+    );
+
+    return {
+      ...cleanItem,
+      zetas,
+    };
+  });
 };
