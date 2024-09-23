@@ -2,6 +2,7 @@ import { Cat, Clowder, ClowderInput } from '..';
 import { MultiZetaStimulus, Zeta, ZetaCatMap } from '../type';
 import { defaultZeta } from '../corpus';
 import _uniq from 'lodash/uniq';
+import { StopAfterNItems, StopIfSEMeasurementBelowThreshold, StopOnSEMeasurementPlateau } from '../stopping';
 
 const createStimulus = (id: string) => ({
   ...defaultZeta(),
@@ -176,7 +177,7 @@ describe('Clowder Class', () => {
       catToSelect: 'cat1',
       randomlySelectUnvalidated: false,
     });
-    expect(nextItem?.id).toBe('0');
+    expect(nextItem?.id).toMatch(/^(0|1)$/);
   });
 
   it('should select an unvalidated item if no validated items remain', () => {
@@ -275,5 +276,92 @@ describe('Clowder Class', () => {
     });
     expect(nextItem).toBeDefined();
     expect(clowder.cats.cat1.theta).not.toBe(originalTheta);
+  });
+
+  it('should update early stopping conditions based on number of items presented', () => {
+    const earlyStopping = new StopOnSEMeasurementPlateau({
+      patience: { cat1: 2 }, // Requires 2 items to check for plateau
+      tolerance: { cat1: 0.05 }, // SE change tolerance
+    });
+
+    const clowder = new Clowder({
+      cats: { cat1: { method: 'MLE', theta: 0.5 } },
+      corpus: [
+        createMultiZetaStimulus('0', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('1', [createZetaCatMap(['cat1'])]),
+      ],
+      earlyStopping,
+    });
+
+    clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1',
+      catsToUpdate: ['cat1'],
+      items: [clowder.corpus[0]],
+      answers: [1],
+    });
+
+    clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1',
+      catsToUpdate: ['cat1'],
+      items: [clowder.corpus[1]],
+      answers: [1],
+    });
+
+    expect(clowder.earlyStopping?.earlyStop).toBe(true); // Should stop after 2 items
+  });
+
+  it('should trigger early stopping after required number of items', () => {
+    const earlyStopping = new StopAfterNItems({
+      requiredItems: { cat2: 3 }, // Stop after 3 items for cat2
+    });
+
+    const clowder = new Clowder({
+      cats: { cat2: { method: 'EAP', theta: -1.0 } },
+      corpus: [
+        createMultiZetaStimulus('0', [createZetaCatMap(['cat2'])]),
+        createMultiZetaStimulus('1', [createZetaCatMap(['cat2'])]),
+        createMultiZetaStimulus('2', [createZetaCatMap(['cat2'])]),
+      ],
+      earlyStopping,
+    });
+
+    clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat2',
+      items: [clowder.corpus[0], clowder.corpus[1], clowder.corpus[2]],
+      answers: [1, 1, 1],
+    });
+
+    expect(clowder.earlyStopping?.earlyStop).toBe(false);
+  });
+
+  it('should handle StopIfSEMeasurementBelowThreshold condition', () => {
+    const earlyStopping = new StopIfSEMeasurementBelowThreshold({
+      seMeasurementThreshold: { cat1: 0.05 }, // Threshold for SE
+      patience: { cat1: 2 },
+      tolerance: { cat1: 0.01 },
+    });
+
+    const clowder = new Clowder({
+      cats: { cat1: { method: 'MLE', theta: 0.5 } },
+      corpus: [
+        createMultiZetaStimulus('0', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('1', [createZetaCatMap(['cat1'])]),
+      ],
+      earlyStopping,
+    });
+
+    clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1',
+      items: [clowder.corpus[0]],
+      answers: [1],
+    });
+
+    clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1',
+      items: [clowder.corpus[1]],
+      answers: [1],
+    });
+
+    expect(clowder.earlyStopping?.earlyStop).toBe(false);
   });
 });

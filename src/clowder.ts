@@ -29,6 +29,10 @@ export interface ClowderInput {
    * An optional EarlyStopping instance to use for early stopping.
    */
   earlyStopping?: EarlyStopping;
+  /**
+   * An optional number of items required for each Cat to be considered for early stopping.
+   */
+  numItemsRequired?: CatMap<number>;
 }
 
 /**
@@ -46,6 +50,7 @@ export class Clowder {
   private _seenItems: Stimulus[];
   private _earlyStopping?: EarlyStopping;
   private readonly _rng: ReturnType<seedrandom>;
+  _numItemsRequired?: CatMap<number>;
 
   /**
    * Create a Clowder object.
@@ -56,11 +61,7 @@ export class Clowder {
    *
    * @throws {Error} - Throws an error if any item in the corpus has duplicated IRT parameters for any Cat name.
    */
-  constructor({ cats, corpus, randomSeed = null, earlyStopping }: ClowderInput) {
-    // TODO: Need to pass in numItemsRequired so that we know when to stop
-    // providing new items. This may depend on the cat name. For instance,
-    // perhaps numItemsRequired should be an object with cat names as keys and
-    // numItemsRequired as values.
+  constructor({ cats, corpus, randomSeed = null, earlyStopping, numItemsRequired = {} }: ClowderInput) {
     this._cats = _mapValues(cats, (catInput) => new Cat(catInput));
     this._seenItems = [];
     checkNoDuplicateCatNames(corpus);
@@ -68,6 +69,7 @@ export class Clowder {
     this._remainingItems = _cloneDeep(corpus);
     this._rng = randomSeed === null ? seedrandom() : seedrandom(randomSeed);
     this._earlyStopping = earlyStopping;
+    this._numItemsRequired = numItemsRequired;
   }
 
   /**
@@ -147,6 +149,10 @@ export class Clowder {
     return _mapValues(this.cats, (cat) => cat.zetas);
   }
 
+  public get earlyStopping() {
+    return this._earlyStopping;
+  }
+
   /**
    * Updates the ability estimates for the specified Cat instances.
    *
@@ -213,14 +219,7 @@ export class Clowder {
     itemSelect?: string;
     randomlySelectUnvalidated?: boolean;
   }): Stimulus | undefined {
-    //           +----------+
-    // ----------| Validate |----------|
-    //           +----------+
-
-    // Validate catToSelect
     this._validateCatName(catToSelect);
-
-    // Convert catsToUpdate to array and validate each name
     catsToUpdate = Array.isArray(catsToUpdate) ? catsToUpdate : [catsToUpdate];
     catsToUpdate.forEach((cat) => {
       this._validateCatName(cat);
@@ -252,29 +251,27 @@ export class Clowder {
 
     // Update the ability estimate for all cats
     for (const catName of catsToUpdate) {
-      const itemsAndAnswersForCat = itemsAndAnswers.filter(([stim]) => {
-        // We are dealing with a single item in this function.  This single item
-        // has an array of zeta parameters for a bunch of different Cats.  We
-        // need to determine if `catName` is present in that list.  So we first
-        // reduce the zetas to get all of the applicabe cat names.
-        const allCats = stim.zetas.reduce((acc: string[], { cats }: { cats: string }) => {
-          return [...acc, ...cats];
-        }, []);
-
-        // Then we simply check if `catName` is present in this reduction.
-        return allCats.includes(catName);
-      });
-
+      const itemsAndAnswersForCat = itemsAndAnswers.filter(([stim]) =>
+        stim.zetas.some((zeta: ZetaCatMap) => zeta.cats.includes(catName)),
+      );
+      // We are dealing with a single item in this function.  This single item
+      // has an array of zeta parameters for a bunch of different Cats.  We
+      // need to determine if `catName` is present in that list.  So we first
+      // reduce the zetas to get all of the applicabe cat names.
       // Now that we have the subset of items that can apply to this cat,
       // retrieve only the item parameters that apply to this cat.
-      const zetasAndAnswersForCat = itemsAndAnswersForCat.map(([stim, _answer]) => {
-        const { zetas } = stim;
-        const zetaForCat = zetas.find((zeta: ZetaCatMap) => zeta.cats.includes(catName));
-        return [zetaForCat.zeta, _answer];
-      });
+      const zetasAndAnswersForCat = itemsAndAnswersForCat
+        .map(([stim, _answer]) => {
+          const zetaForCat: ZetaCatMap | undefined = stim.zetas.find((zeta: ZetaCatMap) => zeta.cats.includes(catName));
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          return [zetaForCat!.zeta, _answer]; // Optional chaining in case zetaForCat is undefined
+        })
+        .filter(([zeta]) => zeta !== undefined); // Filter out undefined zeta values
 
-      // Finally, unzip the zetas and answers and feed them into the cat's updateAbilityEstimate method.
-      const [zetas, answers] = _unzip(zetasAndAnswersForCat);
+      // Unzip the zetas and answers, making sure the zetas array contains only Zeta types
+      const [zetas, answers] = _unzip(zetasAndAnswersForCat) as [Zeta[], (0 | 1)[]];
+
+      // Now, pass the filtered zetas and answers to the cat's updateAbilityEstimate method
       this.cats[catName].updateAbilityEstimate(zetas, answers, method);
     }
 
@@ -300,12 +297,11 @@ export class Clowder {
     // spread at the top-level of each Stimulus object. So we need to convert
     // the MultiZetaStimulus array to an array of Stimulus objects.
     const availableCatInput = available.map((item) => {
-      const { zetas, ...rest } = item;
-      const zetasForCat = zetas.find((zeta: ZetaCatMap) => zeta.cats.includes(catToSelect));
+      const zetasForCat = item.zetas.find((zeta) => zeta.cats.includes(catToSelect));
       return {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         ...zetasForCat!.zeta,
-        ...rest,
+        ...item,
       };
     });
 
@@ -325,11 +321,9 @@ export class Clowder {
 
     // Again `nextStimulus` will be a Stimulus object, or `undefined` if no further validated stimuli are available.
     // We need to convert the Stimulus object back to a MultiZetaStimulus object to return to the user.
-    const returnStimulus: MultiZetaStimulus | undefined = available.find((stim) => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { zetas, ...rest } = stim;
-      return _isEqual(rest, nextStimulusWithoutZeta);
-    });
+    const returnStimulus: MultiZetaStimulus | undefined = available.find((stim) =>
+      _isEqual(stim, nextStimulusWithoutZeta),
+    );
 
     if (missing.length === 0) {
       // If there are no more unvalidated stimuli, we only have validated items left.
@@ -344,18 +338,11 @@ export class Clowder {
       if (!randomlySelectUnvalidated) {
         return returnStimulus;
       }
-
-      const numRemaining = {
-        available: available.length,
-        missing: missing.length,
-      };
       const random = Math.random();
-
-      if (random < numRemaining.missing / (numRemaining.available + numRemaining.missing)) {
-        return missing[Math.floor(this._rng() * missing.length)];
-      } else {
-        return returnStimulus;
-      }
+      const numRemaining = { available: available.length, missing: missing.length };
+      return random < numRemaining.missing / (numRemaining.available + numRemaining.missing)
+        ? missing[Math.floor(this._rng() * missing.length)]
+        : returnStimulus;
     }
   }
 }

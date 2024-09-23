@@ -287,7 +287,7 @@ export const prepareClowderCorpus = (
           zeta: convertZeta(zeta, itemParameterFormat),
         };
       })
-      .filter((zeta) => !_isEmpty(zeta)); // ask if --- Filter null values
+      .filter((zeta) => !_isEmpty(zeta)); // filter empty values
 
     // Create the MultiZetaStimulus structure without the category keys
     const cleanItem = _omit(
