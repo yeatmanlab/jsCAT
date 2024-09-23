@@ -278,6 +278,15 @@ export class Clowder {
       this.cats[catName].updateAbilityEstimate(zetas, answers, method);
     }
 
+    // TODO: These next two if clauses were not very well thought through by Adam. We should scrutinize and add tests.
+    if (this._earlyStopping) {
+      this._earlyStopping.update(this.cats);
+    }
+
+    if (this._earlyStopping?.earlyStop) {
+      return undefined;
+    }
+
     //           +----------+
     // ----------|  Select  |----------|
     //           +----------+
