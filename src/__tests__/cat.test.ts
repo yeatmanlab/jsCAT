@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { Cat } from '../index';
+import { Cat } from '..';
 import { Stimulus } from '../type';
 import seedrandom from 'seedrandom';
 import { convertZeta } from '../corpus';

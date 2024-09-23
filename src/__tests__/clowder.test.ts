@@ -1,5 +1,4 @@
-import { Cat } from '../cat';
-import { Clowder, ClowderInput } from '../clowder';
+import { Cat, Clowder, ClowderInput } from '..';
 import { MultiZetaStimulus, Zeta, ZetaCatMap } from '../type';
 import { defaultZeta } from '../corpus';
 import _uniq from 'lodash/uniq';
