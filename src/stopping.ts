@@ -136,11 +136,11 @@ export abstract class EarlyStopping {
  */
 export class StopOnSEMeasurementPlateau extends EarlyStopping {
   protected _evaluateStoppingCondition(catToEvaluate: string) {
-    const seMeasurements = this._seMeasurements[catToEvaluate] ?? [];
+    const seMeasurements = this._seMeasurements[catToEvaluate];
 
     // Use MAX_SAFE_INTEGER and MAX_VALUE to prevent early stopping if the `catToEvaluate` is missing from the cats map.
-    const patience = this._patience[catToEvaluate] ?? Number.MAX_SAFE_INTEGER;
-    const tolerance = this._tolerance[catToEvaluate] ?? 0;
+    const patience = this._patience[catToEvaluate];
+    const tolerance = this._tolerance[catToEvaluate];
 
     let earlyStop = false;
 
@@ -162,7 +162,7 @@ export class StopOnSEMeasurementPlateau extends EarlyStopping {
  */
 export class StopAfterNItems extends EarlyStopping {
   protected _evaluateStoppingCondition(catToEvaluate: string) {
-    const requiredItems = this._requiredItems[catToEvaluate] ?? Number.MAX_SAFE_INTEGER;
+    const requiredItems = this._requiredItems[catToEvaluate];
     const nItems = this._nItems[catToEvaluate] ?? 0;
 
     let earlyStop = false;
