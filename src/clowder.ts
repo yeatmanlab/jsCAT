@@ -9,6 +9,7 @@ import _omit from 'lodash/omit';
 import _unzip from 'lodash/unzip';
 import _zip from 'lodash/zip';
 import seedrandom from 'seedrandom';
+import { EarlyStopping } from './stopping';
 
 export interface ClowderInput {
   /**
@@ -24,6 +25,10 @@ export interface ClowderInput {
    * A random seed for reproducibility. If not provided, a random seed will be generated.
    */
   randomSeed?: string | null;
+  /**
+   * An optional EarlyStopping instance to use for early stopping.
+   */
+  earlyStopping?: EarlyStopping;
 }
 
 /**
@@ -39,6 +44,7 @@ export class Clowder {
   private _corpus: MultiZetaStimulus[];
   private _remainingItems: MultiZetaStimulus[];
   private _seenItems: Stimulus[];
+  private _earlyStopping?: EarlyStopping;
   private readonly _rng: ReturnType<seedrandom>;
 
   /**
@@ -50,7 +56,7 @@ export class Clowder {
    *
    * @throws {Error} - Throws an error if any item in the corpus has duplicated IRT parameters for any Cat name.
    */
-  constructor({ cats, corpus, randomSeed = null }: ClowderInput) {
+  constructor({ cats, corpus, randomSeed = null, earlyStopping }: ClowderInput) {
     // TODO: Need to pass in numItemsRequired so that we know when to stop
     // providing new items. This may depend on the cat name. For instance,
     // perhaps numItemsRequired should be an object with cat names as keys and
@@ -61,6 +67,7 @@ export class Clowder {
     this._corpus = corpus;
     this._remainingItems = _cloneDeep(corpus);
     this._rng = randomSeed === null ? seedrandom() : seedrandom(randomSeed);
+    this._earlyStopping = earlyStopping;
   }
 
   /**
