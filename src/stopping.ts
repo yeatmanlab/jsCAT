@@ -188,7 +188,7 @@ export class StopIfSEMeasurementBelowThreshold extends EarlyStopping {
     let earlyStop = false;
 
     if (seMeasurements.length >= patience) {
-      const withinTolerance = seMeasurements.slice(-patience).every((se) => Math.abs(se - seThreshold) <= tolerance);
+      const withinTolerance = seMeasurements.slice(-patience).every((se) => se - seThreshold <= tolerance);
 
       if (withinTolerance) {
         earlyStop = true;

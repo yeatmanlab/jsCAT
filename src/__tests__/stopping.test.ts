@@ -638,8 +638,12 @@ describe.each`
   });
 
   it('triggers early stopping when within tolerance', () => {
+    // patience: { cat1: 1, cat2: 3 },
+    // tolerance: { cat1: 0.01, cat2: 0.02 },
+    // seMeasurementThreshold: { cat1: 0.03, cat2: 0.02 },
     const updates: CatMap<Cat>[] = [
       {
+        // Update 1 should not trigger
         cat1: {
           nItems: 1,
           seMeasurement: 10,
@@ -650,31 +654,38 @@ describe.each`
         } as Cat,
       },
       {
+        // Update 2 should not trigger
         cat1: {
           nItems: 2,
           seMeasurement: 1,
         } as Cat,
         cat2: {
           nItems: 2,
+          // Cat 2 is low enough but not enough items to satisfy patience
           seMeasurement: 0.02,
         } as Cat,
       },
       {
+        // Update 3 should trigger for logicalOperation === 'or', but not for 'and'
         cat1: {
           nItems: 3,
-          seMeasurement: 0.0001,
+          // Cat 1 is low enough and the patience is only 1
+          seMeasurement: 0.0399,
         } as Cat,
         cat2: {
           nItems: 3,
+          // Cat 2 patience is still not satisfied
           seMeasurement: 0.04,
         } as Cat,
       },
       {
+        // Update 4 should trigger for logicalOperation === 'and'
         cat1: {
           nItems: 4,
-          seMeasurement: 0.5,
+          seMeasurement: 0.001,
         } as Cat,
         cat2: {
+          // SE is low enough and patience is satisfied
           nItems: 4,
           seMeasurement: 0.01,
         } as Cat,
@@ -688,9 +699,29 @@ describe.each`
     expect(earlyStopping.earlyStop).toBe(false);
 
     earlyStopping.update(updates[2]);
-    expect(earlyStopping.earlyStop).toBe(false);
-
-    earlyStopping.update(updates[3]);
-    expect(earlyStopping.earlyStop).toBe(true);
+    if (earlyStopping.logicalOperation === 'or') {
+      expect(earlyStopping.earlyStop).toBe(true);
+    } else {
+      expect(earlyStopping.earlyStop).toBe(false);
+      earlyStopping.update(updates[3]);
+      expect(earlyStopping.earlyStop).toBe(true);
+    }
   });
 });
+
+// TODO: We need to write some tests where not all cats are in the input for the early stopping instance.
+// Right now, we have input like
+// input = {
+//   patience: { cat1: 2, cat2: 3 },
+//   tolerance: { cat1: 0.01, cat2: 0.02 },
+//   logicalOperation,
+// };
+//
+// But we want input like
+// input = {
+//   patience: { cat1: 2, cat2: 3 },
+//   tolerance: { cat2: 0.02, cat3: 0.01 },
+//   logicalOperation,
+// };
+//
+// In these situations, we need good default values to make sure that the tests pass.
