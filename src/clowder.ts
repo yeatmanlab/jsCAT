@@ -58,7 +58,6 @@ export class Clowder {
    */
   constructor({ cats, corpus, randomSeed = null, earlyStopping }: ClowderInput) {
     this._cats = _mapValues(cats, (catInput) => new Cat(catInput));
-    console.log('Initialized cats:', this._cats);
     this._seenItems = [];
     checkNoDuplicateCatNames(corpus);
     this._corpus = corpus;

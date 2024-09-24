@@ -90,6 +90,8 @@ describe.each`
         } as Cat,
       },
       {
+        // cat1 should trigger stopping if logicalOperator === 'or', because
+        // seMeasurement plateaued over the patience period of 2 items
         cat1: {
           nItems: 2,
           seMeasurement: 0.5,
@@ -104,6 +106,9 @@ describe.each`
           nItems: 3,
           seMeasurement: 0.5,
         } as Cat,
+        // cat2 should trigger stopping if logicalOperator === 'and', because
+        // seMeasurement plateaued over the patience period of 3 items, and the
+        // cat1 criterion passed last update
         cat2: {
           nItems: 3,
           seMeasurement: 0.3,
@@ -293,6 +298,7 @@ describe.each`
       },
       {
         cat1: {
+          // Do not increment nItems for cat1
           nItems: 1,
           seMeasurement: 0.5,
         } as Cat,
@@ -303,20 +309,26 @@ describe.each`
       },
       {
         cat1: {
+          // Do not increment nItems for cat1
           nItems: 1,
           seMeasurement: 0.5,
         } as Cat,
         cat2: {
+          // Do not increment nItems for cat2
           nItems: 2,
           seMeasurement: 0.3,
         } as Cat,
       },
       {
         cat1: {
+          // Increment nItems for cat1, but only use this update if
+          // logicalOperation is 'and'. Early stopping should still not be
+          // triggered.
           nItems: 2,
           seMeasurement: 0.5,
         } as Cat,
         cat2: {
+          // Do not increment nItems for cat2
           nItems: 2,
           seMeasurement: 0.3,
         } as Cat,
@@ -352,6 +364,7 @@ describe.each`
       },
       {
         cat1: {
+          // Do not increment nItems for cat1
           nItems: 1,
           seMeasurement: 0.5,
         } as Cat,
@@ -362,20 +375,24 @@ describe.each`
       },
       {
         cat1: {
+          // Do not increment nItems for cat1
           nItems: 1,
           seMeasurement: 0.5,
         } as Cat,
         cat2: {
+          // Cat2 reaches required items
           nItems: 3,
           seMeasurement: 0.3,
         } as Cat,
       },
       {
         cat1: {
+          // Cat1 reaches required items
           nItems: 2,
           seMeasurement: 0.5,
         } as Cat,
         cat2: {
+          // Cat2 reaches required items
           nItems: 3,
           seMeasurement: 0.3,
         } as Cat,
@@ -542,15 +559,7 @@ describe.each`
     expect(earlyStopping.earlyStop).toBe(false);
   });
 
-  it('handles missing input for some cats', () => {
-    const input = {
-      patience: { cat1: 2 },
-      tolerance: { cat2: 0.02 },
-      seMeasurementThreshold: { cat3: 0.01 },
-      logicalOperation,
-    };
-    const earlyStopping = new StopIfSEMeasurementBelowThreshold(input);
-
+  it('waits for `patience` items to monitor the seMeasurement plateau', () => {
     const updates: CatMap<Cat>[] = [
       {
         cat1: {
@@ -565,7 +574,7 @@ describe.each`
       {
         cat1: {
           nItems: 2,
-          seMeasurement: 0.02,
+          seMeasurement: 0.5,
         } as Cat,
         cat2: {
           nItems: 2,
@@ -575,86 +584,11 @@ describe.each`
       {
         cat1: {
           nItems: 3,
-          seMeasurement: 0.02,
+          seMeasurement: 0.5,
         } as Cat,
         cat2: {
           nItems: 3,
-          seMeasurement: 0.02,
-        } as Cat,
-      },
-    ];
-
-    earlyStopping.update(updates[0]);
-    expect(earlyStopping.earlyStop).toBe(false);
-
-    earlyStopping.update(updates[1]);
-    if (earlyStopping.logicalOperation === 'or') {
-      expect(earlyStopping.earlyStop).toBe(true);
-    } else {
-      expect(earlyStopping.earlyStop).toBe(false);
-    }
-
-    earlyStopping.update(updates[2]);
-    if (earlyStopping.logicalOperation === 'or') {
-      expect(earlyStopping.earlyStop).toBe(true);
-    } else {
-      expect(earlyStopping.earlyStop).toBe(false);
-    }
-  });
-
-  it('does not stop when the seMeasurement has not plateaued enough over patience', () => {
-    const input = {
-      patience: { cat1: 2 },
-      tolerance: { cat1: 0.05 },
-      logicalOperation,
-    };
-    const earlyStopping = new StopOnSEMeasurementPlateau(input);
-
-    const updates: CatMap<Cat>[] = [
-      {
-        cat1: {
-          nItems: 1,
-          seMeasurement: 0.5,
-        } as Cat,
-      },
-      {
-        cat1: {
-          nItems: 2,
-          seMeasurement: 0.49,
-        } as Cat,
-      },
-      {
-        cat1: {
-          nItems: 3,
-          seMeasurement: 0.48,
-        } as Cat,
-      },
-    ];
-
-    earlyStopping.update(updates[0]);
-    expect(earlyStopping.earlyStop).toBe(false);
-
-    earlyStopping.update(updates[1]);
-    if (earlyStopping.logicalOperation === 'and') {
-      expect(earlyStopping.earlyStop).toBe(true);
-    } else {
-      expect(earlyStopping.earlyStop).toBe(true);
-    }
-
-    earlyStopping.update(updates[2]);
-    expect(earlyStopping.earlyStop).toBe(true);
-  });
-
-  it('does not stop if required items have not been reached', () => {
-    const earlyStopping = new StopAfterNItems({
-      requiredItems: { cat1: 5 },
-      logicalOperation: 'or',
-    });
-    const updates: CatMap<Cat>[] = [
-      {
-        cat1: {
-          nItems: 2,
-          seMeasurement: 0.5,
+          seMeasurement: 0.01,
         } as Cat,
       },
       {
@@ -662,6 +596,23 @@ describe.each`
           nItems: 4,
           seMeasurement: 0.5,
         } as Cat,
+        // Cat2 should trigger when logicalOperation is 'or'
+        cat2: {
+          nItems: 4,
+          seMeasurement: 0.01,
+        } as Cat,
+      },
+      {
+        // Cat1 should trigger when logicalOperation is 'and'
+        // Cat2 criterion was satisfied after last update
+        cat1: {
+          nItems: 5,
+          seMeasurement: 0.01,
+        } as Cat,
+        cat2: {
+          nItems: 5,
+          seMeasurement: 0.01,
+        } as Cat,
       },
     ];
 
@@ -669,6 +620,83 @@ describe.each`
     expect(earlyStopping.earlyStop).toBe(false);
 
     earlyStopping.update(updates[1]);
-    expect(earlyStopping.earlyStop).toBe(false); // still not reached requiredItems
+    expect(earlyStopping.earlyStop).toBe(false);
+
+    earlyStopping.update(updates[2]);
+    expect(earlyStopping.earlyStop).toBe(false);
+
+    if (earlyStopping.logicalOperation === 'or') {
+      earlyStopping.update(updates[3]);
+      expect(earlyStopping.earlyStop).toBe(true);
+    } else {
+      earlyStopping.update(updates[3]);
+      expect(earlyStopping.earlyStop).toBe(false);
+
+      earlyStopping.update(updates[4]);
+      expect(earlyStopping.earlyStop).toBe(true);
+    }
+  });
+
+  it('triggers early stopping when within tolerance', () => {
+    const updates: CatMap<Cat>[] = [
+      {
+        cat1: {
+          nItems: 1,
+          seMeasurement: 10,
+        } as Cat,
+        cat2: {
+          nItems: 1,
+          seMeasurement: 0.4,
+        } as Cat,
+      },
+      {
+        cat1: {
+          nItems: 2,
+          seMeasurement: 1,
+        } as Cat,
+        cat2: {
+          nItems: 2,
+          seMeasurement: 0.02,
+        } as Cat,
+      },
+      {
+        cat1: {
+          nItems: 3,
+          seMeasurement: 0.0001,
+        } as Cat,
+        cat2: {
+          nItems: 3,
+          seMeasurement: 0.04,
+        } as Cat,
+      },
+      {
+        cat1: {
+          nItems: 4,
+          seMeasurement: 0.5,
+        } as Cat,
+        cat2: {
+          nItems: 4,
+          seMeasurement: 0.01,
+        } as Cat,
+      },
+    ];
+
+    earlyStopping.update(updates[0]);
+    expect(earlyStopping.earlyStop).toBe(false);
+
+    earlyStopping.update(updates[1]);
+    expect(earlyStopping.earlyStop).toBe(false);
+
+    if (earlyStopping.logicalOperation === 'or') {
+      earlyStopping.update(updates[2]);
+      expect(earlyStopping.earlyStop).toBe(true);
+      earlyStopping.update(updates[3]);
+      expect(earlyStopping.earlyStop).toBe(true);
+    } else {
+      earlyStopping.update(updates[2]);
+      expect(earlyStopping.earlyStop).toBe(false);
+      earlyStopping.update(updates[3]);
+      expect(earlyStopping.earlyStop).toBe(false);
+    }
   });
 });

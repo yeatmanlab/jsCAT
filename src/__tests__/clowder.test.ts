@@ -300,7 +300,7 @@ describe('Clowder Class', () => {
       answers: [1],
     });
 
-    clowder.updateCatAndGetNextItem({
+    const nextItem = clowder.updateCatAndGetNextItem({
       catToSelect: 'cat1',
       catsToUpdate: ['cat1'],
       items: [clowder.corpus[1]],
@@ -308,40 +308,73 @@ describe('Clowder Class', () => {
     });
 
     expect(clowder.earlyStopping?.earlyStop).toBe(true); // Should stop after 2 items
+    expect(nextItem).toBe(undefined); // Expect undefined after early stopping
+  });
+});
+
+describe('Clowder Early Stopping', () => {
+  let clowder: Clowder;
+
+  beforeEach(() => {
+    const clowderInput: ClowderInput = {
+      cats: {
+        cat1: { method: 'MLE', theta: 0.5 },
+      },
+      corpus: [
+        createMultiZetaStimulus('0', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('1', [createZetaCatMap(['cat1'])]),
+      ],
+    };
+    clowder = new Clowder(clowderInput);
   });
 
   it('should trigger early stopping after required number of items', () => {
     const earlyStopping = new StopAfterNItems({
-      requiredItems: { cat2: 3 }, // Stop after 3 items for cat2
+      requiredItems: { cat1: 2 }, // Stop after 2 items
     });
 
-    const clowder = new Clowder({
-      cats: { cat2: { method: 'EAP', theta: -1.0 } },
+    clowder = new Clowder({
+      cats: { cat1: { method: 'MLE', theta: 0.5 } },
       corpus: [
-        createMultiZetaStimulus('0', [createZetaCatMap(['cat2'])]),
-        createMultiZetaStimulus('1', [createZetaCatMap(['cat2'])]),
-        createMultiZetaStimulus('2', [createZetaCatMap(['cat2'])]),
+        createMultiZetaStimulus('0', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('1', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('2', [createZetaCatMap(['cat1'])]), // This item should trigger early stopping
       ],
       earlyStopping,
     });
 
     clowder.updateCatAndGetNextItem({
-      catToSelect: 'cat2',
-      items: [clowder.corpus[0], clowder.corpus[1], clowder.corpus[2]],
-      answers: [1, 1, 1],
+      catToSelect: 'cat1',
+      catsToUpdate: ['cat1'],
+      items: [clowder.corpus[0]],
+      answers: [1],
+    });
+    clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1',
+      catsToUpdate: ['cat1'],
+      items: [clowder.corpus[1]],
+      answers: [1],
     });
 
-    expect(clowder.earlyStopping?.earlyStop).toBe(false);
+    const nextItem = clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1',
+      catsToUpdate: ['cat1'],
+      items: [clowder.corpus[2]],
+      answers: [1],
+    });
+
+    expect(clowder.earlyStopping?.earlyStop).toBe(true); // Early stop should be triggered after 2 items
+    expect(nextItem).toBe(undefined); // No further items should be selected
   });
 
   it('should handle StopIfSEMeasurementBelowThreshold condition', () => {
     const earlyStopping = new StopIfSEMeasurementBelowThreshold({
-      seMeasurementThreshold: { cat1: 0.05 }, // Threshold for SE
+      seMeasurementThreshold: { cat1: 0.2 }, // Stop if SE drops below 0.2
       patience: { cat1: 2 },
       tolerance: { cat1: 0.01 },
     });
 
-    const clowder = new Clowder({
+    clowder = new Clowder({
       cats: { cat1: { method: 'MLE', theta: 0.5 } },
       corpus: [
         createMultiZetaStimulus('0', [createZetaCatMap(['cat1'])]),
@@ -350,18 +383,26 @@ describe('Clowder Class', () => {
       earlyStopping,
     });
 
+    // First update
     clowder.updateCatAndGetNextItem({
       catToSelect: 'cat1',
+      catsToUpdate: ['cat1'],
       items: [clowder.corpus[0]],
       answers: [1],
     });
+    // pringing results
+    console.log('SE Measurements:', clowder.earlyStopping?.seMeasurementThreshold, clowder.cats.cat1);
 
-    clowder.updateCatAndGetNextItem({
+    const nextItem = clowder.updateCatAndGetNextItem({
       catToSelect: 'cat1',
+      catsToUpdate: ['cat1'],
       items: [clowder.corpus[1]],
       answers: [1],
     });
 
-    expect(clowder.earlyStopping?.earlyStop).toBe(false);
+    console.log('Early Stop Triggered:', clowder.earlyStopping?.earlyStop);
+
+    expect(clowder.earlyStopping?.earlyStop).toBe(true); // Should stop after SE drops below threshold
+    expect(nextItem).toBe(undefined); // No further items should be selected
   });
 });
