@@ -29,10 +29,6 @@ export interface ClowderInput {
    * An optional EarlyStopping instance to use for early stopping.
    */
   earlyStopping?: EarlyStopping;
-  /**
-   * An optional number of items required for each Cat to be considered for early stopping.
-   */
-  numItemsRequired?: CatMap<number>;
 }
 
 /**
@@ -50,7 +46,6 @@ export class Clowder {
   private _seenItems: Stimulus[];
   private _earlyStopping?: EarlyStopping;
   private readonly _rng: ReturnType<seedrandom>;
-  _numItemsRequired?: CatMap<number>;
 
   /**
    * Create a Clowder object.
@@ -61,15 +56,15 @@ export class Clowder {
    *
    * @throws {Error} - Throws an error if any item in the corpus has duplicated IRT parameters for any Cat name.
    */
-  constructor({ cats, corpus, randomSeed = null, earlyStopping, numItemsRequired = {} }: ClowderInput) {
+  constructor({ cats, corpus, randomSeed = null, earlyStopping }: ClowderInput) {
     this._cats = _mapValues(cats, (catInput) => new Cat(catInput));
+    console.log('Initialized cats:', this._cats);
     this._seenItems = [];
     checkNoDuplicateCatNames(corpus);
     this._corpus = corpus;
     this._remainingItems = _cloneDeep(corpus);
     this._rng = randomSeed === null ? seedrandom() : seedrandom(randomSeed);
     this._earlyStopping = earlyStopping;
-    this._numItemsRequired = numItemsRequired;
   }
 
   /**
@@ -252,14 +247,14 @@ export class Clowder {
     // Update the ability estimate for all cats
     for (const catName of catsToUpdate) {
       const itemsAndAnswersForCat = itemsAndAnswers.filter(([stim]) =>
+        // We are dealing with a single item in this function.  This single item
+        // has an array of zeta parameters for a bunch of different Cats.  We
+        // need to determine if `catName` is present in that list.  So we first
+        // reduce the zetas to get all of the applicabe cat names.
+        // Now that we have the subset of items that can apply to this cat,
+        // retrieve only the item parameters that apply to this cat.
         stim.zetas.some((zeta: ZetaCatMap) => zeta.cats.includes(catName)),
       );
-      // We are dealing with a single item in this function.  This single item
-      // has an array of zeta parameters for a bunch of different Cats.  We
-      // need to determine if `catName` is present in that list.  So we first
-      // reduce the zetas to get all of the applicabe cat names.
-      // Now that we have the subset of items that can apply to this cat,
-      // retrieve only the item parameters that apply to this cat.
       const zetasAndAnswersForCat = itemsAndAnswersForCat
         .map(([stim, _answer]) => {
           const zetaForCat: ZetaCatMap | undefined = stim.zetas.find((zeta: ZetaCatMap) => zeta.cats.includes(catName));
@@ -275,7 +270,6 @@ export class Clowder {
       this.cats[catName].updateAbilityEstimate(zetas, answers, method);
     }
 
-    // TODO: These next two if clauses were not very well thought through by Adam. We should scrutinize and add tests.
     if (this._earlyStopping) {
       this._earlyStopping.update(this.cats);
     }
