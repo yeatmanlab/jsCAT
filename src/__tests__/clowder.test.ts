@@ -35,7 +35,7 @@ describe('Clowder Class', () => {
         createMultiZetaStimulus('1', [createZetaCatMap(['cat1']), createZetaCatMap(['cat2'])]),
         createMultiZetaStimulus('2', [createZetaCatMap(['cat1'])]),
         createMultiZetaStimulus('3', [createZetaCatMap(['cat2'])]),
-        createMultiZetaStimulus('4', []),
+        createMultiZetaStimulus('4', []), // Unvalidated item
       ],
     };
     clowder = new Clowder(clowderInput);
@@ -43,6 +43,7 @@ describe('Clowder Class', () => {
 
   it('initializes with provided cats and corpora', () => {
     expect(Object.keys(clowder.cats)).toContain('cat1');
+    expect(Object.keys(clowder.cats)).toContain('unvalidated'); // Ensure 'unvalidated' cat is present
     expect(clowder.remainingItems).toHaveLength(5);
     expect(clowder.corpus).toHaveLength(5);
     expect(clowder.seenItems).toHaveLength(0);
@@ -52,7 +53,8 @@ describe('Clowder Class', () => {
     expect(() => {
       const corpus: MultiZetaStimulus[] = [
         {
-          stimulus: 'Item 1',
+          id: 'item1',
+          content: 'Item 1',
           zetas: [
             { cats: ['Model A', 'Model B'], zeta: { a: 1, b: 0.5, c: 0.2, d: 0.8 } },
             { cats: ['Model C'], zeta: { a: 2, b: 0.7, c: 0.3, d: 0.9 } },
@@ -60,7 +62,8 @@ describe('Clowder Class', () => {
           ],
         },
         {
-          stimulus: 'Item 2',
+          id: 'item2',
+          content: 'Item 2',
           zetas: [{ cats: ['Model A', 'Model C'], zeta: { a: 2.5, b: 0.8, c: 0.35, d: 0.95 } }],
         },
       ];
@@ -89,7 +92,7 @@ describe('Clowder Class', () => {
 
   it('throws an error when updating ability estimates for an invalid cat', () => {
     expect(() => clowder.updateAbilityEstimates(['invalidCatName'], createStimulus('1'), [0])).toThrowError(
-      'Invalid Cat name. Expected one of cat1, cat2. Received invalidCatName.',
+      'Invalid Cat name. Expected one of cat1, cat2, unvalidated. Received invalidCatName.',
     );
   });
 
@@ -106,6 +109,7 @@ describe('Clowder Class', () => {
     const expected = {
       cat1: clowder.cats['cat1'][property as keyof Cat],
       cat2: clowder.cats['cat2'][property as keyof Cat],
+      unvalidated: clowder.cats['unvalidated'][property as keyof Cat],
     };
     expect(clowder[property as keyof Clowder]).toEqual(expected);
   });
@@ -125,7 +129,7 @@ describe('Clowder Class', () => {
       clowder.updateCatAndGetNextItem({
         catToSelect: 'invalidCatName',
       });
-    }).toThrow('Invalid Cat name. Expected one of cat1, cat2. Received invalidCatName.');
+    }).toThrow('Invalid Cat name. Expected one of cat1, cat2, unvalidated. Received invalidCatName.');
   });
 
   it('throws an error if any of catsToUpdate is invalid', () => {
@@ -134,7 +138,7 @@ describe('Clowder Class', () => {
         catToSelect: 'cat1',
         catsToUpdate: ['invalidCatName', 'cat2'],
       });
-    }).toThrow('Invalid Cat name. Expected one of cat1, cat2. Received invalidCatName.');
+    }).toThrow('Invalid Cat name. Expected one of cat1, cat2, unvalidated. Received invalidCatName.');
   });
 
   it('updates seen and remaining items', () => {

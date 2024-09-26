@@ -57,7 +57,10 @@ export class Clowder {
    * @throws {Error} - Throws an error if any item in the corpus has duplicated IRT parameters for any Cat name.
    */
   constructor({ cats, corpus, randomSeed = null, earlyStopping }: ClowderInput) {
-    this._cats = _mapValues(cats, (catInput) => new Cat(catInput));
+    this._cats = {
+      ..._mapValues(cats, (catInput) => new Cat(catInput)),
+      unvalidated: new Cat(), // Add 'unvalidated' cat
+    };
     this._seenItems = [];
     checkNoDuplicateCatNames(corpus);
     this._corpus = corpus;
@@ -243,7 +246,7 @@ export class Clowder {
     // answers "stay together."
     const itemsAndAnswers = _zip(items, answers) as [Stimulus, 0 | 1][];
 
-    // Update the ability estimate for all cats
+    // Update the ability estimate for all validated cats
     for (const catName of catsToUpdate) {
       const itemsAndAnswersForCat = itemsAndAnswers.filter(([stim]) =>
         // We are dealing with a single item in this function.  This single item
@@ -269,12 +272,20 @@ export class Clowder {
       this.cats[catName].updateAbilityEstimate(zetas, answers, method);
     }
 
-    if (this._earlyStopping) {
-      this._earlyStopping.update(this.cats);
+    // Assign items with no valid parameters to the 'unvalidated' cat
+    const unvalidatedItemsAndAnswers = itemsAndAnswers.filter(
+      ([stim]) => !stim.zetas.some((zeta: ZetaCatMap) => zeta.cats.length > 0),
+    );
+    if (unvalidatedItemsAndAnswers.length > 0) {
+      const [zetas, answers] = _unzip(unvalidatedItemsAndAnswers) as [Zeta[], (0 | 1)[]];
+      this.cats['unvalidated'].updateAbilityEstimate(zetas, answers, method);
     }
 
-    if (this._earlyStopping?.earlyStop) {
-      return undefined;
+    if (this._earlyStopping) {
+      this._earlyStopping.update(this.cats);
+      if (this._earlyStopping.earlyStop) {
+        return undefined;
+      }
     }
 
     //           +----------+
