@@ -57,9 +57,12 @@ export class Clowder {
    * @throws {Error} - Throws an error if any item in the corpus has duplicated IRT parameters for any Cat name.
    */
   constructor({ cats, corpus, randomSeed = null, earlyStopping }: ClowderInput) {
+    // TODO: Add some imput validation to both the cats and the corpus to make sure that "unvalidated" is not used as a cat name.
+    // If so, throw an error saying that "unvalidated" is a reserved name and may not be used.
+    // TODO: Also add a test of this behavior.
     this._cats = {
       ..._mapValues(cats, (catInput) => new Cat(catInput)),
-      unvalidated: new Cat(), // Add 'unvalidated' cat
+      unvalidated: new Cat({ itemSelect: 'random', randomSeed }), // Add 'unvalidated' cat
     };
     this._seenItems = [];
     checkNoDuplicateCatNames(corpus);
@@ -74,12 +77,14 @@ export class Clowder {
    * Throw an error if the Cat name is not found.
    *
    * @param {string} catName - The name of the Cat instance to validate.
+   * @param {boolean} allowUnvalidated - Whether to allow the reserved 'unvalidated' name.
    *
    * @throws {Error} - Throws an error if the provided Cat name is not found among the existing Cat instances.
    */
-  private _validateCatName(catName: string): void {
-    if (!Object.prototype.hasOwnProperty.call(this._cats, catName)) {
-      throw new Error(`Invalid Cat name. Expected one of ${Object.keys(this._cats).join(', ')}. Received ${catName}.`);
+  private _validateCatName(catName: string, allowUnvalidated = false): void {
+    const allowedCats = allowUnvalidated ? this._cats : this.cats;
+    if (!Object.prototype.hasOwnProperty.call(allowedCats, catName)) {
+      throw new Error(`Invalid Cat name. Expected one of ${Object.keys(allowedCats).join(', ')}. Received ${catName}.`);
     }
   }
 
@@ -87,7 +92,7 @@ export class Clowder {
    * The named Cat instances that this Clowder manages.
    */
   public get cats() {
-    return this._cats;
+    return _omit(this._cats, ['unvalidated']);
   }
 
   /**
@@ -162,7 +167,7 @@ export class Clowder {
    */
   public updateAbilityEstimates(catNames: string[], zeta: Zeta | Zeta[], answer: (0 | 1) | (0 | 1)[], method?: string) {
     catNames.forEach((catName) => {
-      this._validateCatName(catName);
+      this._validateCatName(catName, false);
     });
     for (const catName of catNames) {
       this.cats[catName].updateAbilityEstimate(zeta, answer, method);
@@ -216,10 +221,14 @@ export class Clowder {
     itemSelect?: string;
     randomlySelectUnvalidated?: boolean;
   }): Stimulus | undefined {
-    this._validateCatName(catToSelect);
+    //           +----------+
+    // ----------|  Update  |----------|
+    //           +----------+
+
+    this._validateCatName(catToSelect, true);
     catsToUpdate = Array.isArray(catsToUpdate) ? catsToUpdate : [catsToUpdate];
     catsToUpdate.forEach((cat) => {
-      this._validateCatName(cat);
+      this._validateCatName(cat, false);
     });
 
     // Convert items and answers to arrays
@@ -257,28 +266,24 @@ export class Clowder {
         // retrieve only the item parameters that apply to this cat.
         stim.zetas.some((zeta: ZetaCatMap) => zeta.cats.includes(catName)),
       );
-      const zetasAndAnswersForCat = itemsAndAnswersForCat
-        .map(([stim, _answer]) => {
-          const zetaForCat: ZetaCatMap | undefined = stim.zetas.find((zeta: ZetaCatMap) => zeta.cats.includes(catName));
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          return [zetaForCat!.zeta, _answer]; // Optional chaining in case zetaForCat is undefined
-        })
-        .filter(([zeta]) => zeta !== undefined); // Filter out undefined zeta values
 
-      // Unzip the zetas and answers, making sure the zetas array contains only Zeta types
-      const [zetas, answers] = _unzip(zetasAndAnswersForCat) as [Zeta[], (0 | 1)[]];
+      if (itemsAndAnswersForCat.length > 0) {
+        const zetasAndAnswersForCat = itemsAndAnswersForCat
+          .map(([stim, _answer]) => {
+            const zetaForCat: ZetaCatMap | undefined = stim.zetas.find((zeta: ZetaCatMap) =>
+              zeta.cats.includes(catName),
+            );
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            return [zetaForCat!.zeta, _answer]; // Optional chaining in case zetaForCat is undefined
+          })
+          .filter(([zeta]) => zeta !== undefined); // Filter out undefined zeta values
 
-      // Now, pass the filtered zetas and answers to the cat's updateAbilityEstimate method
-      this.cats[catName].updateAbilityEstimate(zetas, answers, method);
-    }
+        // Unzip the zetas and answers, making sure the zetas array contains only Zeta types
+        const [zetas, answers] = _unzip(zetasAndAnswersForCat) as [Zeta[], (0 | 1)[]];
 
-    // Assign items with no valid parameters to the 'unvalidated' cat
-    const unvalidatedItemsAndAnswers = itemsAndAnswers.filter(
-      ([stim]) => !stim.zetas.some((zeta: ZetaCatMap) => zeta.cats.length > 0),
-    );
-    if (unvalidatedItemsAndAnswers.length > 0) {
-      const [zetas, answers] = _unzip(unvalidatedItemsAndAnswers) as [Zeta[], (0 | 1)[]];
-      this.cats['unvalidated'].updateAbilityEstimate(zetas, answers, method);
+        // Now, pass the filtered zetas and answers to the cat's updateAbilityEstimate method
+        this.cats[catName].updateAbilityEstimate(zetas, answers, method);
+      }
     }
 
     if (this._earlyStopping) {
@@ -292,9 +297,22 @@ export class Clowder {
     // ----------|  Select  |----------|
     //           +----------+
 
+    if (catToSelect === 'unvalidated') {
+      // Assign items with no valid parameters to the 'unvalidated' cat
+      const unvalidatedRemainingItems = this._remainingItems.filter(
+        (stim) => !stim.zetas.some((zeta: ZetaCatMap) => zeta.cats.length > 0),
+      );
+
+      if (unvalidatedRemainingItems.length === 0) {
+        return undefined;
+      } else {
+        const randInt = Math.floor(this._rng() * unvalidatedRemainingItems.length);
+        return unvalidatedRemainingItems[randInt];
+      }
+    }
+
     // Now, we need to dynamically calculate the stimuli available for selection by `catToSelect`.
     // We inspect the remaining items and find ones that have zeta parameters for `catToSelect`
-
     const { available, missing } = filterItemsByCatParameterAvailability(this._remainingItems, catToSelect);
 
     // The cat expects an array of Stimulus objects, with the zeta parameters

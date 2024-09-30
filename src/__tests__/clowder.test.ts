@@ -43,7 +43,6 @@ describe('Clowder Class', () => {
 
   it('initializes with provided cats and corpora', () => {
     expect(Object.keys(clowder.cats)).toContain('cat1');
-    expect(Object.keys(clowder.cats)).toContain('unvalidated'); // Ensure 'unvalidated' cat is present
     expect(clowder.remainingItems).toHaveLength(5);
     expect(clowder.corpus).toHaveLength(5);
     expect(clowder.seenItems).toHaveLength(0);
@@ -92,7 +91,7 @@ describe('Clowder Class', () => {
 
   it('throws an error when updating ability estimates for an invalid cat', () => {
     expect(() => clowder.updateAbilityEstimates(['invalidCatName'], createStimulus('1'), [0])).toThrowError(
-      'Invalid Cat name. Expected one of cat1, cat2, unvalidated. Received invalidCatName.',
+      'Invalid Cat name. Expected one of cat1, cat2. Received invalidCatName.',
     );
   });
 
@@ -109,7 +108,6 @@ describe('Clowder Class', () => {
     const expected = {
       cat1: clowder.cats['cat1'][property as keyof Cat],
       cat2: clowder.cats['cat2'][property as keyof Cat],
-      unvalidated: clowder.cats['unvalidated'][property as keyof Cat],
     };
     expect(clowder[property as keyof Clowder]).toEqual(expected);
   });
@@ -138,7 +136,7 @@ describe('Clowder Class', () => {
         catToSelect: 'cat1',
         catsToUpdate: ['invalidCatName', 'cat2'],
       });
-    }).toThrow('Invalid Cat name. Expected one of cat1, cat2, unvalidated. Received invalidCatName.');
+    }).toThrow('Invalid Cat name. Expected one of cat1, cat2. Received invalidCatName.');
   });
 
   it('updates seen and remaining items', () => {
@@ -207,6 +205,110 @@ describe('Clowder Class', () => {
     expect(['0', '2']).toContain(nextItem?.id);
   });
 
+  it('should select an unvalidated item if catToSelect is "unvalidated"', () => {
+    const clowderInput: ClowderInput = {
+      cats: {
+        cat1: { method: 'MLE', theta: 0.5 },
+      },
+      corpus: [
+        createMultiZetaStimulus('0', [createZetaCatMap([])]),
+        createMultiZetaStimulus('1', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('2', [createZetaCatMap([])]),
+        createMultiZetaStimulus('3', [createZetaCatMap(['cat1'])]),
+      ],
+    };
+
+    const clowder = new Clowder(clowderInput);
+
+    const nDraws = 50;
+    // Simulate sDraws unvalidated items being selected
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    for (const _ of Array(nDraws).fill(0)) {
+      const nextItem = clowder.updateCatAndGetNextItem({
+        catToSelect: 'unvalidated',
+      });
+
+      expect(['0', '2']).toContain(nextItem?.id);
+    }
+  });
+
+  it('should not update cats with items that do not have parameters for that cat', () => {
+    const clowderInput: ClowderInput = {
+      cats: {
+        cat1: { method: 'MLE', theta: 0.5 },
+        cat2: { method: 'MLE', theta: 0.5 },
+      },
+      corpus: [
+        createMultiZetaStimulus('0', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('1', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('2', [createZetaCatMap(['cat2'])]),
+        createMultiZetaStimulus('3', [createZetaCatMap(['cat2'])]),
+      ],
+    };
+
+    const clowder = new Clowder(clowderInput);
+
+    clowder.updateCatAndGetNextItem({
+      catsToUpdate: ['cat1', 'cat2'],
+      items: clowder.corpus,
+      answers: [1, 1, 1, 1],
+      catToSelect: 'unvalidated',
+    });
+
+    expect(clowder.nItems.cat1).toBe(2);
+    expect(clowder.nItems.cat2).toBe(2);
+  });
+
+  it('should not update any cats if only unvalidated items have been seen', () => {
+    const clowderInput: ClowderInput = {
+      cats: {
+        cat1: { method: 'MLE', theta: 0.5 },
+      },
+      corpus: [
+        createMultiZetaStimulus('0', [createZetaCatMap([])]),
+        createMultiZetaStimulus('1', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('2', [createZetaCatMap([])]),
+        createMultiZetaStimulus('3', [createZetaCatMap(['cat1'])]),
+      ],
+    };
+
+    const clowder = new Clowder(clowderInput);
+
+    clowder.updateCatAndGetNextItem({
+      catsToUpdate: ['cat1'],
+      items: [clowder.corpus[0], clowder.corpus[2]],
+      answers: [1, 1],
+      catToSelect: 'unvalidated',
+    });
+
+    expect(clowder.nItems.cat1).toBe(0);
+  });
+
+  it('should return undefined for next item if catToSelect = "unvalidated" and no unvalidated items remain', () => {
+    const clowderInput: ClowderInput = {
+      cats: {
+        cat1: { method: 'MLE', theta: 0.5 },
+      },
+      corpus: [
+        createMultiZetaStimulus('0', [createZetaCatMap([])]),
+        createMultiZetaStimulus('1', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('2', [createZetaCatMap([])]),
+        createMultiZetaStimulus('3', [createZetaCatMap(['cat1'])]),
+      ],
+    };
+
+    const clowder = new Clowder(clowderInput);
+
+    const nextItem = clowder.updateCatAndGetNextItem({
+      catsToUpdate: ['cat1'],
+      items: [clowder.corpus[0], clowder.corpus[2]],
+      answers: [1, 1],
+      catToSelect: 'unvalidated',
+    });
+
+    expect(nextItem).toBeUndefined();
+  });
+
   it('should correctly update ability estimates during the updateCatAndGetNextItem method', () => {
     const originalTheta = clowder.cats.cat1.theta;
     clowder.updateCatAndGetNextItem({
@@ -249,15 +351,12 @@ describe('Clowder Class', () => {
   });
 
   it('should return undefined if no more items remain', () => {
-    clowder.updateCatAndGetNextItem({
+    const nextItem = clowder.updateCatAndGetNextItem({
       catToSelect: 'cat1',
       items: clowder.remainingItems,
       answers: [1, 0, 1, 1, 0], // Exhaust all items
     });
 
-    const nextItem = clowder.updateCatAndGetNextItem({
-      catToSelect: 'cat1',
-    });
     expect(nextItem).toBeUndefined();
   });
 
@@ -341,8 +440,8 @@ describe('Clowder Early Stopping', () => {
       cats: { cat1: { method: 'MLE', theta: 0.5 } },
       corpus: [
         createMultiZetaStimulus('0', [createZetaCatMap(['cat1'])]),
-        createMultiZetaStimulus('1', [createZetaCatMap(['cat1'])]),
-        createMultiZetaStimulus('2', [createZetaCatMap(['cat1'])]), // This item should trigger early stopping
+        createMultiZetaStimulus('1', [createZetaCatMap(['cat1'])]), // This item should trigger early stopping
+        createMultiZetaStimulus('2', [createZetaCatMap(['cat1'])]),
       ],
       earlyStopping,
     });
@@ -353,17 +452,13 @@ describe('Clowder Early Stopping', () => {
       items: [clowder.corpus[0]],
       answers: [1],
     });
-    clowder.updateCatAndGetNextItem({
-      catToSelect: 'cat1',
-      catsToUpdate: ['cat1'],
-      items: [clowder.corpus[1]],
-      answers: [1],
-    });
+
+    expect(clowder.earlyStopping?.earlyStop).toBe(false);
 
     const nextItem = clowder.updateCatAndGetNextItem({
       catToSelect: 'cat1',
       catsToUpdate: ['cat1'],
-      items: [clowder.corpus[2]],
+      items: [clowder.corpus[1]],
       answers: [1],
     });
 
@@ -378,35 +473,41 @@ describe('Clowder Early Stopping', () => {
       tolerance: { cat1: 0.01 },
     });
 
+    const zetaMap = createZetaCatMap(['cat1'], {
+      a: 6,
+      b: 6,
+      c: 0,
+      d: 1,
+    });
+
+    const corpus = [
+      createMultiZetaStimulus('0', [zetaMap]),
+      createMultiZetaStimulus('1', [zetaMap]),
+      createMultiZetaStimulus('2', [zetaMap]), // Here the SE measurement drops below threshold
+      createMultiZetaStimulus('3', [zetaMap]), // And here, early stopping should be triggered because it has been below threshold for 2 items
+    ];
+
     clowder = new Clowder({
       cats: { cat1: { method: 'MLE', theta: 0.5 } },
-      corpus: [
-        createMultiZetaStimulus('0', [createZetaCatMap(['cat1'])]),
-        createMultiZetaStimulus('1', [createZetaCatMap(['cat1'])]),
-      ],
+      corpus,
       earlyStopping,
     });
 
-    // First update
-    clowder.updateCatAndGetNextItem({
-      catToSelect: 'cat1',
-      catsToUpdate: ['cat1'],
-      items: [clowder.corpus[0]],
-      answers: [1],
-    });
-    // pringing results
-    console.log('SE Measurements:', clowder.earlyStopping?.seMeasurementThreshold, clowder.cats.cat1);
+    for (const item of corpus) {
+      const nextItem = clowder.updateCatAndGetNextItem({
+        catToSelect: 'cat1',
+        catsToUpdate: ['cat1'],
+        items: [item],
+        answers: [1],
+      });
 
-    const nextItem = clowder.updateCatAndGetNextItem({
-      catToSelect: 'cat1',
-      catsToUpdate: ['cat1'],
-      items: [clowder.corpus[1]],
-      answers: [1],
-    });
-
-    console.log('Early Stop Triggered:', clowder.earlyStopping?.earlyStop);
-
-    expect(clowder.earlyStopping?.earlyStop).toBe(true); // Should stop after SE drops below threshold
-    expect(nextItem).toBe(undefined); // No further items should be selected
+      if (item.id === '3') {
+        expect(clowder.earlyStopping?.earlyStop).toBe(true); // Should stop after SE drops below threshold
+        expect(nextItem).toBe(undefined); // No further items should be selected
+      } else {
+        expect(clowder.earlyStopping?.earlyStop).toBe(false);
+        expect(nextItem).toBeDefined();
+      }
+    }
   });
 });
