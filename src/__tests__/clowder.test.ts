@@ -95,6 +95,36 @@ describe('Clowder Class', () => {
     );
   });
 
+  it('should return undefined if no validated items remain and returnUndefinedOnExhaustion is true', () => {
+    const clowderInput: ClowderInput = {
+      cats: {
+        cat1: { method: 'MLE', theta: 0.5 },
+      },
+      corpus: [
+        createMultiZetaStimulus('0', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('1', [createZetaCatMap(['cat1'])]),
+      ],
+    };
+
+    const clowder = new Clowder(clowderInput);
+
+    // Use all the validated items for cat1
+    clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1',
+      catsToUpdate: ['cat1'],
+      items: [clowder.corpus[0], clowder.corpus[1]],
+      answers: [1, 1],
+    });
+
+    // Try to get another validated item for cat1 with returnUndefinedOnExhaustion set to true
+    const nextItem = clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1',
+      returnUndefinedOnExhaustion: true,
+    });
+
+    expect(nextItem).toBeUndefined();
+  });
+
   it.each`
     property
     ${'theta'}

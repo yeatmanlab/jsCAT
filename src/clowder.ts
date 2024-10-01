@@ -212,6 +212,7 @@ export class Clowder {
     method,
     itemSelect,
     randomlySelectUnvalidated = false,
+    returnUndefinedOnExhaustion = false, // New parameter
   }: {
     catToSelect: string;
     catsToUpdate?: string | string[];
@@ -220,11 +221,11 @@ export class Clowder {
     method?: string;
     itemSelect?: string;
     randomlySelectUnvalidated?: boolean;
+    returnUndefinedOnExhaustion?: boolean; // New parameter type
   }): Stimulus | undefined {
     //           +----------+
     // ----------|  Update  |----------|
     //           +----------+
-
     this._validateCatName(catToSelect, true);
     catsToUpdate = Array.isArray(catsToUpdate) ? catsToUpdate : [catsToUpdate];
     catsToUpdate.forEach((cat) => {
@@ -293,6 +294,7 @@ export class Clowder {
       }
     }
 
+    // Handle the 'unvalidated' cat selection
     //           +----------+
     // ----------|  Select  |----------|
     //           +----------+
@@ -310,7 +312,6 @@ export class Clowder {
         return unvalidatedRemainingItems[randInt];
       }
     }
-
     // Now, we need to dynamically calculate the stimuli available for selection by `catToSelect`.
     // We inspect the remaining items and find ones that have zeta parameters for `catToSelect`
     const { available, missing } = filterItemsByCatParameterAvailability(this._remainingItems, catToSelect);
@@ -340,26 +341,25 @@ export class Clowder {
       'guessing',
       'slipping',
     ]);
-
     // Again `nextStimulus` will be a Stimulus object, or `undefined` if no further validated stimuli are available.
     // We need to convert the Stimulus object back to a MultiZetaStimulus object to return to the user.
     const returnStimulus: MultiZetaStimulus | undefined = available.find((stim) =>
       _isEqual(stim, nextStimulusWithoutZeta),
     );
 
-    if (missing.length === 0) {
-      // If there are no more unvalidated stimuli, we only have validated items left.
-      // Use the Cat to find the next item. The Cat may return undefined if all validated items have been seen.
-      return returnStimulus;
-    } else if (available.length === 0) {
-      // In this case, there are no more validated items left. Choose an unvalidated item at random.
-      return missing[Math.floor(this._rng() * missing.length)];
-    } else {
-      // In this case, there are both validated and unvalidated items left.
-      // We randomly insert unvalidated items
-      if (!randomlySelectUnvalidated) {
-        return returnStimulus;
+    // Determine behavior based on returnUndefinedOnExhaustion
+    if (available.length === 0) {
+      // If returnUndefinedOnExhaustion is true and no validated items remain for the specified catToSelect, return undefined.
+      if (returnUndefinedOnExhaustion) {
+        return undefined; // Return undefined if no validated items remain
+      } else {
+        // If returnUndefinedOnExhaustion is false, proceed with the fallback mechanism to select an item from other available categories.
+        return missing[Math.floor(this._rng() * missing.length)];
       }
+    } else if (missing.length === 0 || !randomlySelectUnvalidated) {
+      return returnStimulus; // Return validated item if available
+    } else {
+      // Randomly decide whether to return a validated or unvalidated item
       const random = Math.random();
       const numRemaining = { available: available.length, missing: missing.length };
       return random < numRemaining.missing / (numRemaining.available + numRemaining.missing)
