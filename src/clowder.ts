@@ -212,7 +212,7 @@ export class Clowder {
     method,
     itemSelect,
     randomlySelectUnvalidated = false,
-    returnUndefinedOnExhaustion = false, // New parameter
+    returnUndefinedOnExhaustion = true, // New parameter
   }: {
     catToSelect: string;
     catsToUpdate?: string | string[];
@@ -299,22 +299,28 @@ export class Clowder {
     // ----------|  Select  |----------|
     //           +----------+
 
+    // We inspect the remaining items and find ones that have zeta parameters for `catToSelect`
+    const { available, missing } = filterItemsByCatParameterAvailability(this._remainingItems, catToSelect);
+
+    // Handle the 'unvalidated' cat selection
     if (catToSelect === 'unvalidated') {
-      // Assign items with no valid parameters to the 'unvalidated' cat
       const unvalidatedRemainingItems = this._remainingItems.filter(
         (stim) => !stim.zetas.some((zeta: ZetaCatMap) => zeta.cats.length > 0),
       );
 
       if (unvalidatedRemainingItems.length === 0) {
+        // If returnUndefinedOnExhaustion is false, return an item from 'missing'
+        if (!returnUndefinedOnExhaustion && missing.length > 0) {
+          const randInt = Math.floor(this._rng() * missing.length);
+          return missing[randInt];
+        }
+
         return undefined;
       } else {
         const randInt = Math.floor(this._rng() * unvalidatedRemainingItems.length);
         return unvalidatedRemainingItems[randInt];
       }
     }
-    // Now, we need to dynamically calculate the stimuli available for selection by `catToSelect`.
-    // We inspect the remaining items and find ones that have zeta parameters for `catToSelect`
-    const { available, missing } = filterItemsByCatParameterAvailability(this._remainingItems, catToSelect);
 
     // The cat expects an array of Stimulus objects, with the zeta parameters
     // spread at the top-level of each Stimulus object. So we need to convert

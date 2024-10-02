@@ -125,6 +125,36 @@ describe('Clowder Class', () => {
     expect(nextItem).toBeUndefined();
   });
 
+  it('should return an item from missing if catToSelect is "unvalidated", no unvalidated items remain, and returnUndefinedOnExhaustion is false', () => {
+    const clowderInput: ClowderInput = {
+      cats: {
+        cat1: { method: 'MLE', theta: 0.5 },
+      },
+      corpus: [
+        createMultiZetaStimulus('0', [createZetaCatMap(['cat1'])]), // Validated item
+        createMultiZetaStimulus('1', [createZetaCatMap([])]), // Unvalidated item
+      ],
+    };
+
+    const clowder = new Clowder(clowderInput);
+
+    // Exhaust the unvalidated items
+    clowder.updateCatAndGetNextItem({
+      catToSelect: 'unvalidated',
+      items: [clowder.corpus[1]],
+      answers: [1],
+    });
+
+    // Attempt to get another unvalidated item with returnUndefinedOnExhaustion set to false
+    const nextItem = clowder.updateCatAndGetNextItem({
+      catToSelect: 'unvalidated',
+      returnUndefinedOnExhaustion: false,
+    });
+
+    // Should return the validated item since no unvalidated items remain
+    expect(nextItem?.id).toBe('0');
+  });
+
   it.each`
     property
     ${'theta'}
@@ -212,27 +242,30 @@ describe('Clowder Class', () => {
     expect(nextItem?.id).toMatch(/^(0|1)$/);
   });
 
-  it('should select an unvalidated item if no validated items remain', () => {
+  it('should return an item from missing if no validated items remain and returnUndefinedOnExhaustion is false', () => {
     const clowderInput: ClowderInput = {
       cats: {
         cat1: { method: 'MLE', theta: 0.5 },
+        cat2: { method: 'EAP', theta: -1.0 },
       },
       corpus: [
-        createMultiZetaStimulus('0', [createZetaCatMap([])]),
-        createMultiZetaStimulus('1', [createZetaCatMap(['cat1'])]),
-        createMultiZetaStimulus('2', [createZetaCatMap([])]),
+        createMultiZetaStimulus('0', [createZetaCatMap(['cat2'])]), // Validated for cat2
+        createMultiZetaStimulus('1', [createZetaCatMap(['cat2'])]), // Validated for cat2
+        createMultiZetaStimulus('2', [createZetaCatMap(['cat2'])]), // Validated for cat2
       ],
     };
+
     const clowder = new Clowder(clowderInput);
 
+    // Attempt to select an item for cat1, which has no validated items in the corpus
     const nextItem = clowder.updateCatAndGetNextItem({
       catToSelect: 'cat1',
-      catsToUpdate: ['cat1'],
-      items: [clowder.corpus[1]],
-      answers: [1],
+      returnUndefinedOnExhaustion: false, // Ensure fallback is enabled
     });
+
+    // Should return an item from `missing`, which are items validated for cat2
     expect(nextItem).toBeDefined();
-    expect(['0', '2']).toContain(nextItem?.id);
+    expect(['0', '1', '2']).toContain(nextItem?.id); // Item ID should match any of the items for cat2
   });
 
   it('should select an unvalidated item if catToSelect is "unvalidated"', () => {
