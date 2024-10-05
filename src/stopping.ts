@@ -6,16 +6,29 @@ import _uniq from 'lodash/uniq';
  * Interface for input parameters to EarlyStopping classes.
  */
 export interface EarlyStoppingInput {
+  /** The logical operation to use to evaluate multiple stopping conditions */
+  logicalOperation?: 'and' | 'or' | 'AND' | 'OR';
+}
+
+export interface StopAfterNItemsInput extends EarlyStoppingInput {
+  /** Number of items to require before stopping */
+  requiredItems: CatMap<number>;
+}
+
+export interface StopOnSEMeasurementPlateauInput extends EarlyStoppingInput {
+  /** Number of items to wait for before triggering early stopping */
+  patience: CatMap<number>;
+  /** Tolerance for standard error of measurement drop */
+  tolerance?: CatMap<number>;
+}
+
+export interface StopIfSEMeasurementBelowThresholdInput extends EarlyStoppingInput {
+  /** Stop if the standard error of measurement drops below this level */
+  seMeasurementThreshold: CatMap<number>;
   /** Number of items to wait for before triggering early stopping */
   patience?: CatMap<number>;
   /** Tolerance for standard error of measurement drop */
   tolerance?: CatMap<number>;
-  /** Number of items to require before stopping */
-  requiredItems?: CatMap<number>;
-  /** Stop if the standard error of measurement drops below this level */
-  seMeasurementThreshold?: CatMap<number>;
-  /** The logical operation to use to evaluate multiple stopping conditions */
-  logicalOperation?: 'and' | 'or' | 'AND' | 'OR';
 }
 
 /**
@@ -23,57 +36,22 @@ export interface EarlyStoppingInput {
  */
 export abstract class EarlyStopping {
   protected _earlyStop: boolean;
-  protected _patience: CatMap<number>;
-  protected _tolerance: CatMap<number>;
-  protected _requiredItems: CatMap<number>;
-  protected _seMeasurementThreshold: CatMap<number>;
   protected _nItems: CatMap<number>;
   protected _seMeasurements: CatMap<number[]>;
   protected _logicalOperation: 'and' | 'or';
 
-  constructor({
-    patience = {},
-    tolerance = {},
-    requiredItems = {},
-    seMeasurementThreshold = {},
-    logicalOperation = 'or',
-  }: EarlyStoppingInput) {
-    // TODO: Add some input validation here
-    // logicalOperation.toLowerCase() should be 'and' or 'or'
-    this._patience = patience;
-    this._tolerance = tolerance;
-    this._requiredItems = requiredItems;
-    this._seMeasurementThreshold = seMeasurementThreshold;
+  constructor({ logicalOperation = 'or' }: EarlyStoppingInput) {
     this._seMeasurements = {};
     this._nItems = {};
     this._earlyStop = false;
+
+    if (!['and', 'or'].includes(logicalOperation.toLowerCase())) {
+      throw new Error(`Invalid logical operation. Expected "and" or "or". Received "${logicalOperation}"`);
+    }
     this._logicalOperation = logicalOperation.toLowerCase() as 'and' | 'or';
   }
 
-  public get evaluationCats() {
-    return _uniq([
-      ...Object.keys(this._patience),
-      ...Object.keys(this._tolerance),
-      ...Object.keys(this._requiredItems),
-      ...Object.keys(this._seMeasurementThreshold),
-    ]);
-  }
-
-  public get patience() {
-    return this._patience;
-  }
-
-  public get tolerance() {
-    return this._tolerance;
-  }
-
-  public get requiredItems() {
-    return this._requiredItems;
-  }
-
-  public get seMeasurementThreshold() {
-    return this._seMeasurementThreshold;
-  }
+  public abstract get evaluationCats(): string[];
 
   public get earlyStop() {
     return this._earlyStop;
@@ -135,6 +113,27 @@ export abstract class EarlyStopping {
  * Class implementing early stopping based on a plateau in standard error of measurement.
  */
 export class StopOnSEMeasurementPlateau extends EarlyStopping {
+  protected _patience: CatMap<number>;
+  protected _tolerance: CatMap<number>;
+
+  constructor(input: StopOnSEMeasurementPlateauInput) {
+    super(input);
+    this._patience = input.patience;
+    this._tolerance = input.tolerance ?? {};
+  }
+
+  public get evaluationCats() {
+    return _uniq([...Object.keys(this._patience), ...Object.keys(this._tolerance)]);
+  }
+
+  public get patience() {
+    return this._patience;
+  }
+
+  public get tolerance() {
+    return this._tolerance;
+  }
+
   protected _evaluateStoppingCondition(catToEvaluate: string) {
     const seMeasurements = this._seMeasurements[catToEvaluate];
 
@@ -161,9 +160,24 @@ export class StopOnSEMeasurementPlateau extends EarlyStopping {
  * Class implementing early stopping after a certain number of items.
  */
 export class StopAfterNItems extends EarlyStopping {
+  protected _requiredItems: CatMap<number>;
+
+  constructor(input: StopAfterNItemsInput) {
+    super(input);
+    this._requiredItems = input.requiredItems;
+  }
+
+  public get requiredItems() {
+    return this._requiredItems;
+  }
+
+  public get evaluationCats() {
+    return Object.keys(this._requiredItems);
+  }
+
   protected _evaluateStoppingCondition(catToEvaluate: string) {
     const requiredItems = this._requiredItems[catToEvaluate];
-    const nItems = this._nItems[catToEvaluate] ?? 0;
+    const nItems = this._nItems[catToEvaluate];
 
     let earlyStop = false;
 
@@ -179,6 +193,37 @@ export class StopAfterNItems extends EarlyStopping {
  * Class implementing early stopping if the standard error of measurement drops below a certain threshold.
  */
 export class StopIfSEMeasurementBelowThreshold extends EarlyStopping {
+  protected _patience: CatMap<number>;
+  protected _tolerance: CatMap<number>;
+  protected _seMeasurementThreshold: CatMap<number>;
+
+  constructor(input: StopIfSEMeasurementBelowThresholdInput) {
+    super(input);
+    this._seMeasurementThreshold = input.seMeasurementThreshold;
+    this._patience = input.patience ?? {};
+    this._tolerance = input.tolerance ?? {};
+  }
+
+  public get patience() {
+    return this._patience;
+  }
+
+  public get tolerance() {
+    return this._tolerance;
+  }
+
+  public get seMeasurementThreshold() {
+    return this._seMeasurementThreshold;
+  }
+
+  public get evaluationCats() {
+    return _uniq([
+      ...Object.keys(this._patience),
+      ...Object.keys(this._tolerance),
+      ...Object.keys(this._seMeasurementThreshold),
+    ]);
+  }
+
   protected _evaluateStoppingCondition(catToEvaluate: string) {
     const seMeasurements = this._seMeasurements[catToEvaluate] ?? [];
     const seThreshold = this._seMeasurementThreshold[catToEvaluate] ?? 0;

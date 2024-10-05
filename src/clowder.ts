@@ -212,7 +212,7 @@ export class Clowder {
     method,
     itemSelect,
     randomlySelectUnvalidated = false,
-    returnUndefinedOnExhaustion = true, // New parameter
+    returnUndefinedOnExhaustion = true,
   }: {
     catToSelect: string;
     catsToUpdate?: string | string[];

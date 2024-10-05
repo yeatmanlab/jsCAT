@@ -133,6 +133,7 @@ describe('Clowder Class', () => {
       corpus: [
         createMultiZetaStimulus('0', [createZetaCatMap(['cat1'])]), // Validated item
         createMultiZetaStimulus('1', [createZetaCatMap([])]), // Unvalidated item
+        createMultiZetaStimulus('2', [createZetaCatMap(['cat1'])]), // Unvalidated item
       ],
     };
 
@@ -145,14 +146,19 @@ describe('Clowder Class', () => {
       answers: [1],
     });
 
-    // Attempt to get another unvalidated item with returnUndefinedOnExhaustion set to false
-    const nextItem = clowder.updateCatAndGetNextItem({
-      catToSelect: 'unvalidated',
-      returnUndefinedOnExhaustion: false,
-    });
+    const nDraws = 50;
+    // Simulate sDraws unvalidated items being selected
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    for (const _ of Array(nDraws).fill(0)) {
+      // Attempt to get another unvalidated item with returnUndefinedOnExhaustion set to false
+      const nextItem = clowder.updateCatAndGetNextItem({
+        catToSelect: 'unvalidated',
+        returnUndefinedOnExhaustion: false,
+      });
 
-    // Should return the validated item since no unvalidated items remain
-    expect(nextItem?.id).toBe('0');
+      // Should return a validated item since no unvalidated items remain
+      expect(['0', '2']).toContain(nextItem?.id); // Item ID should match any of the items for cat2
+    }
   });
 
   it.each`
@@ -251,21 +257,24 @@ describe('Clowder Class', () => {
       corpus: [
         createMultiZetaStimulus('0', [createZetaCatMap(['cat2'])]), // Validated for cat2
         createMultiZetaStimulus('1', [createZetaCatMap(['cat2'])]), // Validated for cat2
-        createMultiZetaStimulus('2', [createZetaCatMap(['cat2'])]), // Validated for cat2
+        createMultiZetaStimulus('2', [createZetaCatMap([])]), // Unvalidated
       ],
     };
 
     const clowder = new Clowder(clowderInput);
 
-    // Attempt to select an item for cat1, which has no validated items in the corpus
-    const nextItem = clowder.updateCatAndGetNextItem({
-      catToSelect: 'cat1',
-      returnUndefinedOnExhaustion: false, // Ensure fallback is enabled
-    });
-
-    // Should return an item from `missing`, which are items validated for cat2
-    expect(nextItem).toBeDefined();
-    expect(['0', '1', '2']).toContain(nextItem?.id); // Item ID should match any of the items for cat2
+    // Should return an item from `missing`, which are items validated for cat2 or unvalidated
+    const nDraws = 50;
+    // Simulate sDraws unvalidated items being selected
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    for (const _ of Array(nDraws).fill(0)) {
+      // Attempt to select an item for cat1, which has no validated items in the corpus
+      const nextItem = clowder.updateCatAndGetNextItem({
+        catToSelect: 'cat1',
+        returnUndefinedOnExhaustion: false, // Ensure fallback is enabled
+      });
+      expect(['0', '1', '2']).toContain(nextItem?.id); // Item ID should match any of the items for cat2
+    }
   });
 
   it('should select an unvalidated item if catToSelect is "unvalidated"', () => {

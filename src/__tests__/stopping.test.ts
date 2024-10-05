@@ -2,19 +2,49 @@ import { Cat } from '..';
 import { CatMap } from '../type';
 import {
   EarlyStopping,
-  EarlyStoppingInput,
   StopAfterNItems,
+  StopAfterNItemsInput,
   StopIfSEMeasurementBelowThreshold,
+  StopIfSEMeasurementBelowThresholdInput,
   StopOnSEMeasurementPlateau,
+  StopOnSEMeasurementPlateauInput,
 } from '../stopping';
 import { toBeBoolean } from 'jest-extended';
 expect.extend({ toBeBoolean });
 
-const testInstantiation = (earlyStopping: EarlyStopping, input: EarlyStoppingInput) => {
-  expect(earlyStopping.patience).toEqual(input.patience ?? {});
-  expect(earlyStopping.tolerance).toEqual(input.tolerance ?? {});
-  expect(earlyStopping.requiredItems).toEqual(input.requiredItems ?? {});
-  expect(earlyStopping.seMeasurementThreshold).toEqual(input.seMeasurementThreshold ?? {});
+type Class<T> = new (...args: any[]) => T;
+
+const testLogicalOperationValidation = (
+  stoppingClass: Class<StopAfterNItems | StopIfSEMeasurementBelowThreshold | StopOnSEMeasurementPlateau>,
+  input: StopAfterNItemsInput | StopIfSEMeasurementBelowThresholdInput | StopOnSEMeasurementPlateauInput,
+) => {
+  expect(() => new stoppingClass(input)).toThrowError(
+    `Invalid logical operation. Expected "and" or "or". Received "${input.logicalOperation}"`,
+  );
+};
+
+const testInstantiation = (
+  earlyStopping: EarlyStopping,
+  input: StopAfterNItemsInput | StopIfSEMeasurementBelowThresholdInput | StopOnSEMeasurementPlateauInput,
+) => {
+  if (earlyStopping instanceof StopAfterNItems) {
+    expect(earlyStopping.requiredItems).toEqual((input as StopAfterNItems).requiredItems ?? {});
+  }
+
+  if (
+    earlyStopping instanceof StopOnSEMeasurementPlateau ||
+    earlyStopping instanceof StopIfSEMeasurementBelowThreshold
+  ) {
+    expect(earlyStopping.patience).toEqual((input as StopOnSEMeasurementPlateauInput).patience ?? {});
+    expect(earlyStopping.tolerance).toEqual((input as StopOnSEMeasurementPlateauInput).tolerance ?? {});
+  }
+
+  if (earlyStopping instanceof StopIfSEMeasurementBelowThreshold) {
+    expect(earlyStopping.seMeasurementThreshold).toEqual(
+      (input as StopIfSEMeasurementBelowThresholdInput).seMeasurementThreshold ?? {},
+    );
+  }
+
   expect(earlyStopping.logicalOperation).toBe(input.logicalOperation?.toLowerCase() ?? 'or');
   expect(earlyStopping.earlyStop).toBeBoolean();
 };
@@ -62,7 +92,7 @@ describe.each`
   ${'or'}
 `("StopOnSEMeasurementPlateau (with logicalOperation='$logicalOperation'", ({ logicalOperation }) => {
   let earlyStopping: StopOnSEMeasurementPlateau;
-  let input: EarlyStoppingInput;
+  let input: StopOnSEMeasurementPlateauInput;
 
   beforeEach(() => {
     input = {
@@ -74,7 +104,8 @@ describe.each`
   });
 
   it('instantiates with input parameters', () => testInstantiation(earlyStopping, input));
-
+  it('validates input', () =>
+    testLogicalOperationValidation(StopOnSEMeasurementPlateau, { ...input, logicalOperation: 'invalid' as 'and' }));
   it('updates internal state when new measurements are added', () => testInternalState(earlyStopping));
 
   it('stops when the seMeasurement has plateaued', () => {
@@ -270,7 +301,7 @@ describe.each`
   ${'or'}
 `("StopAfterNItems (with logicalOperation='$logicalOperation'", ({ logicalOperation }) => {
   let earlyStopping: StopAfterNItems;
-  let input: EarlyStoppingInput;
+  let input: StopAfterNItemsInput;
 
   beforeEach(() => {
     input = {
@@ -281,7 +312,8 @@ describe.each`
   });
 
   it('instantiates with input parameters', () => testInstantiation(earlyStopping, input));
-
+  it('validates input', () =>
+    testLogicalOperationValidation(StopAfterNItems, { ...input, logicalOperation: 'invalid' as 'and' }));
   it('updates internal state when new measurements are added', () => testInternalState(earlyStopping));
 
   it('does not step when it has not seen required items', () => {
@@ -424,7 +456,7 @@ describe.each`
   ${'or'}
 `("StopIfSEMeasurementBelowThreshold (with logicalOperation='$logicalOperation'", ({ logicalOperation }) => {
   let earlyStopping: StopIfSEMeasurementBelowThreshold;
-  let input: EarlyStoppingInput;
+  let input: StopIfSEMeasurementBelowThresholdInput;
 
   beforeEach(() => {
     input = {
@@ -437,7 +469,11 @@ describe.each`
   });
 
   it('instantiates with input parameters', () => testInstantiation(earlyStopping, input));
-
+  it('validates input', () =>
+    testLogicalOperationValidation(StopIfSEMeasurementBelowThreshold, {
+      ...input,
+      logicalOperation: 'invalid' as 'and',
+    }));
   it('updates internal state when new measurements are added', () => testInternalState(earlyStopping));
 
   it('stops when the seMeasurement has fallen below a threshold', () => {
