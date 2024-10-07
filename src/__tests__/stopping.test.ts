@@ -12,6 +12,7 @@ import {
 import { toBeBoolean } from 'jest-extended';
 expect.extend({ toBeBoolean });
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 type Class<T> = new (...args: any[]) => T;
 
 const testLogicalOperationValidation = (
