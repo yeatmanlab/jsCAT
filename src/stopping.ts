@@ -38,17 +38,17 @@ export abstract class EarlyStopping {
   protected _earlyStop: boolean;
   protected _nItems: CatMap<number>;
   protected _seMeasurements: CatMap<number[]>;
-  protected _logicalOperation: 'and' | 'or';
+  protected _logicalOperation: 'and' | 'or' | 'only';
 
   constructor({ logicalOperation = 'or' }: EarlyStoppingInput) {
     this._seMeasurements = {};
     this._nItems = {};
     this._earlyStop = false;
 
-    if (!['and', 'or'].includes(logicalOperation.toLowerCase())) {
-      throw new Error(`Invalid logical operation. Expected "and" or "or". Received "${logicalOperation}"`);
+    if (!['and', 'or', 'only'].includes(logicalOperation.toLowerCase())) {
+      throw new Error(`Invalid logical operation. Expected "and", "or", or "only". Received "${logicalOperation}"`);
     }
-    this._logicalOperation = logicalOperation.toLowerCase() as 'and' | 'or';
+    this._logicalOperation = logicalOperation.toLowerCase() as 'and' | 'or' | 'only';
   }
 
   public abstract get evaluationCats(): string[];
@@ -96,15 +96,39 @@ export abstract class EarlyStopping {
    * Abstract method to be implemented by subclasses to update the early stopping strategy.
    * @param {CatMap<Cat>} cats - A map of cats to update.
    */
-  public update(cats: CatMap<Cat>): void {
-    this._updateCats(cats);
+  public update(cats: CatMap<Cat>, catToSelect?: string): void {
+    this._updateCats(cats); // This updates internal state with current cat data
 
+    // Iterate over each cat and update the _nItems map
+    for (const catName in cats) {
+      const cat = cats[catName];
+      const nItems = cat.nItems; // Get the current number of items for this cat
+
+      // Update the _nItems map with the current nItems value
+      if (nItems !== undefined) {
+        this._nItems[catName] = nItems; // Make sure nItems is set for this cat
+      }
+    }
+
+    // Collect the stopping conditions for all cats
     const conditions: boolean[] = this.evaluationCats.map((catName) => this._evaluateStoppingCondition(catName));
 
+    // Evaluate the stopping condition based on the logical operation
     if (this._logicalOperation === 'and') {
-      this._earlyStop = conditions.every(Boolean);
-    } else {
-      this._earlyStop = conditions.some(Boolean);
+      this._earlyStop = conditions.every(Boolean); // All conditions must be true for 'and'
+    } else if (this._logicalOperation === 'or') {
+      this._earlyStop = conditions.some(Boolean); // Any condition can be true for 'or'
+    } else if (this._logicalOperation === 'only') {
+      if (catToSelect === undefined) {
+        throw new Error('Must provide a cat to select for "only" stopping condition');
+      }
+
+      // Evaluate the stopping condition for the selected cat
+      if (this.evaluationCats.includes(catToSelect)) {
+        this._earlyStop = this._evaluateStoppingCondition(catToSelect);
+      } else {
+        this._earlyStop = false; // Default to false if the selected cat is not in evaluationCats
+      }
     }
   }
 }

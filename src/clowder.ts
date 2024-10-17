@@ -257,33 +257,35 @@ export class Clowder {
     const itemsAndAnswers = _zip(items, answers) as [Stimulus, 0 | 1][];
 
     // Update the ability estimate for all validated cats
-    for (const catName of catsToUpdate) {
-      const itemsAndAnswersForCat = itemsAndAnswers.filter(([stim]) =>
-        // We are dealing with a single item in this function.  This single item
-        // has an array of zeta parameters for a bunch of different Cats.  We
-        // need to determine if `catName` is present in that list.  So we first
-        // reduce the zetas to get all of the applicabe cat names.
-        // Now that we have the subset of items that can apply to this cat,
-        // retrieve only the item parameters that apply to this cat.
-        stim.zetas.some((zeta: ZetaCatMap) => zeta.cats.includes(catName)),
-      );
+    if (catsToUpdate.includes(catToSelect)) {
+      for (const catName of catsToUpdate) {
+        const itemsAndAnswersForCat = itemsAndAnswers?.filter(([stim]) =>
+          // We are dealing with a single item in this function.  This single item
+          // has an array of zeta parameters for a bunch of different Cats.  We
+          // need to determine if `catName` is present in that list.  So we first
+          // reduce the zetas to get all of the applicabe cat names.
+          // Now that we have the subset of items that can apply to this cat,
+          // retrieve only the item parameters that apply to this cat.
+          stim.zetas.some((zeta: ZetaCatMap) => zeta.cats.includes(catName)),
+        );
 
-      if (itemsAndAnswersForCat.length > 0) {
-        const zetasAndAnswersForCat = itemsAndAnswersForCat
-          .map(([stim, _answer]) => {
-            const zetaForCat: ZetaCatMap | undefined = stim.zetas.find((zeta: ZetaCatMap) =>
-              zeta.cats.includes(catName),
-            );
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            return [zetaForCat!.zeta, _answer]; // Optional chaining in case zetaForCat is undefined
-          })
-          .filter(([zeta]) => zeta !== undefined); // Filter out undefined zeta values
+        if (itemsAndAnswersForCat.length > 0) {
+          const zetasAndAnswersForCat = itemsAndAnswersForCat
+            .map(([stim, _answer]) => {
+              const zetaForCat: ZetaCatMap | undefined = stim.zetas.find((zeta: ZetaCatMap) =>
+                zeta.cats.includes(catName),
+              );
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              return [zetaForCat!.zeta, _answer]; // Optional chaining in case zetaForCat is undefined
+            })
+            .filter(([zeta]) => zeta !== undefined); // Filter out undefined zeta values
 
-        // Unzip the zetas and answers, making sure the zetas array contains only Zeta types
-        const [zetas, answers] = _unzip(zetasAndAnswersForCat) as [Zeta[], (0 | 1)[]];
+          // Unzip the zetas and answers, making sure the zetas array contains only Zeta types
+          const [zetas, answers] = _unzip(zetasAndAnswersForCat) as [Zeta[], (0 | 1)[]];
 
-        // Now, pass the filtered zetas and answers to the cat's updateAbilityEstimate method
-        this.cats[catName].updateAbilityEstimate(zetas, answers, method);
+          // Now call updateAbilityEstimates for this cat
+          this.updateAbilityEstimates([catName], zetas, answers, method);
+        }
       }
     }
 
