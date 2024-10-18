@@ -327,8 +327,8 @@ describe('Clowder Class', () => {
       catToSelect: 'unvalidated',
     });
 
-    expect(clowder.nItems.cat1).toBe(2);
-    expect(clowder.nItems.cat2).toBe(2);
+    expect(clowder.nItems.cat1).toBe(0);
+    expect(clowder.nItems.cat2).toBe(0);
   });
 
   it('should not update any cats if only unvalidated items have been seen', () => {

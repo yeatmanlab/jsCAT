@@ -7,7 +7,7 @@ import _uniq from 'lodash/uniq';
  */
 export interface EarlyStoppingInput {
   /** The logical operation to use to evaluate multiple stopping conditions */
-  logicalOperation?: 'and' | 'or' | 'AND' | 'OR';
+  logicalOperation?: 'and' | 'or' | 'only' | 'AND' | 'OR' | 'ONLY';
 }
 
 export interface StopAfterNItemsInput extends EarlyStoppingInput {
@@ -167,7 +167,7 @@ export class StopOnSEMeasurementPlateau extends EarlyStopping {
 
     let earlyStop = false;
 
-    if (seMeasurements.length >= patience) {
+    if (seMeasurements?.length >= patience) {
       const mean = seMeasurements.slice(-patience).reduce((sum, se) => sum + se, 0) / patience;
       const withinTolerance = seMeasurements.slice(-patience).every((se) => Math.abs(se - mean) <= tolerance);
 

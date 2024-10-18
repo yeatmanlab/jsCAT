@@ -259,7 +259,7 @@ export class Clowder {
     // Update the ability estimate for all validated cats
     if (catsToUpdate.includes(catToSelect)) {
       for (const catName of catsToUpdate) {
-        const itemsAndAnswersForCat = itemsAndAnswers?.filter(([stim]) =>
+        const itemsAndAnswersForCat = itemsAndAnswers.filter(([stim]) =>
           // We are dealing with a single item in this function.  This single item
           // has an array of zeta parameters for a bunch of different Cats.  We
           // need to determine if `catName` is present in that list.  So we first
