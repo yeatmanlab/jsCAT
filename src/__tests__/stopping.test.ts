@@ -1,12 +1,9 @@
 import { Cat } from '..';
 import { CatMap } from '../type';
+import { EarlyStopping, StopAfterNItems, StopIfSEMeasurementBelowThreshold, StopOnSEMeasurementPlateau } from '../';
 import {
-  EarlyStopping,
-  StopAfterNItems,
   StopAfterNItemsInput,
-  StopIfSEMeasurementBelowThreshold,
   StopIfSEMeasurementBelowThresholdInput,
-  StopOnSEMeasurementPlateau,
   StopOnSEMeasurementPlateauInput,
 } from '../stopping';
 import { toBeBoolean } from 'jest-extended';
@@ -469,20 +466,6 @@ describe('EarlyStopping with logicalOperation "only"', () => {
       earlyStopping.update({ cat1: { nItems: 1, seMeasurement: 0.5 } as any }, undefined);
     }).toThrowError('Must provide a cat to select for "only" stopping condition');
   });
-});
-
-describe('EarlyStopping with logicalOperation "only"', () => {
-  let earlyStopping: StopOnSEMeasurementPlateau;
-  let input: StopOnSEMeasurementPlateauInput;
-
-  beforeEach(() => {
-    input = {
-      patience: { cat1: 2, cat2: 3 },
-      tolerance: { cat1: 0.01, cat2: 0.02 },
-      logicalOperation: 'only',
-    };
-    earlyStopping = new StopOnSEMeasurementPlateau(input);
-  });
 
   it('evaluates the stopping condition when catToSelect is in evaluationCats', () => {
     // Add updates to make sure cat1 is included in evaluationCats and has some measurements
@@ -492,20 +475,6 @@ describe('EarlyStopping with logicalOperation "only"', () => {
     // Since 'cat1' is in evaluationCats, _earlyStop should be evaluated based on the stopping condition
     expect(earlyStopping.earlyStop).toBe(true); // Should be true because seMeasurement has plateaued
   });
-});
-describe('EarlyStopping with logicalOperation "only"', () => {
-  let earlyStopping: StopOnSEMeasurementPlateau;
-  let input: StopOnSEMeasurementPlateauInput;
-
-  beforeEach(() => {
-    input = {
-      patience: { cat1: 2, cat2: 3 },
-      tolerance: { cat1: 0.01, cat2: 0.02 },
-      logicalOperation: 'only',
-    };
-    earlyStopping = new StopOnSEMeasurementPlateau(input);
-  });
-
   it('sets _earlyStop to false when catToSelect is not in evaluationCats', () => {
     // Use 'cat3', which is not in the patience or tolerance maps (and thus not in evaluationCats)
     earlyStopping.update({ cat3: { nItems: 1, seMeasurement: 0.5 } as any }, 'cat3');
