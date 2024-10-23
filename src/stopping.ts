@@ -99,17 +99,6 @@ export abstract class EarlyStopping {
   public update(cats: CatMap<Cat>, catToSelect?: string): void {
     this._updateCats(cats); // This updates internal state with current cat data
 
-    // Iterate over each cat and update the _nItems map
-    for (const catName in cats) {
-      const cat = cats[catName];
-      const nItems = cat.nItems; // Get the current number of items for this cat
-
-      // Update the _nItems map with the current nItems value
-      if (nItems !== undefined) {
-        this._nItems[catName] = nItems; // Make sure nItems is set for this cat
-      }
-    }
-
     // Collect the stopping conditions for all cats
     const conditions: boolean[] = this.evaluationCats.map((catName) => this._evaluateStoppingCondition(catName));
 
