@@ -287,12 +287,12 @@ export class Clowder {
           this.updateAbilityEstimates([catName], zetas, answers, method);
         }
       }
-    }
 
-    if (this._earlyStopping) {
-      this._earlyStopping.update(this.cats);
-      if (this._earlyStopping.earlyStop) {
-        return undefined;
+      if (this._earlyStopping) {
+        this._earlyStopping.update(this.cats, catToSelect);
+        if (this._earlyStopping.earlyStop) {
+          return undefined;
+        }
       }
     }
 
