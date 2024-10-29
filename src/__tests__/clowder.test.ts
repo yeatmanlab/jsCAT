@@ -536,6 +536,7 @@ describe('Clowder Early Stopping', () => {
 
     expect(clowder.earlyStopping?.earlyStop).toBe(true); // Early stop should be triggered after 2 items
     expect(nextItem).toBe(undefined); // No further items should be selected
+    expect(clowder.stoppingReason).toBe('Early stopping');
   });
 
   it('should handle StopIfSEMeasurementBelowThreshold condition', () => {

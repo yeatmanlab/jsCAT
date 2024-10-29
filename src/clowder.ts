@@ -46,6 +46,7 @@ export class Clowder {
   private _seenItems: Stimulus[];
   private _earlyStopping?: EarlyStopping;
   private readonly _rng: ReturnType<seedrandom>;
+  private _stoppingReason: string | null;
 
   /**
    * Create a Clowder object.
@@ -70,6 +71,7 @@ export class Clowder {
     this._remainingItems = _cloneDeep(corpus);
     this._rng = randomSeed === null ? seedrandom() : seedrandom(randomSeed);
     this._earlyStopping = earlyStopping;
+    this._stoppingReason = null;
   }
 
   /**
@@ -151,8 +153,18 @@ export class Clowder {
     return _mapValues(this.cats, (cat) => cat.zetas);
   }
 
+  /**
+   * The early stopping condition in the Clowder configuration.
+   */
   public get earlyStopping() {
     return this._earlyStopping;
+  }
+
+  /**
+   * The stopping reason in the Clowder configuration.
+   */
+  public get stoppingReason() {
+    return this._stoppingReason;
   }
 
   /**
@@ -290,6 +302,7 @@ export class Clowder {
     if (this._earlyStopping) {
       this._earlyStopping.update(this.cats, catToSelect);
       if (this._earlyStopping.earlyStop) {
+        this._stoppingReason = 'Early stopping';
         return undefined;
       }
     }
@@ -314,7 +327,7 @@ export class Clowder {
           const randInt = Math.floor(this._rng() * missing.length);
           return missing[randInt];
         }
-
+        this._stoppingReason = 'No unvalidated items remaining';
         return undefined;
       } else {
         const randInt = Math.floor(this._rng() * unvalidatedRemainingItems.length);
@@ -357,6 +370,7 @@ export class Clowder {
     if (available.length === 0) {
       // If returnUndefinedOnExhaustion is true and no validated items remain for the specified catToSelect, return undefined.
       if (returnUndefinedOnExhaustion) {
+        this._stoppingReason = 'No validated items remaining for specified catToSelect';
         return undefined; // Return undefined if no validated items remain
       } else {
         // If returnUndefinedOnExhaustion is false, proceed with the fallback mechanism to select an item from other available categories.
