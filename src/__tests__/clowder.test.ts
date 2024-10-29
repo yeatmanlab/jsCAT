@@ -121,7 +121,7 @@ describe('Clowder Class', () => {
       catToSelect: 'cat1',
       returnUndefinedOnExhaustion: true,
     });
-
+    expect(clowder.stoppingReason).toBe('No validated items remaining for specified catToSelect');
     expect(nextItem).toBeUndefined();
   });
 
@@ -377,7 +377,7 @@ describe('Clowder Class', () => {
       answers: [1, 1],
       catToSelect: 'unvalidated',
     });
-
+    expect(clowder.stoppingReason).toBe('No unvalidated items remaining');
     expect(nextItem).toBeUndefined();
   });
 
@@ -483,6 +483,7 @@ describe('Clowder Class', () => {
     });
 
     expect(clowder.earlyStopping?.earlyStop).toBe(true); // Should stop after 2 items
+    expect(clowder.stoppingReason).toBe('Early stopping');
     expect(nextItem).toBe(undefined); // Expect undefined after early stopping
   });
 });
@@ -576,6 +577,7 @@ describe('Clowder Early Stopping', () => {
 
       if (item.id === '3') {
         expect(clowder.earlyStopping?.earlyStop).toBe(true); // Should stop after SE drops below threshold
+        expect(clowder.stoppingReason).toBe('Early stopping');
         expect(nextItem).toBe(undefined); // No further items should be selected
       } else {
         expect(clowder.earlyStopping?.earlyStop).toBe(false);
