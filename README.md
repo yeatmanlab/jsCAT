@@ -26,6 +26,14 @@ const currentPrior = normal();
 // create a Cat object 
 const cat = new CAT({method: 'MLE', itemSelect: 'MFI', nStartItems: 0, theta: 0, minTheta: -6, maxTheta: 6, prior: currentPrior})
 
+// option 1 to input stimuli:
+const zeta = {[{discrimination: 1, difficulty: 0, guessing: 0, slipping: 1}, {discrimination: 1, difficulty: 0.5, guessing: 0, slipping: 1}]}
+
+// option 2 to input stimuli:
+const zeta = {[{a: 1, b: 0, c: 0, d: 1}, {a: 1, b: 0.5, c: 0, d: 1}]}
+
+const answer = {[1, 0]}
+
 // update the abilitiy estimate by adding test items 
 cat.updateAbilityEstimate(zeta, answer);
 
@@ -37,7 +45,7 @@ const numItems = cat.nItems;
 
 // find the next available item from an input array of stimuli based on a selection method
 
-const stimuli = [{difficulty: -3, item: 'item1'}, {difficulty: -2,  item: 'item2'}];
+const stimuli = [{  discrimination: 1, difficulty: -2, guessing: 0, slipping: 1, item = "item1" },{ discrimination: 1, difficulty: 3, guessing: 0, slipping: 1, item = "item2" }];
 
 const nextItem = cat.findNextItem(stimuli, 'MFI');
 ```
