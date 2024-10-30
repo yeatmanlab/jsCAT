@@ -37,18 +37,16 @@ export class Cat {
 
   /**
    * Create a Cat object. This expects an single object parameter with the following keys
-   * @param {{method: string, itemSelect: string, nStartItems: number, startSelect:string, theta: number, minTheta: number, maxTheta: number, prior: number[][]}=} destructuredParam
-   *     method: ability estimator, e.g. MLE or EAP, default = 'MLE'
-   *     itemSelect: the method of item selection, e.g. "MFI", "random", "closest", default method = 'MFI'
-   *     nStartItems: first n trials to keep non-adaptive selection
-   *     startSelect: rule to select first n trials
-   *     theta: initial theta estimate
-   *     minTheta: lower bound of theta
-   *     maxTheta: higher bound of theta
-   *     prior:  the prior distribution
-   *     randomSeed: set a random seed to trace the simulation
+   * @param {string} [method='MLE'] - ability estimator, e.g. MLE or EAP
+   * @param {string} [itemSelect='MFI'] - the method of item selection, e.g. "MFI", "random", "closest"
+   * @param {number} [nStartItems=0] - the first N trials that will use non-adaptive selection
+   * @param {string} [startSelect='middle'] - the non-adaptive selection rule to select first N trials
+   * @param {number} [theta=0] - initial theta estimate
+   * @param {number} [minTheta=-6] - lower bound of theta
+   * @param {number} [maxTheta=6] - upper bound of theta
+   * @param {number[][]} [prior=abilityPrior] - prior distribution of ability estimates
+   * @param {number | null} [randomSeed=null] - optional random seed for reproducibility
    */
-
   constructor({
     method = 'MLE',
     itemSelect = 'MFI',

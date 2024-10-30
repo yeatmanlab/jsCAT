@@ -51,9 +51,10 @@ export class Clowder {
   /**
    * Create a Clowder object.
    *
-   * @param {ClowderInput} input - An object containing arrays of Cat configurations and corpora.
-   * @param {CatMap<CatInput>} input.cats - An object containing Cat configurations for each Cat instance.
-   * @param {MultiZetaStimulus[]} input.corpus - An array of stimuli representing each corpus.
+   * @param {CatMap<CatInput>} cats - An object containing Cat configurations for each Cat instance.
+   * @param {MultiZetaStimulus[]} corpus - An array of stimuli representing each corpus.
+   * @param {string | null} randomSeed - A random seed for reproducibility. If not provided, a random seed will be generated.
+   * @param {EarlyStopping} earlyStopping - An optional EarlyStopping instance to use for early stopping.
    *
    * @throws {Error} - Throws an error if any item in the corpus has duplicated IRT parameters for any Cat name.
    */
@@ -191,14 +192,13 @@ export class Clowder {
    * This function processes previous items and answers, updates internal state, and selects the next stimulus
    * based on the remaining stimuli and `catToSelect`.
    *
-   * @param {Object} input - The parameters for updating the Cat instance and selecting the next stimulus.
-   * @param {string} input.catToSelect - The Cat instance to use for selecting the next stimulus.
-   * @param {string | string[]} [input.catsToUpdate=[]] - A single Cat or array of Cats for which to update ability estimates.
-   * @param {Stimulus[]} [input.items=[]] - An array of previously presented stimuli.
-   * @param {(0 | 1) | (0 | 1)[]} [input.answers=[]] - An array of answers (0 or 1) corresponding to `items`.
-   * @param {string} [input.method] - Optional method for updating ability estimates (if applicable).
-   * @param {string} [input.itemSelect] - Optional item selection method (if applicable).
-   * @param {boolean} [input.randomlySelectUnvalidated=false] - Optional flag indicating whether to randomly select an unvalidated item for `catToSelect`.
+   * @param {string} catToSelect - The Cat instance to use for selecting the next stimulus.
+   * @param {string | string[]} [catsToUpdate=[]] - A single Cat or array of Cats for which to update ability estimates.
+   * @param {Stimulus[]} [items=[]] - An array of previously presented stimuli.
+   * @param {(0 | 1) | (0 | 1)[]} [answers=[]] - An array of answers (0 or 1) corresponding to `items`.
+   * @param {string} [method] - Optional method for updating ability estimates (if applicable).
+   * @param {string} [itemSelect] - Optional item selection method (if applicable).
+   * @param {boolean} [randomlySelectUnvalidated=false] - Optional flag indicating whether to randomly select an unvalidated item for `catToSelect`.
    *
    * @returns {Stimulus | undefined} - The next stimulus to present, or `undefined` if no further validated stimuli are available.
    *
