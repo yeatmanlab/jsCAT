@@ -1,0 +1,8 @@
+{
+  "entryPointStrategy": "expand",
+  "entryPoints": ["./src/index.ts"], // the main TypeScript entry file
+  "exclude": ["**/*+(spec|test).+(ts|js)", "**/__tests__/**/*.+(ts|js)"],
+  "out": "./website/docs/api", // output directory within `docs/`
+  "plugin": ["typedoc-plugin-markdown"],
+  "tsconfig": "./tsconfig.json"
+}

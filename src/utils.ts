@@ -1,35 +1,43 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import bs from 'binary-search';
-import { Stimulus, Zeta } from './type';
+import { Stimulus, Zeta, ZetaSymbolic } from './type';
+import { fillZetaDefaults } from './corpus';
 
 /**
- * calculates the probability that someone with a given ability level theta will answer correctly an item. Uses the 4 parameters logistic model
- * @param theta - ability estimate
- * @param zeta - item params
+ * Calculates the probability that someone with a given ability level theta will
+ * answer correctly an item. Uses the 4 parameters logistic model
+ *
+ * @param {number} theta - ability estimate
+ * @param {Zeta} zeta - item params
  * @returns {number} the probability
  */
 export const itemResponseFunction = (theta: number, zeta: Zeta) => {
-  return zeta.c + (zeta.d - zeta.c) / (1 + Math.exp(-zeta.a * (theta - zeta.b)));
+  const _zeta = fillZetaDefaults(zeta, 'symbolic') as ZetaSymbolic;
+  return _zeta.c + (_zeta.d - _zeta.c) / (1 + Math.exp(-_zeta.a * (theta - _zeta.b)));
 };
 
 /**
- * a 3PL Fisher information function
- * @param theta - ability estimate
- * @param zeta - item params
+ * A 3PL Fisher information function
+ *
+ * @param {number} theta - ability estimate
+ * @param {Zeta} zeta - item params
  * @returns {number} - the expected value of the observed information
  */
 export const fisherInformation = (theta: number, zeta: Zeta) => {
-  const p = itemResponseFunction(theta, zeta);
+  const _zeta = fillZetaDefaults(zeta, 'symbolic') as ZetaSymbolic;
+  const p = itemResponseFunction(theta, _zeta);
   const q = 1 - p;
-  return Math.pow(zeta.a, 2) * (q / p) * (Math.pow(p - zeta.c, 2) / Math.pow(1 - zeta.c, 2));
+  return Math.pow(_zeta.a, 2) * (q / p) * (Math.pow(p - _zeta.c, 2) / Math.pow(1 - _zeta.c, 2));
 };
 
 /**
- * return a Gaussian distribution within a given range
- * @param mean
- * @param stdDev
- * @param min
- * @param max
- * @param stepSize - the quantization (step size) of the internal table, default = 0.1
+ * Return a Gaussian distribution within a given range
+ *
+ * @param {number} mean
+ * @param {number} stdDev
+ * @param {number} min
+ * @param {number} max
+ * @param {number} stepSize - the quantization (step size) of the internal table, default = 0.1
  * @returns {Array<[number, number]>} - a normal distribution
  */
 export const normal = (mean = 0, stdDev = 1, min = -4, max = 4, stepSize = 0.1) => {
@@ -45,27 +53,28 @@ export const normal = (mean = 0, stdDev = 1, min = -4, max = 4, stepSize = 0.1) 
 };
 
 /**
- * find the item in a given array that has the difficulty closest to the target value
+ * Find the item in a given array that has the difficulty closest to the target value
  *
  * @remarks
  * The input array of stimuli must be sorted by difficulty.
  *
- * @param arr Array<Stimulus> - an array of stimuli sorted by difficulty
- * @param target number - ability estimate
- * @returns {number} the index of arr
+ * @param {Stimulus[]} inputStimuli - an array of stimuli sorted by difficulty
+ * @param {number} target - ability estimate
+ * @returns {number} the index of stimuli
  */
-export const findClosest = (arr: Array<Stimulus>, target: number) => {
+export const findClosest = (inputStimuli: Array<Stimulus>, target: number) => {
+  const stimuli = inputStimuli.map((stim) => fillZetaDefaults(stim, 'semantic'));
   // Let's consider the edge cases first
-  if (target <= arr[0].difficulty) {
+  if (target <= stimuli[0].difficulty!) {
     return 0;
-  } else if (target >= arr[arr.length - 1].difficulty) {
-    return arr.length - 1;
+  } else if (target >= stimuli[stimuli.length - 1].difficulty!) {
+    return stimuli.length - 1;
   }
 
   const comparitor = (element: Stimulus, needle: number) => {
-    return element.difficulty - needle;
+    return element.difficulty! - needle;
   };
-  const indexOfTarget = bs(arr, target, comparitor);
+  const indexOfTarget = bs(stimuli, target, comparitor);
 
   if (indexOfTarget >= 0) {
     // `bs` returns a positive integer index if it found an exact match.
@@ -79,8 +88,8 @@ export const findClosest = (arr: Array<Stimulus>, target: number) => {
 
     // So we simply compare the differences between the target and the high and
     // low values, respectively
-    const lowDiff = Math.abs(arr[lowIndex].difficulty - target);
-    const highDiff = Math.abs(arr[highIndex].difficulty - target);
+    const lowDiff = Math.abs(stimuli[lowIndex].difficulty! - target);
+    const highDiff = Math.abs(stimuli[highIndex].difficulty! - target);
 
     if (lowDiff < highDiff) {
       return lowIndex;

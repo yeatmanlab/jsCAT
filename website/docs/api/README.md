@@ -1,3 +1,7 @@
+**@bdelab/jscat** • [**Docs**](globals.md)
+
+***
+
 [![Test and lint](https://github.com/yeatmanlab/jsCAT/actions/workflows/ci.yml/badge.svg)](https://github.com/yeatmanlab/jsCAT/actions/workflows/ci.yml)
 [![Coverage Status](https://coveralls.io/repos/github/yeatmanlab/jsCAT/badge.svg?branch=main)](https://coveralls.io/github/yeatmanlab/jsCAT?branch=main)
 [![npm version](https://badge.fury.io/js/@bdelab%2Fjscat.svg)](https://badge.fury.io/js/@bdelab%2Fjscat)
@@ -71,18 +75,17 @@ You can mix and match these criteria with different logical operations, giving y
 
 If you need more details or a specific example documented, feel free to ask!
 
-
 ## Validation
 
 ### Validation of theta estimate and theta standard error
 
 Reference software: mirt (Chalmers, 2012)
-![img.png](validation/plots/jsCAT_validation_1.png)
+![img.png](_media/jsCAT_validation_1.png)
 
 ### Validation of MFI algorithm 
 
 Reference software: catR (Magis et al., 2017)
-![img_1.png](validation/plots/jsCAT_validation_2.png)
+![img_1.png](_media/jsCAT_validation_2.png)
 
 ## References
 
@@ -94,4 +97,4 @@ Reference software: catR (Magis et al., 2017)
 
 ## License
 
-jsCAT is distributed under the [ISC license](LICENSE).
+jsCAT is distributed under the [ISC license](_media/LICENSE).

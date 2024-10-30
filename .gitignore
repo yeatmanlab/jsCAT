@@ -180,8 +180,5 @@ firebase.json
 firestore.rules
 firestore.indexes.json
 
-# Typedoc generated docs
-docs
-
 validation/data
 validation/simulation/resp
