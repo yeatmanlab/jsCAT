@@ -7,8 +7,8 @@ import {
   convertZeta,
   checkNoDuplicateCatNames,
   filterItemsByCatParameterAvailability,
-  prepareClowderCorpus,
 } from '../corpus';
+import { prepareClowderCorpus } from '..';
 import _omit from 'lodash/omit';
 
 describe('validateZetaParams', () => {
