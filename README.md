@@ -26,7 +26,7 @@ const currentPrior = normal();
 // create a Cat object 
 const cat = new CAT({method: 'MLE', itemSelect: 'MFI', nStartItems: 0, theta: 0, minTheta: -6, maxTheta: 6, prior: currentPrior})
 
-// update the abilitiy estimate by adding test items 
+// update the ability estimate by adding test items 
 cat.updateAbilityEstimate(zeta, answer);
 
 const currentTheta = cat.theta;
