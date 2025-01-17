@@ -61,3 +61,18 @@ Lucas Duailibe, irt-js, (2019), GitHub repository, https://github.com/geekie/irt
 
 ## License
 jsCAT is distributed under the [ISC license](LICENSE).
+
+## Citation 
+If you are use jsCAT for your web applications, please cite us:
+Ma, W. A., Richie-Halford, A., Burkhardt, A. K., Kanopka, K., Chou, C., Domingue, B. W., & Yeatman, J. D. (2025). ROAR-CAT: Rapid Online Assessment of Reading ability with Computerized Adaptive Testing. Behavior Research Methods, 57(1), 1-17. https://doi.org/10.3758/s13428-024-02578-y
+
+@article{ma2025roar,
+  title={ROAR-CAT: Rapid Online Assessment of Reading ability with Computerized Adaptive Testing},
+  author={Ma, Wanjing Anya and Richie-Halford, Adam and Burkhardt, Amy K and Kanopka, Klint and Chou, Clementine and Domingue, Benjamin W and Yeatman, Jason D},
+  journal={Behavior Research Methods},
+  volume={57},
+  number={1},
+  pages={1--17},
+  year={2025},
+  publisher={Springer}
+}
