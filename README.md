@@ -36,7 +36,7 @@ const zeta = {[{a: 1, b: 0, c: 0, d: 1}, {a: 1, b: 0.5, c: 0, d: 1}]}
 
 const answer = {[1, 0]}
 
-// update the abilitiy estimate by adding test items 
+// update the ability estimate by adding test items 
 cat.updateAbilityEstimate(zeta, answer);
 
 const currentTheta = cat.theta;
