@@ -54,35 +54,6 @@ const stimuli = [{  discrimination: 1, difficulty: -2, guessing: 0, slipping: 1,
 const nextItem = cat.findNextItem(stimuli, 'MFI');
 ```
 
-## Early Stopping Criteria Combinations
-
-To clarify the available combinations for early stopping, here’s a breakdown of the options you can use:
-
-### 1. Logical Operations
-
-You can combine multiple stopping criteria using one of the following logical operations:
-
-- **`and`**: All conditions need to be met to trigger early stopping.
-- **`or`**: Any one condition being met will trigger early stopping.
-- **`only`**: Only a specific condition is considered (you need to specify the cat to evaluate).
-
-### 2. Stopping Criteria Classes
-
-There are different types of stopping criteria you can configure:
-
-- **`StopAfterNItems`**: Stops the process after a specified number of items.
-- **`StopOnSEMeasurementPlateau`**: Stops if the standard error (SE) of measurement remains stable (within a defined tolerance) for a specified number of items.
-- **`StopIfSEMeasurementBelowThreshold`**: Stops if the SE measurement drops below a set threshold.
-
-### How Combinations Work
-
-You can mix and match these criteria with different logical operations, giving you a range of configurations for early stopping. For example:
-
-- Using **`and`** with both `StopAfterNItems` and `StopIfSEMeasurementBelowThreshold` means stopping will only occur if both conditions are satisfied.
-- Using **`or`** with `StopOnSEMeasurementPlateau` and `StopAfterNItems` allows early stopping if either condition is met.
-
-If you need more details or a specific example documented, feel free to ask!
-
 
 ## Validation
 
@@ -203,6 +174,33 @@ const clowder = new Clowder({
   earlyStopping: earlyStopping,
 });
 ```
+
+## Early Stopping Criteria Combinations
+
+To clarify the available combinations for early stopping, here’s a breakdown of the options you can use:
+
+### 1. Logical Operations
+
+You can combine multiple stopping criteria using one of the following logical operations:
+
+- **`and`**: All conditions need to be met to trigger early stopping.
+- **`or`**: Any one condition being met will trigger early stopping.
+- **`only`**: Only a specific condition is considered (you need to specify the cat to evaluate).
+
+### 2. Stopping Criteria Classes
+
+There are different types of stopping criteria you can configure:
+
+- **`StopAfterNItems`**: Stops the process after a specified number of items.
+- **`StopOnSEMeasurementPlateau`**: Stops if the standard error (SE) of measurement remains stable (within a defined tolerance) for a specified number of items.
+- **`StopIfSEMeasurementBelowThreshold`**: Stops if the SE measurement drops below a set threshold.
+
+### How Combinations Work
+
+You can mix and match these criteria with different logical operations, giving you a range of configurations for early stopping. For example:
+
+- Using **`and`** with both `StopAfterNItems` and `StopIfSEMeasurementBelowThreshold` means stopping will only occur if both conditions are satisfied.
+- Using **`or`** with `StopOnSEMeasurementPlateau` and `StopAfterNItems` allows early stopping if either condition is met.
 
 ---
 
