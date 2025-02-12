@@ -47,6 +47,8 @@ const numItems = cat.nItems;
 
 // find the next available item from an input array of stimuli based on a selection method
 
+> **Note:** For existing jsCAT users: To make your applications compatible with the updated jsCAT version, you will need to pass the stimuli in the following way:
+
 const stimuli = [{  discrimination: 1, difficulty: -2, guessing: 0, slipping: 1, item = "item1" },{ discrimination: 1, difficulty: 3, guessing: 0, slipping: 1, item = "item2" }];
 
 const nextItem = cat.findNextItem(stimuli, 'MFI');
@@ -94,19 +96,6 @@ Reference software: mirt (Chalmers, 2012)
 Reference software: catR (Magis et al., 2017)
 ![img_1.png](validation/plots/jsCAT_validation_2.png)
 
-## References
-
-- Chalmers, R. P. (2012). mirt: A multidimensional item response theory package for the R environment. Journal of Statistical Software.
-
-- Magis, D., & Barrada, J. R. (2017). Computerized adaptive testing with R: Recent updates of the package catR. Journal of Statistical Software, 76, 1-19.
-
-- Lucas Duailibe, irt-js, (2019), GitHub repository, https://github.com/geekie/irt-js
-
-## License
-
-jsCAT is distributed under the [ISC license](LICENSE).
-
-
 # Clowder Usage Guide
 
 The `Clowder` class is a powerful tool for managing multiple `Cat` instances and handling stimuli corpora in adaptive testing scenarios. This guide provides an overview of integrating `Clowder` into your application, with examples and explanations for key features.
@@ -152,12 +141,18 @@ const nextItem = clowder.updateCatAndGetNextItem({
 The `Clowder` corpus supports multi-zeta stimuli, allowing each stimulus to define parameters for multiple Cats. Use the following tools to prepare the corpus:
 
 #### Fill Default Zeta Parameters:
+
 ```typescript
 import { fillZetaDefaults } from './corpus';
+
 const filledStimuli = stimuli.map((stim) => fillZetaDefaults(stim));
+
 ```
 
-The function above will give default Zeta values and apply the desired format, if not format gets passed it will default to symbolic
+**What is `fillZetaDefaults`?**
+The function `fillZetaDefaults` ensures that each stimulus in the corpus has Zeta parameters defined. If any parameters are missing, it fills them with the default Zeta values.
+
+The default values are:
 
 ```typescript
 export const defaultZeta = (desiredFormat: 'symbolic' | 'semantic' = 'symbolic'): Zeta => {
@@ -170,7 +165,11 @@ export const defaultZeta = (desiredFormat: 'symbolic' | 'semantic' = 'symbolic')
 
   return convertZeta(defaultZeta, desiredFormat);
 };
+
 ```
+- If desiredFormat is not specified, it defaults to 'symbolic'.
+- This ensures consistency across different stimuli and prevents errors from missing Zeta parameters.
+- You can pass 'semantic' as an argument to convert the default Zeta values into a different representation.
 
 #### Validate the Corpus:
 ```typescript
@@ -264,3 +263,15 @@ if (clowder.earlyStopping?.earlyStop) {
 ---
 
 By integrating `Clowder`, your application can efficiently manage adaptive testing scenarios with robust trial and stimuli handling, multi-CAT configurations, and stopping conditions to ensure optimal performance.
+
+## References
+
+- Chalmers, R. P. (2012). mirt: A multidimensional item response theory package for the R environment. Journal of Statistical Software.
+
+- Magis, D., & Barrada, J. R. (2017). Computerized adaptive testing with R: Recent updates of the package catR. Journal of Statistical Software, 76, 1-19.
+
+- Lucas Duailibe, irt-js, (2019), GitHub repository, https://github.com/geekie/irt-js
+
+## License
+
+jsCAT is distributed under the [ISC license](LICENSE).
