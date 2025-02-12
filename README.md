@@ -16,6 +16,8 @@ npm i @bdelab/jscat
 
 ## Usage
 
+For existing jsCAT users: to make your applications compatible to the updated jsCAT version, you will need to pass the stimuli in the following way:
+
 ```js
 // import jsCAT
 import { Cat, normal } from '@bdelab/jscat';
@@ -153,6 +155,21 @@ The `Clowder` corpus supports multi-zeta stimuli, allowing each stimulus to defi
 ```typescript
 import { fillZetaDefaults } from './corpus';
 const filledStimuli = stimuli.map((stim) => fillZetaDefaults(stim));
+```
+
+The function above will give default Zeta values and apply the desired format, if not format gets passed it will default to symbolic
+
+```typescript
+export const defaultZeta = (desiredFormat: 'symbolic' | 'semantic' = 'symbolic'): Zeta => {
+  const defaultZeta: Zeta = {
+    a: 1,
+    b: 0,
+    c: 0,
+    d: 1,
+  };
+
+  return convertZeta(defaultZeta, desiredFormat);
+};
 ```
 
 #### Validate the Corpus:

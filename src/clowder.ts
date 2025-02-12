@@ -363,7 +363,10 @@ export class Clowder {
     // Again `nextStimulus` will be a Stimulus object, or `undefined` if no further validated stimuli are available.
     // We need to convert the Stimulus object back to a MultiZetaStimulus object to return to the user.
     const returnStimulus: MultiZetaStimulus | undefined = available.find((stim) =>
-      _isEqual(stim, nextStimulusWithoutZeta),
+      _isEqual(
+        _omit(stim, ['a', 'b', 'c', 'd', 'discrimination', 'difficulty', 'guessing', 'slipping']),
+        nextStimulusWithoutZeta,
+      ),
     );
 
     // Determine behavior based on returnUndefinedOnExhaustion
