@@ -240,7 +240,6 @@ export class Cat {
 
   private selectorMFI(inputStimuli: Stimulus[]) {
     const stimuli = inputStimuli.map((stim) => fillZetaDefaults(stim, 'semantic'));
-    console.log('theta on selectorMFI', this._theta);
     const stimuliAddFisher = stimuli.map((element: Stimulus) => ({
       fisherInformation: fisherInformation(this._theta, fillZetaDefaults(element, 'symbolic')),
       ...element,
