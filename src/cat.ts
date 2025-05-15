@@ -164,7 +164,8 @@ export class Cat {
       nf += like * probability;
     });
 
-    return num / nf;
+    const eap = num / nf;
+    return _clamp(eap, this.minTheta, this.maxTheta);
   }
 
   private estimateAbilityMLE() {
@@ -239,6 +240,7 @@ export class Cat {
 
   private selectorMFI(inputStimuli: Stimulus[]) {
     const stimuli = inputStimuli.map((stim) => fillZetaDefaults(stim, 'semantic'));
+    console.log('theta on selectorMFI', this._theta);
     const stimuliAddFisher = stimuli.map((element: Stimulus) => ({
       fisherInformation: fisherInformation(this._theta, fillZetaDefaults(element, 'symbolic')),
       ...element,
