@@ -195,6 +195,50 @@ for (const format of ['symbolic', 'semantic'] as Array<'symbolic' | 'semantic'>)
       }
     });
 
+    it('should create a normal prior distribution with default parameters', () => {
+      const cat = new Cat();
+      expect(cat.prior).toBeDefined();
+      expect(cat.prior.length).toBeGreaterThan(0);
+    });
+
+    it('should create a normal prior distribution with custom theta and thetaStdDev', () => {
+      const cat = new Cat({ theta: 2, thetaStdDev: 0.5 });
+      expect(cat.prior).toBeDefined();
+      // The peak of the prior distribution should be around theta = 2
+      const maxY = Math.max(...cat.prior.map((p) => p[1]));
+      const peakPoint = cat.prior.find((p) => p[1] === maxY);
+      expect(peakPoint && peakPoint[0]).toBeCloseTo(2, 1);
+    });
+
+    it('should use custom prior when provided', () => {
+      const customPrior = [
+        [0.1, 0.2, 0.4, 0.2, 0.1],
+        [-2, -1, 0, 1, 2],
+      ];
+      const cat = new Cat({ prior: customPrior });
+      expect(cat.prior).toEqual(customPrior);
+    });
+
+    it('should respect minTheta and maxTheta when creating default prior', () => {
+      const cat = new Cat({ minTheta: -3, maxTheta: 3, theta: 0, thetaStdDev: 1 });
+      const priorXValues = cat.prior[1];
+      expect(Math.min(...priorXValues)).toBeGreaterThanOrEqual(-3);
+      expect(Math.max(...priorXValues)).toBeLessThanOrEqual(3);
+    });
+
+    it('should use custom prior for EAP estimation', () => {
+      const customPrior = [
+        [0.0001, 0.9999, 0.0001],
+        [-1, 0, 1],
+      ]; // Strong prior belief around theta = 0
+      const cat = new Cat({ method: 'eap', prior: customPrior });
+
+      // Even with a high difficulty item and incorrect response,
+      // estimate should stay close to 0 due to strong prior
+      cat.updateAbilityEstimate(convertZeta({ a: 1, b: 2.0, c: 0.5, d: 1 }, format), 0);
+      expect(cat.theta).toBeCloseTo(0, 1);
+    });
+
     it('should throw an error if method is invalid', () => {
       try {
         new Cat({ method: 'coolMethod' });
