@@ -7,17 +7,16 @@ import seedrandom from 'seedrandom';
 import _clamp from 'lodash/clamp';
 import _cloneDeep from 'lodash/cloneDeep';
 
-const abilityPrior = normal();
-
 export interface CatInput {
   method?: string;
   itemSelect?: string;
   nStartItems?: number;
   startSelect?: string;
   theta?: number;
+  thetaStdDev?: number;
   minTheta?: number;
   maxTheta?: number;
-  prior?: number[][];
+  prior?: number[][] | null;
   randomSeed?: string | null;
 }
 
@@ -37,12 +36,13 @@ export class Cat {
 
   /**
    * Create a Cat object. This expects an single object parameter with the following keys
-   * @param {{method: string, itemSelect: string, nStartItems: number, startSelect:string, theta: number, minTheta: number, maxTheta: number, prior: number[][]}=} destructuredParam
+   * @param {{method: string, itemSelect: string, nStartItems: number, startSelect:string, theta: number, thetaStdDev: number, minTheta: number, maxTheta: number, prior: number[][] | null}=} destructuredParam
    *     method: ability estimator, e.g. MLE or EAP, default = 'MLE'
    *     itemSelect: the method of item selection, e.g. "MFI", "random", "closest", default method = 'MFI'
    *     nStartItems: first n trials to keep non-adaptive selection
    *     startSelect: rule to select first n trials
    *     theta: initial theta estimate
+   *     thetaStdDev: initial estimate for the standard deviation of the prior theta distribution
    *     minTheta: lower bound of theta
    *     maxTheta: higher bound of theta
    *     prior:  the prior distribution
@@ -55,9 +55,10 @@ export class Cat {
     nStartItems = 0,
     startSelect = 'middle',
     theta = 0,
+    thetaStdDev = 1,
     minTheta = -6,
     maxTheta = 6,
-    prior = abilityPrior,
+    prior = null,
     randomSeed = null,
   }: CatInput = {}) {
     this.method = Cat.validateMethod(method);
@@ -68,13 +69,13 @@ export class Cat {
 
     this.minTheta = minTheta;
     this.maxTheta = maxTheta;
-    this.prior = prior;
     this._zetas = [];
     this._resps = [];
     this._theta = theta;
     this._seMeasurement = Number.MAX_VALUE;
     this.nStartItems = nStartItems;
     this._rng = randomSeed === null ? seedrandom() : seedrandom(randomSeed);
+    this.prior = prior === null ? normal(theta, thetaStdDev, minTheta, maxTheta) : prior;
   }
 
   public get theta() {
