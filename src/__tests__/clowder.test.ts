@@ -303,6 +303,42 @@ describe('Clowder Class', () => {
     expect(nextItem?.id).toBe('item3');
   });
 
+  it('should warn when selecting from a corpus with items that lack parameters for the selecting cat', () => {
+    const consoleSpy = jest.spyOn(console, 'warn');
+    const clowderInput: ClowderInput = {
+      cats: {
+        cat1: { method: 'MLE', theta: 0.5 },
+        cat2: { method: 'MLE', theta: 0.5 },
+      },
+      corpus: [
+        // Only has parameters for cat2
+        createMultiZetaStimulus('item1', [createZetaCatMap(['cat2'])]),
+        createMultiZetaStimulus('item2', [createZetaCatMap(['cat2'])]),
+      ],
+    };
+    const clowder = new Clowder(clowderInput);
+
+    // Try to select using cat1's ability estimate from cat2's corpus
+    const nextItem = clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1',
+      corpusToSelectFrom: 'cat2',
+      returnUndefinedOnExhaustion: false,
+    });
+
+    // Should warn about missing parameters
+    expect(consoleSpy).toHaveBeenCalledWith(
+      'No items available for cat cat1 in corpus cat2. ' +
+        'This will still work but is probably not what you intended. Typically ' +
+        'the corpusToSelectFrom will be a subset of the corpus for catToSelect, ' +
+        "such as when a 'total' cat is selecting from a sub-domain corpus."
+    );
+
+    // Should still return an item since returnUndefinedOnExhaustion is false
+    expect(['item1', 'item2']).toContain(nextItem?.id);
+
+    consoleSpy.mockRestore();
+  });
+
   it('throws an error if any of catsToUpdate is invalid', () => {
     expect(() => {
       clowder.updateCatAndGetNextItem({
