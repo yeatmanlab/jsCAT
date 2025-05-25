@@ -159,7 +159,7 @@ export class Cat {
     let num = 0;
     let nf = 0;
     this.prior.forEach(([theta, probability]) => {
-      const like = this.likelihood(theta);
+      const like = Math.exp(this.likelihood(theta)); // Convert back to probability
       num += theta * like * probability;
       nf += like * probability;
     });

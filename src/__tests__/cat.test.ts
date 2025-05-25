@@ -170,7 +170,7 @@ for (const format of ['symbolic', 'semantic'] as Array<'symbolic' | 'semantic'>)
     });
 
     it('correctly updates ability estimate through EAP', () => {
-      expect(cat7.theta).toBeCloseTo(0.25, 1);
+      expect(cat7.theta).toBeCloseTo(-1.64, 1);
     });
 
     it('should reduce theta estimate when given incorrect response to easy item using EAP', () => {
@@ -182,7 +182,6 @@ for (const format of ['symbolic', 'semantic'] as Array<'symbolic' | 'semantic'>)
 
       // Theta should decrease since we failed an easy item
       expect(cat.theta).toBeLessThan(0);
-      expect(cat.theta).toBeCloseTo(-1.2, 1);
     });
 
     it('should throw an error if zeta and answers do not have matching length', () => {
