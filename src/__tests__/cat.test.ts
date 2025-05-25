@@ -173,6 +173,18 @@ for (const format of ['symbolic', 'semantic'] as Array<'symbolic' | 'semantic'>)
       expect(cat7.theta).toBeCloseTo(0.25, 1);
     });
 
+    it('should reduce theta estimate when given incorrect response to easy item using EAP', () => {
+      const cat = new Cat({ method: 'eap', theta: 0 });
+      const easyItem = convertZeta({ a: 1, b: -2.0, c: 0, d: 1 }, format);
+
+      // Give incorrect response (0) to an easy item
+      cat.updateAbilityEstimate(easyItem, 0);
+
+      // Theta should decrease since we failed an easy item
+      expect(cat.theta).toBeLessThan(0);
+      expect(cat.theta).toBeCloseTo(-1.2, 1);
+    });
+
     it('should throw an error if zeta and answers do not have matching length', () => {
       try {
         cat7.updateAbilityEstimate(
