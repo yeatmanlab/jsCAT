@@ -121,7 +121,7 @@ describe('Clowder Class', () => {
       catToSelect: 'cat1',
       returnUndefinedOnExhaustion: true,
     });
-    expect(clowder.stoppingReason).toBe('No validated items remaining for specified catToSelect');
+    expect(clowder.stoppingReason).toBe('No validated items remaining for the requested corpus cat1');
     expect(nextItem).toBeUndefined();
   });
 

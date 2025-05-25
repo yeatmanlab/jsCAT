@@ -189,16 +189,18 @@ export class Clowder {
   /**
    * Update the ability estimates for the specified `catsToUpdate` and select the next stimulus for the `catToSelect`.
    * This function processes previous items and answers, updates internal state, and selects the next stimulus
-   * based on the remaining stimuli and `catToSelect`.
+   * based on the remaining stimuli and `corpusToSelect`.
    *
    * @param {Object} input - The parameters for updating the Cat instance and selecting the next stimulus.
    * @param {string} input.catToSelect - The Cat instance to use for selecting the next stimulus.
+   * @param {string} [input.corpusToSelectFrom] - The corpus to use for selecting the next stimulus. If not provided, `catToSelect` will be used.
    * @param {string | string[]} [input.catsToUpdate=[]] - A single Cat or array of Cats for which to update ability estimates.
    * @param {Stimulus[]} [input.items=[]] - An array of previously presented stimuli.
    * @param {(0 | 1) | (0 | 1)[]} [input.answers=[]] - An array of answers (0 or 1) corresponding to `items`.
    * @param {string} [input.method] - Optional method for updating ability estimates (if applicable).
    * @param {string} [input.itemSelect] - Optional item selection method (if applicable).
    * @param {boolean} [input.randomlySelectUnvalidated=false] - Optional flag indicating whether to randomly select an unvalidated item for `catToSelect`.
+   * @param {boolean} [input.returnUndefinedOnExhaustion=true] - Optional flag indicating whether to return undefined when no validated items are available.
    *
    * @returns {Stimulus | undefined} - The next stimulus to present, or `undefined` if no further validated stimuli are available.
    *
@@ -218,6 +220,7 @@ export class Clowder {
    */
   public updateCatAndGetNextItem({
     catToSelect,
+    corpusToSelectFrom,
     catsToUpdate = [],
     items = [],
     answers = [],
@@ -227,6 +230,7 @@ export class Clowder {
     returnUndefinedOnExhaustion = true,
   }: {
     catToSelect: string;
+    corpusToSelectFrom?: string;
     catsToUpdate?: string | string[];
     items?: MultiZetaStimulus | MultiZetaStimulus[];
     answers?: (0 | 1) | (0 | 1)[];
@@ -236,9 +240,11 @@ export class Clowder {
     returnUndefinedOnExhaustion?: boolean; // New parameter type
   }): Stimulus | undefined {
     //           +----------+
-    // ----------|  Update  |----------|
+    // ----------| Validate |----------|
     //           +----------+
     this._validateCatName(catToSelect, true);
+    const corpusToSelect = corpusToSelectFrom ?? catToSelect;
+    this._validateCatName(corpusToSelect, true);
     catsToUpdate = Array.isArray(catsToUpdate) ? catsToUpdate : [catsToUpdate];
     catsToUpdate.forEach((cat) => {
       this._validateCatName(cat, false);
@@ -312,11 +318,11 @@ export class Clowder {
     // ----------|  Select  |----------|
     //           +----------+
 
-    // We inspect the remaining items and find ones that have zeta parameters for `catToSelect`
-    const { available, missing } = filterItemsByCatParameterAvailability(this._remainingItems, catToSelect);
+    // We inspect the remaining items and find ones that have zeta parameters for `corpusToSelect`
+    const { available, missing } = filterItemsByCatParameterAvailability(this._remainingItems, corpusToSelect);
 
     // Handle the 'unvalidated' cat selection
-    if (catToSelect === 'unvalidated') {
+    if (corpusToSelect === 'unvalidated') {
       const unvalidatedRemainingItems = this._remainingItems.filter(
         (stim) => !stim.zetas.some((zeta: ZetaCatMap) => zeta.cats.length > 0),
       );
@@ -339,7 +345,7 @@ export class Clowder {
     // spread at the top-level of each Stimulus object. So we need to convert
     // the MultiZetaStimulus array to an array of Stimulus objects.
     const availableCatInput = available.map((item) => {
-      const zetasForCat = item.zetas.find((zeta) => zeta.cats.includes(catToSelect));
+      const zetasForCat = item.zetas.find((zeta) => zeta.cats.includes(corpusToSelect));
       return {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         ...zetasForCat!.zeta,
@@ -347,7 +353,7 @@ export class Clowder {
       };
     });
 
-    // Use the catForSelect to determine the next stimulus
+    // Use the catToSelect to determine the next stimulus
     const cat = this.cats[catToSelect];
     const { nextStimulus } = cat.findNextItem(availableCatInput, itemSelect);
     const nextStimulusWithoutZeta = _omit(nextStimulus, [
@@ -371,9 +377,9 @@ export class Clowder {
 
     // Determine behavior based on returnUndefinedOnExhaustion
     if (available.length === 0) {
-      // If returnUndefinedOnExhaustion is true and no validated items remain for the specified catToSelect, return undefined.
+      // If returnUndefinedOnExhaustion is true and no validated items remain for the specified corpusToSelectFrom, return undefined.
       if (returnUndefinedOnExhaustion) {
-        this._stoppingReason = 'No validated items remaining for specified catToSelect';
+        this._stoppingReason = `No validated items remaining for the requested corpus ${corpusToSelect}`;
         return undefined; // Return undefined if no validated items remain
       } else {
         // If returnUndefinedOnExhaustion is false, proceed with the fallback mechanism to select an item from other available categories.
