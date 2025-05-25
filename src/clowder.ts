@@ -239,9 +239,9 @@ export class Clowder {
     randomlySelectUnvalidated?: boolean;
     returnUndefinedOnExhaustion?: boolean; // New parameter type
   }): Stimulus | undefined {
-    //           +----------+
-    // ----------| Validate |----------|
-    //           +----------+
+    //           +----------------+
+    // ----------| Validate Input |----------|
+    //           +----------------+
     this._validateCatName(catToSelect, true);
     const corpusToSelect = corpusToSelectFrom ?? catToSelect;
     this._validateCatName(corpusToSelect, true);
@@ -259,10 +259,43 @@ export class Clowder {
       throw new Error('Previous items and answers must have the same length.');
     }
 
-    //           +----------+
-    // ----------|  Update  |----------|
-    //           +----------+
+    //           +----------------+
+    // ----------|  Update Cats   |----------|
+    //           +----------------+
+    this._updateCats(catsToUpdate, items, answers, method);
 
+    //           +----------------+
+    // ----------| Early Stopping |----------|
+    //           +----------------+
+    if (this._earlyStopping) {
+      this._earlyStopping.update(this.cats, catToSelect);
+      if (this._earlyStopping.earlyStop) {
+        this._stoppingReason = 'Early stopping';
+        return undefined;
+      }
+    }
+
+    //           +----------------+
+    // ----------|  Select Item   |----------|
+    //           +----------------+
+    return this._selectNextItem(
+      catToSelect,
+      corpusToSelect,
+      randomlySelectUnvalidated,
+      returnUndefinedOnExhaustion,
+      itemSelect,
+    );
+  }
+
+  /**
+   * Updates the ability estimates for the specified Cat instances.
+   *
+   * @param {string[]} catsToUpdate - The names of the Cat instances to update.
+   * @param {MultiZetaStimulus[]} items - The items to update the ability estimates for.
+   * @param {(0 | 1)[]} answers - The answers to the items.
+   * @param {string} [method] - Optional method for updating ability estimates. If none is provided, it will use the default method for each Cat instance.
+   */
+  private _updateCats(catsToUpdate: string[], items: MultiZetaStimulus[], answers: (0 | 1)[], method?: string) {
     // Update the seenItems with the provided previous items
     this._seenItems.push(...items);
 
@@ -292,6 +325,8 @@ export class Clowder {
             const zetaForCat: ZetaCatMap | undefined = stim.zetas.find((zeta: ZetaCatMap) =>
               zeta.cats.includes(catName),
             );
+            // We already know from using filterItemsByCatParameterAvailability that
+            // zetasForCat is not undefined, so we can safely use non-null assertion.
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             return [zetaForCat!.zeta, _answer]; // Optional chaining in case zetaForCat is undefined
           })
@@ -304,22 +339,34 @@ export class Clowder {
         this.updateAbilityEstimates([catName], zetas, answers, method);
       }
     }
+  }
 
-    if (this._earlyStopping) {
-      this._earlyStopping.update(this.cats, catToSelect);
-      if (this._earlyStopping.earlyStop) {
-        this._stoppingReason = 'Early stopping';
-        return undefined;
-      }
+  private _selectNextItem(
+    catToSelect: string,
+    corpusToSelect: string,
+    randomlySelectUnvalidated: boolean,
+    returnUndefinedOnExhaustion: boolean,
+    itemSelect?: string,
+  ) {
+    // We inspect the remaining items and find ones that have zeta parameters for both `corpusToSelect` and `catToSelect`
+    const { available: availableForCorpus, missing: missingForCorpus } = filterItemsByCatParameterAvailability(
+      this._remainingItems,
+      corpusToSelect,
+    );
+    const { available, missing: missingForCat } = filterItemsByCatParameterAvailability(
+      availableForCorpus,
+      catToSelect,
+    );
+    const missing = [...missingForCorpus, ...missingForCat];
+
+    if (available.length === 0 && availableForCorpus.length > 0) {
+      console.warn(
+        `No items available for cat ${catToSelect} in corpus ${corpusToSelect}. ` +
+          'This will still work but is probably not what you intended. Typically ' +
+          'the corpusToSelectFrom will be a subset of the corpus for catToSelect, ' +
+          "such as when a 'total' cat is selecting from a sub-domain corpus.",
+      );
     }
-
-    // Handle the 'unvalidated' cat selection
-    //           +----------+
-    // ----------|  Select  |----------|
-    //           +----------+
-
-    // We inspect the remaining items and find ones that have zeta parameters for `corpusToSelect`
-    const { available, missing } = filterItemsByCatParameterAvailability(this._remainingItems, corpusToSelect);
 
     // Handle the 'unvalidated' cat selection
     if (corpusToSelect === 'unvalidated') {
@@ -345,8 +392,10 @@ export class Clowder {
     // spread at the top-level of each Stimulus object. So we need to convert
     // the MultiZetaStimulus array to an array of Stimulus objects.
     const availableCatInput = available.map((item) => {
-      const zetasForCat = item.zetas.find((zeta) => zeta.cats.includes(corpusToSelect));
+      const zetasForCat = item.zetas.find((zeta) => zeta.cats.includes(catToSelect));
       return {
+        // We already know from using filterItemsByCatParameterAvailability that
+        // zetasForCat is not undefined, so we can safely use non-null assertion.
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         ...zetasForCat!.zeta,
         ...item,

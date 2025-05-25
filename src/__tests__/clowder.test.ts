@@ -196,6 +196,113 @@ describe('Clowder Class', () => {
     }).toThrow('Invalid Cat name. Expected one of cat1, cat2, unvalidated. Received invalidCatName.');
   });
 
+  it('should allow selecting items from a different corpus than catToSelect', () => {
+    const clowderInput: ClowderInput = {
+      cats: {
+        cat1: { method: 'MLE', theta: 0.5 },
+        cat2: { method: 'MLE', theta: 0.5 },
+      },
+      corpus: [
+        createMultiZetaStimulus('item1', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('item2', [createZetaCatMap(['cat1', 'cat2'])]),
+        createMultiZetaStimulus('item3', [createZetaCatMap(['cat1', 'cat2'])]),
+      ],
+    };
+    const clowder = new Clowder(clowderInput);
+
+    // Use cat1's ability estimate but select from cat2's item pool
+    const nextItem = clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1',
+      corpusToSelectFrom: 'cat2',
+    });
+
+    // Should select an item from cat2's pool
+    expect(['item2', 'item3']).toContain(nextItem?.id);
+  });
+
+  it('should validate corpusToSelectFrom parameter', () => {
+    const clowderInput: ClowderInput = {
+      cats: {
+        cat1: { method: 'MLE', theta: 0.5 },
+      },
+      corpus: [createMultiZetaStimulus('item1', [createZetaCatMap(['cat1'])])],
+    };
+    const clowder = new Clowder(clowderInput);
+
+    // Should throw when corpusToSelectFrom doesn't exist
+    expect(() => {
+      clowder.updateCatAndGetNextItem({
+        catToSelect: 'cat1',
+        corpusToSelectFrom: 'nonexistent',
+      });
+    }).toThrow('Invalid Cat name. Expected one of cat1, unvalidated. Received nonexistent.');
+  });
+
+  it('should use catToSelect as corpus when corpusToSelectFrom is not provided', () => {
+    const clowderInput: ClowderInput = {
+      cats: {
+        cat1: { method: 'MLE', theta: 0.5 },
+      },
+      corpus: [createMultiZetaStimulus('item1', [createZetaCatMap(['cat1'])])],
+    };
+    const clowder = new Clowder(clowderInput);
+
+    const nextItem = clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1',
+    });
+
+    expect(nextItem?.id).toBe('item1');
+  });
+
+  it('should show correct stopping reason when no items remain in specified corpus', () => {
+    const clowderInput: ClowderInput = {
+      cats: {
+        cat1: { method: 'MLE', theta: 0.5 },
+        cat2: { method: 'MLE', theta: 0.5 },
+      },
+      corpus: [
+        // cat2 has no items
+        createMultiZetaStimulus('item1', [createZetaCatMap(['cat1'])]),
+      ],
+    };
+    const clowder = new Clowder(clowderInput);
+
+    const nextItem = clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1',
+      corpusToSelectFrom: 'cat2',
+      returnUndefinedOnExhaustion: true,
+    });
+
+    expect(clowder.stoppingReason).toBe('No validated items remaining for the requested corpus cat2');
+    expect(nextItem).toBeUndefined();
+  });
+
+  it('should allow selecting from one corpus and updating multiple cats', () => {
+    const clowderInput: ClowderInput = {
+      cats: {
+        cat1: { method: 'MLE', theta: 0.5 },
+        cat2: { method: 'MLE', theta: 0.5 },
+        cat3: { method: 'MLE', theta: 0.5 },
+      },
+      corpus: [
+        createMultiZetaStimulus('prev_item', [createZetaCatMap(['cat1', 'cat2'])]),
+        createMultiZetaStimulus('item3', [createZetaCatMap(['cat1', 'cat3'])]),
+      ],
+    };
+    const clowder = new Clowder(clowderInput);
+
+    // Update cat1 and cat2, but select next item from cat3
+    const nextItem = clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1',
+      corpusToSelectFrom: 'cat3',
+      catsToUpdate: ['cat1', 'cat2'],
+      items: [clowder.corpus[0]],
+      answers: [1],
+    });
+
+    expect(nextItem?.id).toBe('item3');
+  });
+
   it('throws an error if any of catsToUpdate is invalid', () => {
     expect(() => {
       clowder.updateCatAndGetNextItem({
