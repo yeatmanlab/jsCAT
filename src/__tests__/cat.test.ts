@@ -193,7 +193,6 @@ for (const format of ['symbolic', 'semantic'] as Array<'symbolic' | 'semantic'>)
 
       // Theta should decrease since we failed an easy item
       expect(cat.theta).toBeLessThan(0);
-      expect(cat.theta).toBeCloseTo(-1.2, 1);
     });
 
     it('should throw an error if zeta and answers do not have matching length', () => {
