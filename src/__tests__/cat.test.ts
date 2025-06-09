@@ -195,7 +195,7 @@ for (const format of ['symbolic', 'semantic'] as Array<'symbolic' | 'semantic'>)
       }
     });
 
-    it('should create a normal prior distribution with default parameters', () => {
+    it('should create a prior distribution with default parameters', () => {
       const cat = new Cat();
       expect(cat.prior).toBeDefined();
       expect(cat.prior.length).toBeGreaterThan(0);
@@ -228,15 +228,15 @@ for (const format of ['symbolic', 'semantic'] as Array<'symbolic' | 'semantic'>)
 
     it('should use custom prior for EAP estimation', () => {
       const customPrior = [
-        [0.0001, 0.9999, 0.0001],
         [-1, 0, 1],
+        [0.0001, 0.9999, 0.0001],
       ]; // Strong prior belief around theta = 0
       const cat = new Cat({ method: 'eap', prior: customPrior });
 
       // Even with a high difficulty item and incorrect response,
       // estimate should stay close to 0 due to strong prior
       cat.updateAbilityEstimate(convertZeta({ a: 1, b: 2.0, c: 0.5, d: 1 }, format), 0);
-      expect(cat.theta).toBeCloseTo(0, 1);
+      expect(cat.theta).toBeCloseTo(0, 3);
     });
 
     it('should throw an error if method is invalid', () => {
