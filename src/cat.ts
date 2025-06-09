@@ -152,6 +152,7 @@ export class Cat {
     } else if (method === 'mle') {
       this._theta = this.estimateAbilityMLE();
     }
+    this._theta = _clamp(this._theta, this.minTheta, this.maxTheta);
     this.calculateSE();
   }
 
@@ -164,15 +165,14 @@ export class Cat {
       nf += like * probability;
     });
 
-    const eap = num / nf;
-    return _clamp(eap, this.minTheta, this.maxTheta);
+    return num / nf;
   }
 
   private estimateAbilityMLE() {
     const theta0 = [0];
     const solution = minimize_Powell(this.negLikelihood.bind(this), theta0);
     const theta = solution.argument[0];
-    return _clamp(theta, this.minTheta, this.maxTheta);
+    return theta;
   }
 
   private negLikelihood(thetaArray: Array<number>) {
