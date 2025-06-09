@@ -212,8 +212,11 @@ for (const format of ['symbolic', 'semantic'] as Array<'symbolic' | 'semantic'>)
 
     it('should use custom prior when provided', () => {
       const customPrior = [
-        [0.1, 0.2, 0.4, 0.2, 0.1],
-        [-2, -1, 0, 1, 2],
+        [-2, 0.1],
+        [-1, 0.2],
+        [0, 0.4],
+        [1, 0.2],
+        [2, 0.1],
       ];
       const cat = new Cat({ prior: customPrior });
       expect(cat.prior).toEqual(customPrior);
@@ -228,8 +231,9 @@ for (const format of ['symbolic', 'semantic'] as Array<'symbolic' | 'semantic'>)
 
     it('should use custom prior for EAP estimation', () => {
       const customPrior = [
-        [-1, 0, 1],
-        [0.0001, 0.9999, 0.0001],
+        [-1, 0.0001],
+        [0, 0.9999],
+        [1, 0.0001],
       ]; // Strong prior belief around theta = 0
       const cat = new Cat({ method: 'eap', prior: customPrior });
 
@@ -286,3 +290,70 @@ for (const format of ['symbolic', 'semantic'] as Array<'symbolic' | 'semantic'>)
     });
   });
 }
+
+describe('Cat.validatePrior', () => {
+  // Since we can't directly access the private method, we'll test it indirectly through constructor
+  // which calls validatePrior internally
+
+  it('should throw an error if prior contains points that are not 2D', () => {
+    const invalidPrior = [
+      [1, 0.5],
+      [2, 0.3, 0.1], // Not a 2D point (has 3 elements)
+      [3, 0.2],
+    ];
+
+    expect(() => {
+      // Creating a new Cat with invalid prior should throw an error
+      // validatePrior is called internally by the constructor
+      new Cat({ prior: invalidPrior });
+    }).toThrow('The prior you provided is not a 2D array');
+  });
+
+  it('should throw an error if prior contains a point with only one element', () => {
+    const invalidPrior = [
+      [1, 0.5],
+      [2], // Not a 2D point (has only 1 element)
+      [3, 0.2],
+    ];
+
+    expect(() => {
+      new Cat({ prior: invalidPrior });
+    }).toThrow('The prior you provided is not a 2D array');
+  });
+
+  it('should throw an error if any y-value (second element of each point) is negative', () => {
+    const invalidPrior = [
+      [1, 0.5],
+      [2, -0.2], // Contains a negative y-value
+      [3, 0.3],
+    ];
+
+    expect(() => {
+      new Cat({ prior: invalidPrior });
+    }).toThrow('The prior you provided contains negative values.');
+  });
+
+  it('should accept a valid prior with all proper 2D points and non-negative y-values', () => {
+    const validPrior = [
+      [1, 0.1],
+      [2, 0.2],
+      [3, 0.7],
+    ];
+
+    expect(() => {
+      new Cat({ prior: validPrior });
+    }).not.toThrow();
+  });
+
+  it('should accept a valid prior with y-value of zero', () => {
+    const validPrior = [
+      [1, 0.1],
+      [2, 0],
+      [3, 0.7],
+    ];
+
+    expect(() => {
+      new Cat({ prior: validPrior });
+    }).not.toThrow();
+  });
+});

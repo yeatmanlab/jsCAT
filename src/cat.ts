@@ -103,13 +103,10 @@ export class Cat {
   }
 
   private static validatePrior(prior: number[][]) {
-    if (prior.length !== 2) {
+    if (!prior.every((x) => x.length === 2)) {
       throw new Error('The prior you provided is not a 2D array');
     }
-    if (prior[0].length !== prior[1].length) {
-      throw new Error('The prior you provided is not a 2D array');
-    }
-    if (!prior[1].every((x) => x >= 0)) {
+    if (!prior.every((x) => x[1] >= 0)) {
       throw new Error('The prior you provided contains negative values.');
     }
   }
