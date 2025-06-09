@@ -76,6 +76,7 @@ export class Cat {
     this.nStartItems = nStartItems;
     this._rng = randomSeed === null ? seedrandom() : seedrandom(randomSeed);
     this.prior = prior === null ? normal(theta, thetaStdDev, minTheta, maxTheta) : prior;
+    Cat.validatePrior(this.prior);
   }
 
   public get theta() {
@@ -99,6 +100,18 @@ export class Cat {
 
   public get zetas() {
     return this._zetas;
+  }
+
+  private static validatePrior(prior: number[][]) {
+    if (prior.length !== 2) {
+      throw new Error('The prior you provided is not a 2D array');
+    }
+    if (prior[0].length !== prior[1].length) {
+      throw new Error('The prior you provided is not a 2D array');
+    }
+    if (!prior[1].every((x) => x >= 0)) {
+      throw new Error('The prior you provided contains negative values.');
+    }
   }
 
   private static validateMethod(method: string) {
