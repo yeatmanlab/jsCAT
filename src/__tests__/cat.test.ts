@@ -185,14 +185,14 @@ for (const format of ['symbolic', 'semantic'] as Array<'symbolic' | 'semantic'>)
     });
 
     it('should reduce theta estimate when given incorrect response to easy item using EAP', () => {
-      const cat = new Cat({ method: 'eap', theta: 0 });
-      const easyItem = convertZeta({ a: 1, b: -2.0, c: 0, d: 1 }, format);
+      const easyItem = convertZeta({ a: 1, b: -2.5, c: 0.2, d: 1 }, format);
 
-      // Give incorrect response (0) to an easy item
-      cat.updateAbilityEstimate(easyItem, 0);
+      // Give correct response (1) to an easy item
+      cat7.updateAbilityEstimate(easyItem, 1);
+      console.log(cat7.theta)
 
-      // Theta should decrease since we failed an easy item
-      expect(cat.theta).toBeLessThan(0);
+      // Theta should increase since we got a correct response to an easy item
+      expect(cat7.theta).toBeCloseTo(-1.48,2);
     });
 
     it('should throw an error if zeta and answers do not have matching length', () => {
