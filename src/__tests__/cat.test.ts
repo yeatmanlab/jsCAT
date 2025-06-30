@@ -170,7 +170,6 @@ for (const format of ['symbolic', 'semantic'] as Array<'symbolic' | 'semantic'>)
     });
 
     it('correctly updates ability estimate through EAP', () => {
-      expect(cat7.theta).toBeCloseTo(-1.64, 1);
       expect(cat7.theta).toBeCloseTo(-1.64, 2);
     });
 
