@@ -330,7 +330,7 @@ describe('Clowder Class', () => {
       'No items available for cat cat1 in corpus cat2. ' +
         'This will still work but is probably not what you intended. Typically ' +
         'the corpusToSelectFrom will be a subset of the corpus for catToSelect, ' +
-        "such as when a 'total' cat is selecting from a sub-domain corpus."
+        "such as when a 'total' cat is selecting from a sub-domain corpus.",
     );
 
     // Should still return an item since returnUndefinedOnExhaustion is false
