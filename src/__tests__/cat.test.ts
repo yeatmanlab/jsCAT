@@ -3,6 +3,7 @@ import { Cat } from '..';
 import { Stimulus } from '../type';
 import seedrandom from 'seedrandom';
 import { convertZeta } from '../corpus';
+import { uniform } from '../utils';
 
 for (const format of ['symbolic', 'semantic'] as Array<'symbolic' | 'semantic'>) {
   describe(`Cat with ${format} zeta`, () => {
@@ -429,10 +430,6 @@ describe('Cat.validatePrior', () => {
     const cat1 = new Cat({ minTheta: -3, maxTheta: 3, priorDist: 'norm', priorPar: [0, 1] });
     expect(cat1.prior.length).toBe(61);
 
-    // Custom stepSize = 0.5, range = -2 to 2 = 9 points
-    const cat2 = new Cat({ minTheta: -2, maxTheta: 2, priorDist: 'norm', priorPar: [0, 1] });
-    // Note: This test assumes the normal function uses default stepSize of 0.1
-    // To test custom stepSize, you'd need to modify the Cat constructor to accept stepSize
   });
 
   it('should create prior with correct step intervals', () => {
@@ -462,7 +459,6 @@ describe('Cat.validatePrior', () => {
     const xs = cat.prior.map(([x]: [number, number]) => x);
     
     // Find points within the uniform bounds [-2, 2]
-    const pointsInBounds = xs.filter(x => x >= -2 && x <= 2);
     const probsInBounds = probs.filter((p, i) => xs[i] >= -2 && xs[i] <= 2);
     
     // All points within bounds should have the same probability
@@ -500,7 +496,9 @@ describe('Cat.validatePrior', () => {
     const originalValidatePrior = Cat['validatePrior'];
     
     // Temporarily replace validatePrior to allow invalid priorDist
-    Cat['validatePrior'] = () => {}; // No-op validation
+    Cat['validatePrior'] = () => {
+      // No-op validation to allow invalid priorDist
+    };
     
     try {
       const cat = new Cat({ 
@@ -511,7 +509,7 @@ describe('Cat.validatePrior', () => {
       });
       
       // Check that the fallback was used (should be normal(0,1) over [-2,2])
-      const priorXValues = cat.prior.map(([x, ]: [number, number]) => x);
+      const priorXValues = cat.prior.map(([x]: [number, number]) => x);
       const priorYValues = cat.prior.map(([, y]: [number, number]) => y);
       
       // Check that the middle value is the largest (normal distribution should peak at the middle)
@@ -519,31 +517,27 @@ describe('Cat.validatePrior', () => {
       const middleValue = priorYValues[middleIndex];
       const maxValue = Math.max(...priorYValues);
       expect(middleValue).toBeCloseTo(maxValue, 6);
-
-      console.log(priorXValues)
       
-      // Check that the range is correct
       expect(Math.min(...priorXValues)).toBeCloseTo(-2, 6);
       expect(Math.max(...priorXValues)).toBeCloseTo(2, 6);
     } finally {
-      // Restore original validation
+      // Restore original validation method
       Cat['validatePrior'] = originalValidatePrior;
     }
   });
 
-});
+  it('uniform() outputs correct probabilities and boundaries', async () => {
+    const result = uniform(-2, 2, 0.5, -3, 3);
+    const probs = result.map(([, p]: [number, number]) => p);
+    const xs = result.map(([x]: [number, number]) => x);
+    // Probabilities sum to 1
+    expect(probs.reduce((a: number, b: number) => a + b, 0)).toBeCloseTo(1, 6);
+    // Boundaries have nonzero probability
+    expect(probs[xs.indexOf(-2)]).toBeGreaterThan(0);
+    expect(probs[xs.indexOf(2)]).toBeGreaterThan(0);
+    // Outside bounds are zero
+    expect(probs[xs.indexOf(-3)]).toBeCloseTo(0, 6);
+    expect(probs[xs.indexOf(3)]).toBeCloseTo(0, 6);
+  });
 
-it('uniform() outputs correct probabilities and boundaries', () => {
-  const { uniform } = require('../utils');
-  const result = uniform(-2, 2, 0.5, -3, 3);
-  const probs = result.map(([, p]: [number, number]) => p);
-  const xs = result.map(([x]: [number, number]) => x);
-  // Probabilities sum to 1
-  expect(probs.reduce((a: number, b: number) => a + b, 0)).toBeCloseTo(1, 6);
-  // Boundaries have nonzero probability
-  expect(probs[xs.indexOf(-2)]).toBeGreaterThan(0);
-  expect(probs[xs.indexOf(2)]).toBeGreaterThan(0);
-  // Outside bounds are zero
-  expect(probs[xs.indexOf(-3)]).toBeCloseTo(0, 6);
-  expect(probs[xs.indexOf(3)]).toBeCloseTo(0, 6);
 });
