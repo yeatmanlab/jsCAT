@@ -54,8 +54,11 @@ itemBank <- matrix(c(
 responses <- c(0, 0)
 
 # Step 2: Compute EAP estimate before adding
-eap_before <- eapEst(it = itemBank, x = responses)
-cat("EAP before adding item:", eap_before, "\n")
+eap_before <- eapEst(it = itemBank, x = responses, lower = -6, upper = 6)
+cat("EAP before adding item (norm):", eap_before, "\n")
+
+eap_before <- eapEst(it = itemBank, x = responses, lower = -6, upper = 6, priorDist = "unif", priorPar = c(-6, 6))
+cat("EAP before adding item (unif):", eap_before, "\n")
 
 # Step 3: Add one more item and response (e.g., a correct response to an easier item)
 new_item <- matrix(c(1, -2.5, 0.2, 1), ncol = 4)
@@ -64,11 +67,12 @@ itemBank_new <- rbind(itemBank, new_item)
 responses_new <- c(responses, 1)
 
 # Step 4: Compute EAP estimate after adding the item
-eap_after <- eapEst(it = itemBank_new, x = responses_new)
-cat("EAP after adding item:", eap_after, "\n")
+eap_after <- eapEst(it = itemBank_new, x = responses_new, lower = -6, upper = 6)
+cat("EAP after adding item (norm):", eap_after, "\n")
 
-# Step 5: Difference
-cat("Change in EAP:", eap_after - eap_before, "\n")
+eap_after <- eapEst(it = itemBank_new, x = responses_new, lower = -6, upper = 6, priorDist = "unif", priorPar = c(-6, 6))
+cat("EAP after adding item (unif):", eap_after, "\n")
+
 ```
 
 
