@@ -2,6 +2,7 @@
 import bs from 'binary-search';
 import { Stimulus, Zeta, ZetaSymbolic } from './type';
 import { fillZetaDefaults } from './corpus';
+import _range from 'lodash/range';
 
 /**
  * Calculates the probability that someone with a given ability level theta will
@@ -40,16 +41,14 @@ export const fisherInformation = (theta: number, zeta: Zeta) => {
  * @param {number} stepSize - the quantization (step size) of the internal table, default = 0.1
  * @returns {Array<[number, number]>} - a normal distribution
  */
-export const normal = (mean = 0, stdDev = 1, min = -4, max = 4, stepSize = 0.1) => {
-  const distribution = [];
-  for (let i = min; i <= max; i += stepSize) {
-    distribution.push([i, y(i)]);
-  }
-  return distribution;
+export const normal = (mean = 0, stdDev = 1, min = -4, max = 4, stepSize = 0.1): Array<[number, number]> => {
+  const x = _range(min, max + stepSize, stepSize);
 
   function y(x: number) {
     return (1 / (Math.sqrt(2 * Math.PI) * stdDev)) * Math.exp(-Math.pow(x - mean, 2) / (2 * Math.pow(stdDev, 2)));
   }
+
+  return x.map((x) => [x, y(x)]);
 };
 
 /**

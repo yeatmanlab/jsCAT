@@ -1,4 +1,4 @@
-import { itemResponseFunction, fisherInformation, findClosest } from '../utils';
+import { itemResponseFunction, fisherInformation, findClosest, normal } from '../utils';
 
 describe('itemResponseFunction', () => {
   it('correctly calculates the probability', () => {
@@ -53,5 +53,74 @@ describe('findClosest', () => {
       { difficulty: 11.4, discrimination: 1, guessing: 0.25, slipping: 0.75 },
     ];
     expect(findClosest(stimuliWithDecimal, 9.1)).toBe(2);
+  });
+});
+
+describe('normal', () => {
+  it('should create a normal distribution with default parameters', () => {
+    const dist = normal();
+    expect(dist.length).toBeGreaterThan(0);
+    expect(dist[0].length).toBe(2); // Each point should have x and y coordinates
+
+    // Find the peak of the distribution
+    const maxY = Math.max(...dist.map((p) => p[1]));
+    const peakPoint = dist.find((p) => p[1] === maxY);
+
+    // With default parameters (mean=0), the peak should be at x=0
+    expect(peakPoint && peakPoint[0]).toBeCloseTo(0, 1);
+
+    // Default range should be [-4, 4]
+    expect(dist[0][0]).toBeCloseTo(-4, 1);
+    expect(dist[dist.length - 1][0]).toBeCloseTo(4, 1);
+  });
+
+  it('should create a normal distribution with custom mean and standard deviation', () => {
+    const mean = 2;
+    const stdDev = 0.5;
+    const dist = normal(mean, stdDev);
+
+    // Find the peak of the distribution
+    const maxY = Math.max(...dist.map((p) => p[1]));
+    const peakPoint = dist.find((p) => p[1] === maxY);
+
+    // Peak should be at x = mean
+    expect(peakPoint && peakPoint[0]).toBeCloseTo(mean, 1);
+
+    // With smaller stdDev, peak should be higher than default
+    expect(maxY).toBeGreaterThan(0.4); // Normal peak with stdDev=1 is ~0.4
+  });
+
+  it('should respect custom min and max range', () => {
+    const min = -2;
+    const max = 2;
+    const dist = normal(0, 1, min, max);
+
+    // Check range bounds
+    expect(dist[0][0]).toBeCloseTo(min, 1);
+    expect(dist[dist.length - 1][0]).toBeCloseTo(max, 1);
+  });
+
+  it('should use custom step size', () => {
+    const stepSize = 0.5;
+    const dist = normal(0, 1, -4, 4, stepSize);
+
+    // Check step size between consecutive points
+    for (let i = 1; i < dist.length; i++) {
+      expect(dist[i][0] - dist[i - 1][0]).toBeCloseTo(stepSize, 3);
+    }
+  });
+
+  it('should create a symmetric distribution around mean', () => {
+    const mean = 1;
+    const dist = normal(mean, 1, -3, 5); // Asymmetric range but should still be symmetric around mean
+
+    // Find points equidistant from mean and compare their y-values
+    const tolerance = 0.001;
+    dist.forEach((point) => {
+      const oppositePoint = dist.find((p) => Math.abs(p[0] - (mean + (mean - point[0]))) < tolerance);
+      if (oppositePoint) {
+        expect(point[1]).toBeCloseTo(oppositePoint[1], 5);
+      }
+    });
   });
 });
