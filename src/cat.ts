@@ -6,7 +6,6 @@ import { validateZetaParams, fillZetaDefaults } from './corpus';
 import seedrandom from 'seedrandom';
 import _clamp from 'lodash/clamp';
 import _cloneDeep from 'lodash/cloneDeep';
-import _range from 'lodash/range';
 
 export interface CatInput {
   method?: string;

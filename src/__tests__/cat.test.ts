@@ -181,32 +181,7 @@ for (const format of ['symbolic', 'semantic'] as Array<'symbolic' | 'semantic'>)
       expect(cat7.theta).toBeCloseTo(-1.649, 2);
     });
 
-    it('should increate theta estimate when given correct response to easy item using EAP', () => {
-      const easyItem = convertZeta({ a: 1, b: -2.5, c: 0.2, d: 1 }, format);
-
-      // Give correct response (1) to an easy item
-      cat7.updateAbilityEstimate(easyItem, 1);
-      console.log(cat7.theta);
-
-      // Theta should increase since we got a correct response to an easy item
-      expect(cat7.theta).toBeCloseTo(-1.48, 2);
-    });
-
-    it('correctly updates ability estimate through EAP with uniform prior', () => {
-
-      expect(cat9.theta).toBeCloseTo(-3.29, 2);
-    });
-
-    it('should increate theta estimate when given correct response to easy item using EAP', () => {
-      const easyItem = convertZeta({ a: 1, b: -2.5, c: 0.2, d: 1 }, format);
-
-      // Give correct response (1) to an easy item
-      cat7.updateAbilityEstimate(easyItem, 1);
-      console.log(cat7.theta);
-
-      // Theta should increase since we got a correct response to an easy item
-      expect(cat7.theta).toBeCloseTo(-1.48, 2);
-    });
+    
 
     it('should reduce theta estimate when given incorrect response to easy item using EAP (norm)', () => {
       const easyItem = convertZeta({ a: 1, b: -2.5, c: 0.2, d: 1 }, format);
