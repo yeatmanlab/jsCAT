@@ -57,7 +57,7 @@ responses <- c(0, 0)
 eap_before <- eapEst(it = itemBank, x = responses, lower = -6, upper = 6)
 cat("EAP before adding item (norm):", eap_before, "\n")
 
-eap_before <- eapEst(it = itemBank, x = responses, lower = -6, upper = 6, priorDist = "unif", priorPar = c(-6, 6))
+eap_before <- eapEst(it = itemBank, x = responses, lower = -6, upper = 6, priorDist = "unif", priorPar = c(-4, 4), nqp = 121)
 cat("EAP before adding item (unif):", eap_before, "\n")
 
 # Step 3: Add one more item and response (e.g., a correct response to an easier item)
@@ -70,7 +70,7 @@ responses_new <- c(responses, 1)
 eap_after <- eapEst(it = itemBank_new, x = responses_new, lower = -6, upper = 6)
 cat("EAP after adding item (norm):", eap_after, "\n")
 
-eap_after <- eapEst(it = itemBank_new, x = responses_new, lower = -6, upper = 6, priorDist = "unif", priorPar = c(-6, 6))
+eap_after <- eapEst(it = itemBank_new, x = responses_new, lower = -6, upper = 6, priorDist = "unif", priorPar = c(-4, 4), nqp = 121)
 cat("EAP after adding item (unif):", eap_after, "\n")
 
 ```
