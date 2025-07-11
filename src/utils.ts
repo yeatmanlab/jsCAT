@@ -48,7 +48,7 @@ export const normal = (mean = 0, stdDev = 1, min = -4, max = 4, stepSize = 0.1):
     return (1 / (Math.sqrt(2 * Math.PI) * stdDev)) * Math.exp(-Math.pow(x - mean, 2) / (2 * Math.pow(stdDev, 2)));
   }
 
-  return x.map((x) => [Math.round(x * 1000000) / 1000000, y(x)]);
+  return x.map((x) => [_round(x, 6), y(x)]);
 };
 
 /**
