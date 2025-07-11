@@ -137,7 +137,7 @@ export class Cat {
       }
       return uniform(minSupport, maxSupport, 0.1, minTheta, maxTheta);
     }
-    return [];
+    throw new Error(`priorDist must be "unif" or "norm." Received ${priorDist} instead.`);
   }
 
   private static validateMethod(method: string) {
