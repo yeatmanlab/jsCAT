@@ -153,4 +153,13 @@ describe('uniform', () => {
       expect(p).toBeCloseTo(firstProb, 6);
     });
   });
+
+  it(`it should use the first two values as the fullmin and fullmax if they are not provided`, () => {
+    const result = uniform(-1, 1, 0.5);
+    const probs = result.map(([, p]: [number, number]) => p);
+    const xs = result.map(([x]: [number, number]) => x);
+    expect(probs.reduce((a: number, b: number) => a + b, 0)).toBeCloseTo(1, 6);
+    expect(xs[0]).toBeCloseTo(-1, 6);
+  });
+
 });

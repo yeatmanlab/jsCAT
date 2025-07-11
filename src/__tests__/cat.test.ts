@@ -226,10 +226,9 @@ for (const format of ['symbolic', 'semantic'] as Array<'symbolic' | 'semantic'>)
       expect(cat.priorPar).toEqual([2, 0.5]);
     });
 
-    it('should throw an error for invalid priorDist', () => {
-      expect(() => {
-        new Cat({ priorDist: 'invalid' as unknown as string, priorPar: [0, 1] });
-      }).toThrow("Invalid priorDist value: 'invalid'. Must be either 'unif' or 'norm'.");
+    it('should return empty array for invalid priorDist', () => {
+      const cat = new Cat({ priorDist: 'invalid' as unknown as string, priorPar: [0, 1] });
+      expect(cat.prior).toEqual([]);
     });
 
     it('should throw an error for invalid priorPar length', () => {
@@ -323,10 +322,9 @@ describe('Cat.validatePrior', () => {
   // Since we can't directly access the private method, we'll test it indirectly through constructor
   // which calls validatePrior internally
 
-  it('should throw an error if priorDist is not supported', () => {
-    expect(() => {
-      new Cat({ priorDist: 'invalid' as unknown as string, priorPar: [0, 1] });
-    }).toThrow("Invalid priorDist value: 'invalid'. Must be either 'unif' or 'norm'.");
+  it('should return empty array if priorDist is not supported', () => {
+    const cat = new Cat({ priorDist: 'invalid' as unknown as string, priorPar: [0, 1] });
+    expect(cat.prior).toEqual([]);
   });
 
   it('should throw an error if priorPar length is not 2', () => {
@@ -464,40 +462,16 @@ describe('Cat.validatePrior', () => {
     expect(cat.prior.length).toBeGreaterThan(0);
   });
 
-  it('should use fallback normal(0,1) when priorDist is invalid', () => {
-    // This test covers the fallback branch: normal(0, 1, minTheta, maxTheta)
-    // We need to test this by temporarily modifying the validation to allow invalid priorDist
-    const originalValidatePrior = Cat['validatePrior'];
+  it('should return empty array when priorDist is invalid', () => {
+    const cat = new Cat({ 
+      minTheta: -2, 
+      maxTheta: 2,
+      priorDist: 'invalid' as unknown as string,
+      priorPar: [5, 10]
+    });
     
-    // Temporarily replace validatePrior to allow invalid priorDist
-    Cat['validatePrior'] = () => {
-      // No-op validation to allow invalid priorDist
-    };
-    
-    try {
-      const cat = new Cat({ 
-        minTheta: -2, 
-        maxTheta: 2,
-        priorDist: 'invalid' as unknown as string,
-        priorPar: [5, 10]
-      });
-      
-      // Check that the fallback was used (should be normal(0,1) over [-2,2])
-      const priorXValues = cat.prior.map(([x]: [number, number]) => x);
-      const priorYValues = cat.prior.map(([, y]: [number, number]) => y);
-      
-      // Check that the middle value is the largest (normal distribution should peak at the middle)
-      const middleIndex = Math.floor(priorYValues.length / 2);
-      const middleValue = priorYValues[middleIndex];
-      const maxValue = Math.max(...priorYValues);
-      expect(middleValue).toBeCloseTo(maxValue, 6);
-      
-      expect(Math.min(...priorXValues)).toBeCloseTo(-2, 6);
-      expect(Math.max(...priorXValues)).toBeCloseTo(2, 6);
-    } finally {
-      // Restore original validation method
-      Cat['validatePrior'] = originalValidatePrior;
-    }
+    // Check that an empty prior array was returned
+    expect(cat.prior).toEqual([]);
   });
 
 

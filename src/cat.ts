@@ -80,14 +80,8 @@ export class Cat {
     this._seMeasurement = Number.MAX_VALUE;
     this.nStartItems = nStartItems;
     this._rng = randomSeed === null ? seedrandom() : seedrandom(randomSeed);
-    Cat.validatePrior(priorDist, priorPar, minTheta, maxTheta);
-    if (priorDist === 'norm') {
-      this._prior = normal(priorPar[0], priorPar[1], minTheta, maxTheta);
-    } else if (priorDist === 'unif') {
-      this._prior = uniform(priorPar[0], priorPar[1], 0.1, minTheta, maxTheta);
-    } else {
-      this._prior = normal(0, 1, minTheta, maxTheta);
-    }
+    this._prior = Cat.validatePrior(priorDist, priorPar, minTheta, maxTheta);
+
   }
 
   public get theta() {
@@ -118,28 +112,32 @@ export class Cat {
   }
 
   private static validatePrior(priorDist: string, priorPar: number[], minTheta: number, maxTheta: number) {
-    if (!['norm', 'unif'].includes(priorDist)) {
-      throw new Error(`Invalid priorDist value: '${priorDist}'. Must be either 'unif' or 'norm'.`);
-    }
-    if (priorPar.length !== 2) {
-      throw new Error(`The prior distribution parameters should be an array of two numbers. Received ${priorPar}.`);
-    }
     if (priorDist === 'norm') {
-      if (priorPar[1] <= 0) {
-        throw new Error(`Expected a positive prior distribution standard deviation. Received ${priorPar[1]}`);
+      if (priorPar.length !== 2) {
+        throw new Error(`The prior distribution parameters should be an array of two numbers. Received ${priorPar}.`);
       }
-      if (priorPar[0] < minTheta || priorPar[0] > maxTheta) {
-        throw new Error(`Expected the prior distribution mean to be between the min and max theta. Received mean: ${priorPar[0]}, min: ${minTheta}, max: ${maxTheta}`);
+      const [mean, sd] = priorPar;
+      if (sd <= 0) {
+        throw new Error(`Expected a positive prior distribution standard deviation. Received ${sd}`);
       }
+      if (mean < minTheta || mean > maxTheta) {
+        throw new Error(`Expected the prior distribution mean to be between the min and max theta. Received mean: ${mean}, min: ${minTheta}, max: ${maxTheta}`);
+      }
+      return normal(mean, sd, minTheta, maxTheta);
+    } else if (priorDist === 'unif') {
+      if (priorPar.length !== 2) {
+        throw new Error(`The prior distribution parameters should be an array of two numbers. Received ${priorPar}.`);
+      }
+      const [minSupport, maxSupport] = priorPar;
+      if (minSupport >= maxSupport) {
+        throw new Error(`The uniform distribution bounds you provided are not valid (min must be less than max). Received min: ${minSupport} and max: ${maxSupport}`);
+      }
+      if (minSupport < minTheta || maxSupport > maxTheta) {
+        throw new Error(`The uniform distribution bounds you provided are not within theta bounds. Received minTheta: ${minTheta}, minSupport: ${minSupport}, maxSupport: ${maxSupport}, maxTheta: ${maxTheta}.`);
+      }
+      return uniform(minSupport, maxSupport, 0.1, minTheta, maxTheta);
     }
-    if (priorDist === 'unif') {
-      if (priorPar[0] >= priorPar[1]) {
-        throw new Error(`The uniform distribution bounds you provided are not valid (min must be less than max). Received min: ${priorPar[0]} and max: ${priorPar[1]}`);
-      }
-      if (priorPar[0] < minTheta || priorPar[1] > maxTheta) {
-        throw new Error(`The uniform distribution bounds you provided are not within theta bounds. Received minTheta: ${minTheta}, minSupport: ${priorPar[0]}, maxSupport: ${priorPar[1]}, maxTheta: ${maxTheta}.`);
-      }
-    }
+    return [];
   }
 
   private static validateMethod(method: string) {
