@@ -118,8 +118,8 @@ export class Cat {
   }
 
   private static validatePrior(priorDist: string, priorPar: number[], minTheta: number, maxTheta: number) {
-    if (priorDist !== 'norm' && priorDist !== 'unif') {
-      throw new Error('The prior distribution you provided is not supported');
+    if (!['norm', 'unif'].includes(priorDist)) {
+      throw new Error(`Invalid priorDist value: '${priorDist}'. Must be either 'unif' or 'norm'.`);
     }
     if (priorDist === 'norm') {
       if (priorPar.length !== 2) {
