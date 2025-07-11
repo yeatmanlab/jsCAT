@@ -3,7 +3,6 @@ import { Cat } from '..';
 import { Stimulus } from '../type';
 import seedrandom from 'seedrandom';
 import { convertZeta } from '../corpus';
-import { uniform } from '../utils';
 
 for (const format of ['symbolic', 'semantic'] as Array<'symbolic' | 'semantic'>) {
   describe(`Cat with ${format} zeta`, () => {
@@ -229,26 +228,26 @@ for (const format of ['symbolic', 'semantic'] as Array<'symbolic' | 'semantic'>)
 
     it('should throw an error for invalid priorDist', () => {
       expect(() => {
-        new Cat({ priorDist: 'invalid' as unknown as PriorDistType, priorPar: [0, 1] });
-      }).toThrow('The prior distribution you provided is not supported');
+        new Cat({ priorDist: 'invalid' as unknown as string, priorPar: [0, 1] });
+      }).toThrow("Invalid priorDist value: 'invalid'. Must be either 'unif' or 'norm'.");
     });
 
     it('should throw an error for invalid priorPar length', () => {
       expect(() => {
         new Cat({ priorDist: 'norm', priorPar: [0] });
-      }).toThrow('The prior distribution parameters you provided are not valid');
+      }).toThrow('The prior distribution parameters should be an array of two numbers. Received 0.');
     });
 
     it('should throw an error for invalid priorPar standard deviation', () => {
       expect(() => {
         new Cat({ priorDist: 'norm', priorPar: [0, -1] });
-      }).toThrow('The prior distribution standard deviation you provided is not valid');
+      }).toThrow('Expected a positive prior distribution standard deviation. Received -1');
     });
 
     it('should throw an error when priorPar mean is outside theta bounds', () => {
       expect(() => {
         new Cat({ priorDist: 'norm', priorPar: [10, 1], minTheta: -6, maxTheta: 6 });
-      }).toThrow('The prior distribution mean you provided is not valid');
+      }).toThrow('Expected the prior distribution mean to be between the min and max theta. Received mean: 10, min: -6, max: 6');
     });
 
     it('should use custom prior when provided', () => {
@@ -326,38 +325,38 @@ describe('Cat.validatePrior', () => {
 
   it('should throw an error if priorDist is not supported', () => {
     expect(() => {
-      new Cat({ priorDist: 'invalid' as unknown as PriorDistType, priorPar: [0, 1] });
-    }).toThrow('The prior distribution you provided is not supported');
+      new Cat({ priorDist: 'invalid' as unknown as string, priorPar: [0, 1] });
+    }).toThrow("Invalid priorDist value: 'invalid'. Must be either 'unif' or 'norm'.");
   });
 
   it('should throw an error if priorPar length is not 2', () => {
     expect(() => {
       new Cat({ priorDist: 'norm', priorPar: [0] });
-    }).toThrow('The prior distribution parameters you provided are not valid');
+    }).toThrow('The prior distribution parameters should be an array of two numbers. Received 0.');
   });
 
   it('should throw an error if priorPar standard deviation is not positive', () => {
     expect(() => {
       new Cat({ priorDist: 'norm', priorPar: [0, -1] });
-    }).toThrow('The prior distribution standard deviation you provided is not valid');
+    }).toThrow('Expected a positive prior distribution standard deviation. Received -1');
   });
 
   it('should throw an error if priorPar standard deviation is zero', () => {
     expect(() => {
       new Cat({ priorDist: 'norm', priorPar: [0, 0] });
-    }).toThrow('The prior distribution standard deviation you provided is not valid');
+    }).toThrow('Expected a positive prior distribution standard deviation. Received 0');
   });
 
   it('should throw an error when priorPar mean is outside theta bounds', () => {
     expect(() => {
       new Cat({ priorDist: 'norm', priorPar: [10, 1], minTheta: -6, maxTheta: 6 });
-    }).toThrow('The prior distribution mean you provided is not valid');
+    }).toThrow('Expected the prior distribution mean to be between the min and max theta. Received mean: 10, min: -6, max: 6');
   });
 
   it('should throw an error when priorPar mean is below minTheta', () => {
     expect(() => {
       new Cat({ priorDist: 'norm', priorPar: [-10, 1], minTheta: -6, maxTheta: 6 });
-    }).toThrow('The prior distribution mean you provided is not valid');
+    }).toThrow('Expected the prior distribution mean to be between the min and max theta. Received mean: -10, min: -6, max: 6');
   });
 
   it('should accept valid priorDist and priorPar', () => {
@@ -385,19 +384,19 @@ describe('Cat.validatePrior', () => {
   it('should throw an error for invalid uniform priorPar length', () => {
     expect(() => {
       new Cat({ priorDist: 'unif', priorPar: [0] });
-    }).toThrow('The prior distribution parameters you provided are not valid');
+    }).toThrow('The prior distribution parameters should be an array of two numbers. Received 0.');
   });
 
   it('should throw an error for invalid uniform bounds (min >= max)', () => {
     expect(() => {
       new Cat({ priorDist: 'unif', priorPar: [2, 1] });
-    }).toThrow('The uniform distribution bounds you provided are not valid (min must be less than max)');
+    }).toThrow('The uniform distribution bounds you provided are not valid (min must be less than max). Received min: 2 and max: 1');
   });
 
   it('should throw an error for uniform bounds outside theta range', () => {
     expect(() => {
       new Cat({ priorDist: 'unif', priorPar: [-10, 10], minTheta: -6, maxTheta: 6 });
-    }).toThrow('The uniform distribution bounds you provided are not within theta bounds');
+    }).toThrow('The uniform distribution bounds you provided are not within theta bounds. Received minTheta: -6, minSupport: -10, maxSupport: 10, maxTheta: 6.');
   });
 
   it('should create prior with correct number of points based on stepSize', () => {
@@ -479,7 +478,7 @@ describe('Cat.validatePrior', () => {
       const cat = new Cat({ 
         minTheta: -2, 
         maxTheta: 2,
-        priorDist: 'invalid' as any,
+        priorDist: 'invalid' as unknown as string,
         priorPar: [5, 10]
       });
       
@@ -501,18 +500,5 @@ describe('Cat.validatePrior', () => {
     }
   });
 
-  it('uniform() outputs correct probabilities and boundaries', async () => {
-    const result = uniform(-2, 2, 0.5, -3, 3);
-    const probs = result.map(([, p]: [number, number]) => p);
-    const xs = result.map(([x]: [number, number]) => x);
-    // Probabilities sum to 1
-    expect(probs.reduce((a: number, b: number) => a + b, 0)).toBeCloseTo(1, 6);
-    // Boundaries have nonzero probability
-    expect(probs[xs.indexOf(-2)]).toBeGreaterThan(0);
-    expect(probs[xs.indexOf(2)]).toBeGreaterThan(0);
-    // Outside bounds are zero
-    expect(probs[xs.indexOf(-3)]).toBeCloseTo(0, 6);
-    expect(probs[xs.indexOf(3)]).toBeCloseTo(0, 6);
-  });
 
 });

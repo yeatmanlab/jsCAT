@@ -1,4 +1,4 @@
-import { itemResponseFunction, fisherInformation, findClosest, normal } from '../utils';
+import { itemResponseFunction, fisherInformation, findClosest, normal, uniform } from '../utils';
 
 describe('itemResponseFunction', () => {
   it('correctly calculates the probability', () => {
@@ -121,6 +121,36 @@ describe('normal', () => {
       if (oppositePoint) {
         expect(point[1]).toBeCloseTo(oppositePoint[1], 5);
       }
+    });
+  });
+});
+
+describe('uniform', () => {
+  it('outputs correct probabilities and boundaries', () => {
+    const result = uniform(-2, 2, 0.5, -3, 3);
+    const probs = result.map(([, p]: [number, number]) => p);
+    const xs = result.map(([x]: [number, number]) => x);
+
+    // Probabilities sum to 1
+    expect(probs.reduce((a: number, b: number) => a + b, 0)).toBeCloseTo(1, 6);
+
+    // Boundaries have nonzero probability
+    expect(probs[xs.indexOf(-2)]).toBeGreaterThan(0);
+    expect(probs[xs.indexOf(2)]).toBeGreaterThan(0);
+
+    // Outside bounds are zero
+    expect(probs[xs.indexOf(-3)]).toBeCloseTo(0, 6);
+    expect(probs[xs.indexOf(3)]).toBeCloseTo(0, 6);
+  });
+
+  it('probabilities are uniform within support', () => {
+    const result = uniform(-1, 1, 0.5, -2, 2);
+    const probsInSupport = result.filter(([x]) => x >= -1 && x <= 1).map(([, p]) => p);
+
+    // All probabilities in support should be equal
+    const firstProb = probsInSupport[0];
+    probsInSupport.forEach(p => {
+      expect(p).toBeCloseTo(firstProb, 6);
     });
   });
 });

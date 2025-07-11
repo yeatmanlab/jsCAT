@@ -3,6 +3,7 @@ import bs from 'binary-search';
 import { Stimulus, Zeta, ZetaSymbolic } from './type';
 import { fillZetaDefaults } from './corpus';
 import _range from 'lodash/range';
+import _round from 'lodash/round';
 
 /**
  * Calculates the probability that someone with a given ability level theta will

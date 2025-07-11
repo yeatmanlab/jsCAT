@@ -15,7 +15,7 @@ export interface CatInput {
   theta?: number;
   minTheta?: number;
   maxTheta?: number;
-  priorDist?: PriorDistType;
+  priorDist?: string;
   priorPar?: number[];
   randomSeed?: string | null;
 }
@@ -85,6 +85,8 @@ export class Cat {
       this._prior = normal(priorPar[0], priorPar[1], minTheta, maxTheta);
     } else if (priorDist === 'unif') {
       this._prior = uniform(priorPar[0], priorPar[1], 0.1, minTheta, maxTheta);
+    } else {
+      this._prior = normal(0, 1, minTheta, maxTheta);
     }
   }
 
@@ -119,26 +121,23 @@ export class Cat {
     if (!['norm', 'unif'].includes(priorDist)) {
       throw new Error(`Invalid priorDist value: '${priorDist}'. Must be either 'unif' or 'norm'.`);
     }
+    if (priorPar.length !== 2) {
+      throw new Error(`The prior distribution parameters should be an array of two numbers. Received ${priorPar}.`);
+    }
     if (priorDist === 'norm') {
-      if (priorPar.length !== 2) {
-        throw new Error('The prior distribution parameters you provided are not valid');
-      }
       if (priorPar[1] <= 0) {
         throw new Error(`Expected a positive prior distribution standard deviation. Received ${priorPar[1]}`);
       }
       if (priorPar[0] < minTheta || priorPar[0] > maxTheta) {
-        throw new Error('The prior distribution mean you provided is not valid');
+        throw new Error(`Expected the prior distribution mean to be between the min and max theta. Received mean: ${priorPar[0]}, min: ${minTheta}, max: ${maxTheta}`);
       }
     }
     if (priorDist === 'unif') {
-      if (priorPar.length !== 2) {
-        throw new Error('The prior distribution parameters you provided are not valid');
-      }
       if (priorPar[0] >= priorPar[1]) {
-        throw new Error('The uniform distribution bounds you provided are not valid (min must be less than max)');
+        throw new Error(`The uniform distribution bounds you provided are not valid (min must be less than max). Received min: ${priorPar[0]} and max: ${priorPar[1]}`);
       }
       if (priorPar[0] < minTheta || priorPar[1] > maxTheta) {
-        throw new Error('The uniform distribution bounds you provided are not within theta bounds. Received minTheta: ${minTheta}, minSupport: ${priorPar[0]}, maxSupport: ${priorPar[1]}, maxTheta: ${maxTheta}.');
+        throw new Error(`The uniform distribution bounds you provided are not within theta bounds. Received minTheta: ${minTheta}, minSupport: ${priorPar[0]}, maxSupport: ${priorPar[1]}, maxTheta: ${maxTheta}.`);
       }
     }
   }
