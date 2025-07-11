@@ -66,20 +66,16 @@ export const uniform = (
   min = -4, max = 4, stepSize = 0.1,
   fullMin?: number, fullMax?: number
 ): Array<[number, number]> => {
-  const round6 = (n: number) => Math.round(n * 1e6) / 1e6;
-
   const actualMin = fullMin ?? min;
   const actualMax = fullMax ?? max;
 
-  // Create grid including both ends using integer stepping
-  const steps = Math.round((actualMax - actualMin) / stepSize);
-  const x = Array.from({ length: steps + 1 }, (_, i) =>
-    round6(actualMin + i * stepSize)
+  // Create the grid with rounding
+  const x = _range(actualMin, actualMax + stepSize / 2, stepSize).map(n =>
+    _round(n, 6)
   );
-
-  // Count how many points are in uniform support
-  const pointsInBounds = x.filter(theta => theta >= min && theta <= max).length;
-  const probabilityMass = 1 / pointsInBounds;
+  
+  const support = x.filter(theta => theta >= min && theta <= max);
+  const probabilityMass = 1 / support.length;
 
   return x.map(theta => [
     theta,
