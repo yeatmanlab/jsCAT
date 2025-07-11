@@ -138,7 +138,7 @@ export class Cat {
         throw new Error('The uniform distribution bounds you provided are not valid (min must be less than max)');
       }
       if (priorPar[0] < minTheta || priorPar[1] > maxTheta) {
-        throw new Error('The uniform distribution bounds you provided are not within theta bounds');
+        throw new Error('The uniform distribution bounds you provided are not within theta bounds. Received minTheta: ${minTheta}, minSupport: ${priorPar[0]}, maxSupport: ${priorPar[1]}, maxTheta: ${maxTheta}.');
       }
     }
   }
