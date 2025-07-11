@@ -124,7 +124,7 @@ export class Cat {
         throw new Error('The prior distribution parameters you provided are not valid');
       }
       if (priorPar[1] <= 0) {
-        throw new Error('The prior distribution standard deviation you provided is not valid');
+        throw new Error(`Expected a positive prior distribution standard deviation. Received ${priorPar[1]}`);
       }
       if (priorPar[0] < minTheta || priorPar[0] > maxTheta) {
         throw new Error('The prior distribution mean you provided is not valid');
