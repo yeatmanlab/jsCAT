@@ -226,11 +226,6 @@ for (const format of ['symbolic', 'semantic'] as Array<'symbolic' | 'semantic'>)
       expect(cat.priorPar).toEqual([2, 0.5]);
     });
 
-    it('should return empty array for invalid priorDist', () => {
-      const cat = new Cat({ priorDist: 'invalid' as unknown as string, priorPar: [0, 1] });
-      expect(cat.prior).toEqual([]);
-    });
-
     it('should throw an error for invalid priorPar length', () => {
       expect(() => {
         new Cat({ priorDist: 'norm', priorPar: [0] });
@@ -322,10 +317,6 @@ describe('Cat.validatePrior', () => {
   // Since we can't directly access the private method, we'll test it indirectly through constructor
   // which calls validatePrior internally
 
-  it('should return empty array if priorDist is not supported', () => {
-    const cat = new Cat({ priorDist: 'invalid' as unknown as string, priorPar: [0, 1] });
-    expect(cat.prior).toEqual([]);
-  });
 
   it('should throw an error if priorPar length is not 2', () => {
     expect(() => {
@@ -462,17 +453,14 @@ describe('Cat.validatePrior', () => {
     expect(cat.prior.length).toBeGreaterThan(0);
   });
 
-  it('should return empty array when priorDist is invalid', () => {
-    const cat = new Cat({ 
-      minTheta: -2, 
-      maxTheta: 2,
-      priorDist: 'invalid' as unknown as string,
-      priorPar: [5, 10]
-    });
-    
-    // Check that an empty prior array was returned
-    expect(cat.prior).toEqual([]);
+  it('should throw error when priorDist is invalid', () => {
+    expect(() => {
+      new Cat({ 
+        minTheta: -2, 
+        maxTheta: 2,
+        priorDist: 'invalid' as unknown as string,
+        priorPar: [5, 10]
+      });
+    }).toThrowError('priorDist must be "unif" or "norm." Received invalid instead.');
   });
-
-
 });
