@@ -326,7 +326,7 @@ describe('Cat.validatePrior', () => {
 
   it('should throw an error if priorDist is not supported', () => {
     expect(() => {
-      new Cat({ priorDist: 'invalid' as any, priorPar: [0, 1] });
+      new Cat({ priorDist: 'invalid' as unknown as PriorDistType, priorPar: [0, 1] });
     }).toThrow('The prior distribution you provided is not supported');
   });
 
