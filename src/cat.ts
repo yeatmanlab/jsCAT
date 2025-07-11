@@ -15,7 +15,7 @@ export interface CatInput {
   theta?: number;
   minTheta?: number;
   maxTheta?: number;
-  priorDist?: string;
+  priorDist?: PriorDistType;
   priorPar?: number[];
   randomSeed?: string | null;
 }
