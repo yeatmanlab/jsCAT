@@ -21,7 +21,6 @@ export interface CatInput {
 }
 
 export class Cat {
-  [x: string]: any;
   public method: string;
   public itemSelect: string;
   public minTheta: number;
