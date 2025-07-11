@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { minimize_Powell } from 'optimization-js';
 import { Stimulus, Zeta } from './type';
-import { itemResponseFunction, fisherInformation, normal, findClosest } from './utils';
+import { itemResponseFunction, fisherInformation, normal, uniform, findClosest } from './utils';
 import { validateZetaParams, fillZetaDefaults } from './corpus';
 import seedrandom from 'seedrandom';
 import _clamp from 'lodash/clamp';
@@ -13,10 +13,10 @@ export interface CatInput {
   nStartItems?: number;
   startSelect?: string;
   theta?: number;
-  thetaStdDev?: number;
   minTheta?: number;
   maxTheta?: number;
-  prior?: number[][] | null;
+  priorDist?: string;
+  priorPar?: number[];
   randomSeed?: string | null;
 }
 
@@ -25,7 +25,8 @@ export class Cat {
   public itemSelect: string;
   public minTheta: number;
   public maxTheta: number;
-  public prior: number[][];
+  public priorDist: string;
+  public priorPar: number[];
   private readonly _zetas: Zeta[];
   private readonly _resps: (0 | 1)[];
   private _theta: number;
@@ -33,19 +34,21 @@ export class Cat {
   public nStartItems: number;
   public startSelect: string;
   private readonly _rng: ReturnType<seedrandom>;
+  private _prior: [number, number][];
+ 
 
   /**
    * Create a Cat object. This expects an single object parameter with the following keys
-   * @param {{method: string, itemSelect: string, nStartItems: number, startSelect:string, theta: number, thetaStdDev: number, minTheta: number, maxTheta: number, prior: number[][] | null}=} destructuredParam
+   * @param {{method: string, itemSelect: string, nStartItems: number, startSelect:string, theta: number, minTheta: number, maxTheta: number, priorDist: string, priorPar: number[]}=} destructuredParam
    *     method: ability estimator, e.g. MLE or EAP, default = 'MLE'
    *     itemSelect: the method of item selection, e.g. "MFI", "random", "closest", default method = 'MFI'
    *     nStartItems: first n trials to keep non-adaptive selection
    *     startSelect: rule to select first n trials
    *     theta: initial theta estimate
-   *     thetaStdDev: initial estimate for the standard deviation of the prior theta distribution
    *     minTheta: lower bound of theta
    *     maxTheta: higher bound of theta
-   *     prior:  the prior distribution
+   *     priorDist: the prior distribution type (only applies to EAP estimator)
+   *     priorPar: the prior distribution parameters (only applies to EAP estimator)
    *     randomSeed: set a random seed to trace the simulation
    */
 
@@ -55,10 +58,10 @@ export class Cat {
     nStartItems = 0,
     startSelect = 'middle',
     theta = 0,
-    thetaStdDev = 1,
     minTheta = -6,
     maxTheta = 6,
-    prior = null,
+    priorDist = 'norm', // only applies to EAP estimator
+    priorPar = priorDist === 'unif' ? [-4, 4] : [0, 1], // only applies to EAP estimator
     randomSeed = null,
   }: CatInput = {}) {
     this.method = Cat.validateMethod(method);
@@ -69,14 +72,16 @@ export class Cat {
 
     this.minTheta = minTheta;
     this.maxTheta = maxTheta;
+    this.priorDist = priorDist;
+    this.priorPar = priorPar;
     this._zetas = [];
     this._resps = [];
     this._theta = theta;
     this._seMeasurement = Number.MAX_VALUE;
     this.nStartItems = nStartItems;
     this._rng = randomSeed === null ? seedrandom() : seedrandom(randomSeed);
-    this.prior = prior === null ? normal(theta, thetaStdDev, minTheta, maxTheta) : prior;
-    Cat.validatePrior(this.prior);
+    this._prior = Cat.validatePrior(priorDist, priorPar, minTheta, maxTheta);
+
   }
 
   public get theta() {
@@ -102,13 +107,37 @@ export class Cat {
     return this._zetas;
   }
 
-  private static validatePrior(prior: number[][]) {
-    if (!prior.every((x) => x.length === 2)) {
-      throw new Error('The prior you provided is not a 2D array');
+  public get prior() {
+    return this._prior;
+  }
+
+  private static validatePrior(priorDist: string, priorPar: number[], minTheta: number, maxTheta: number) {
+    if (priorDist === 'norm') {
+      if (priorPar.length !== 2) {
+        throw new Error(`The prior distribution parameters should be an array of two numbers. Received ${priorPar}.`);
+      }
+      const [mean, sd] = priorPar;
+      if (sd <= 0) {
+        throw new Error(`Expected a positive prior distribution standard deviation. Received ${sd}`);
+      }
+      if (mean < minTheta || mean > maxTheta) {
+        throw new Error(`Expected the prior distribution mean to be between the min and max theta. Received mean: ${mean}, min: ${minTheta}, max: ${maxTheta}`);
+      }
+      return normal(mean, sd, minTheta, maxTheta);
+    } else if (priorDist === 'unif') {
+      if (priorPar.length !== 2) {
+        throw new Error(`The prior distribution parameters should be an array of two numbers. Received ${priorPar}.`);
+      }
+      const [minSupport, maxSupport] = priorPar;
+      if (minSupport >= maxSupport) {
+        throw new Error(`The uniform distribution bounds you provided are not valid (min must be less than max). Received min: ${minSupport} and max: ${maxSupport}`);
+      }
+      if (minSupport < minTheta || maxSupport > maxTheta) {
+        throw new Error(`The uniform distribution bounds you provided are not within theta bounds. Received minTheta: ${minTheta}, minSupport: ${minSupport}, maxSupport: ${maxSupport}, maxTheta: ${maxTheta}.`);
+      }
+      return uniform(minSupport, maxSupport, 0.1, minTheta, maxTheta);
     }
-    if (!prior.every((x) => x[1] >= 0)) {
-      throw new Error('The prior you provided contains negative values.');
-    }
+    throw new Error(`priorDist must be "unif" or "norm." Received ${priorDist} instead.`);
   }
 
   private static validateMethod(method: string) {
@@ -170,7 +199,7 @@ export class Cat {
   private estimateAbilityEAP() {
     let num = 0;
     let nf = 0;
-    this.prior.forEach(([theta, probability]) => {
+    this._prior.forEach(([theta, probability]) => {
       const like = Math.exp(this.likelihood(theta)); // Convert back to probability
       num += theta * like * probability;
       nf += like * probability;

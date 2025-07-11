@@ -3,6 +3,7 @@ import bs from 'binary-search';
 import { Stimulus, Zeta, ZetaSymbolic } from './type';
 import { fillZetaDefaults } from './corpus';
 import _range from 'lodash/range';
+import _round from 'lodash/round';
 
 /**
  * Calculates the probability that someone with a given ability level theta will
@@ -48,7 +49,39 @@ export const normal = (mean = 0, stdDev = 1, min = -4, max = 4, stepSize = 0.1):
     return (1 / (Math.sqrt(2 * Math.PI) * stdDev)) * Math.exp(-Math.pow(x - mean, 2) / (2 * Math.pow(stdDev, 2)));
   }
 
-  return x.map((x) => [x, y(x)]);
+  return x.map((x) => [_round(x, 6), y(x)]);
+};
+
+/**
+ * Return a uniform distribution within a given range
+ *
+ * @param {number} min - lower bound of the uniform distribution
+ * @param {number} max - upper bound of the uniform distribution
+ * @param {number} stepSize - the quantization (step size) of the internal table, default = 0.1
+ * @param {number} fullMin - full range minimum (defaults to min)
+ * @param {number} fullMax - full range maximum (defaults to max)
+ * @returns {Array<[number, number]>} - a uniform distribution
+ */
+
+export const uniform = (
+  min = -4, max = 4, stepSize = 0.1,
+  fullMin?: number, fullMax?: number
+): Array<[number, number]> => {
+  const actualMin = fullMin ?? min;
+  const actualMax = fullMax ?? max;
+
+  // Create the grid with rounding
+  const x = _range(actualMin, actualMax + stepSize / 2, stepSize).map(n =>
+    _round(n, 6)
+  );
+  
+  const support = x.filter(theta => theta >= min && theta <= max);
+  const probabilityMass = 1 / support.length;
+
+  return x.map(theta => [
+    theta,
+    theta >= min && theta <= max ? probabilityMass : 0
+  ]);
 };
 
 /**
