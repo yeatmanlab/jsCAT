@@ -85,8 +85,6 @@ export class Cat {
       this._prior = normal(priorPar[0], priorPar[1], minTheta, maxTheta);
     } else if (priorDist === 'unif') {
       this._prior = uniform(priorPar[0], priorPar[1], 0.1, minTheta, maxTheta);
-    } else {
-      this._prior = normal(0, 1, minTheta, maxTheta); // fallback
     }
   }
 
