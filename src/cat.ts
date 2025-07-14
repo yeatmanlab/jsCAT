@@ -35,7 +35,6 @@ export class Cat {
   public startSelect: string;
   private readonly _rng: ReturnType<seedrandom>;
   private _prior: [number, number][];
- 
 
   /**
    * Create a Cat object. This expects an single object parameter with the following keys
@@ -81,7 +80,6 @@ export class Cat {
     this.nStartItems = nStartItems;
     this._rng = randomSeed === null ? seedrandom() : seedrandom(randomSeed);
     this._prior = Cat.validatePrior(priorDist, priorPar, minTheta, maxTheta);
-
   }
 
   public get theta() {
@@ -121,7 +119,9 @@ export class Cat {
         throw new Error(`Expected a positive prior distribution standard deviation. Received ${sd}`);
       }
       if (mean < minTheta || mean > maxTheta) {
-        throw new Error(`Expected the prior distribution mean to be between the min and max theta. Received mean: ${mean}, min: ${minTheta}, max: ${maxTheta}`);
+        throw new Error(
+          `Expected the prior distribution mean to be between the min and max theta. Received mean: ${mean}, min: ${minTheta}, max: ${maxTheta}`,
+        );
       }
       return normal(mean, sd, minTheta, maxTheta);
     } else if (priorDist === 'unif') {
@@ -130,10 +130,14 @@ export class Cat {
       }
       const [minSupport, maxSupport] = priorPar;
       if (minSupport >= maxSupport) {
-        throw new Error(`The uniform distribution bounds you provided are not valid (min must be less than max). Received min: ${minSupport} and max: ${maxSupport}`);
+        throw new Error(
+          `The uniform distribution bounds you provided are not valid (min must be less than max). Received min: ${minSupport} and max: ${maxSupport}`,
+        );
       }
       if (minSupport < minTheta || maxSupport > maxTheta) {
-        throw new Error(`The uniform distribution bounds you provided are not within theta bounds. Received minTheta: ${minTheta}, minSupport: ${minSupport}, maxSupport: ${maxSupport}, maxTheta: ${maxTheta}.`);
+        throw new Error(
+          `The uniform distribution bounds you provided are not within theta bounds. Received minTheta: ${minTheta}, minSupport: ${minSupport}, maxSupport: ${maxSupport}, maxTheta: ${maxTheta}.`,
+        );
       }
       return uniform(minSupport, maxSupport, 0.1, minTheta, maxTheta);
     }

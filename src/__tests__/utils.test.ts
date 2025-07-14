@@ -149,7 +149,7 @@ describe('uniform', () => {
 
     // All probabilities in support should be equal
     const firstProb = probsInSupport[0];
-    probsInSupport.forEach(p => {
+    probsInSupport.forEach((p) => {
       expect(p).toBeCloseTo(firstProb, 6);
     });
   });
@@ -161,5 +161,4 @@ describe('uniform', () => {
     expect(probs.reduce((a: number, b: number) => a + b, 0)).toBeCloseTo(1, 6);
     expect(xs[0]).toBeCloseTo(-1, 6);
   });
-
 });

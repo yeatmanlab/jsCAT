@@ -64,24 +64,22 @@ export const normal = (mean = 0, stdDev = 1, min = -4, max = 4, stepSize = 0.1):
  */
 
 export const uniform = (
-  min = -4, max = 4, stepSize = 0.1,
-  fullMin?: number, fullMax?: number
+  min = -4,
+  max = 4,
+  stepSize = 0.1,
+  fullMin?: number,
+  fullMax?: number,
 ): Array<[number, number]> => {
   const actualMin = fullMin ?? min;
   const actualMax = fullMax ?? max;
 
   // Create the grid with rounding
-  const x = _range(actualMin, actualMax + stepSize / 2, stepSize).map(n =>
-    _round(n, 6)
-  );
-  
-  const support = x.filter(theta => theta >= min && theta <= max);
+  const x = _range(actualMin, actualMax + stepSize / 2, stepSize).map((n) => _round(n, 6));
+
+  const support = x.filter((theta) => theta >= min && theta <= max);
   const probabilityMass = 1 / support.length;
 
-  return x.map(theta => [
-    theta,
-    theta >= min && theta <= max ? probabilityMass : 0
-  ]);
+  return x.map((theta) => [theta, theta >= min && theta <= max ? probabilityMass : 0]);
 };
 
 /**
