@@ -2,9 +2,14 @@
   "collectCoverage": true,
   "coverageDirectory": "coverage",
   "coverageProvider": "v8",
-  "coveragePathIgnorePatterns": [
-    "/node_modules/",
-    "/__tests__/"
+  "coveragePathIgnorePatterns": ["/node_modules/", "/__tests__/"],
+  "coverageReporters": ["text", "lcov"],
+  "collectCoverageFrom": [
+    "src/**/*.{js,jsx,ts,tsx}",
+    "!src/**/*.d.ts",
+    "!src/**/types.ts",
+    "!src/**/type.ts",
+    "!src/index.ts"
   ],
   "transform": {
     "^.+\\.ts?$": "ts-jest",
