@@ -20,13 +20,16 @@ For existing jsCAT users: to make your applications compatible to the updated js
 
 ```js
 // import jsCAT
-import { Cat, normal } from '@bdelab/jscat';
+import { Cat } from '@bdelab/jscat';
 
-// declare prior if you choose to use EAP method
-const currentPrior = normal();
+// create a Cat object with MLE estimator
+const cat1 = new CAT({method: 'MLE', itemSelect: 'MFI', nStartItems: 0, theta: 0, minTheta: -6, maxTheta: 6})
 
-// create a Cat object 
-const cat = new CAT({method: 'MLE', itemSelect: 'MFI', nStartItems: 0, theta: 0, minTheta: -6, maxTheta: 6, prior: currentPrior})
+// create a Cat object with EAP estimator with normal distribution
+const cat2 = new CAT({method: 'eap', itemSelect: 'MFI', nStartItems: 0, theta: 0, minTheta: -6, maxTheta: 6, priorDist: 'norm', priorPar: [0, 1]})
+
+// create a Cat object with EAP estimator with unirform distribution
+const cat3 = new CAT({method: 'eap', itemSelect: 'MFI', nStartItems: 0, theta: 0, minTheta: -6, maxTheta: 6, priorDist: 'unif', priorPar: [-4, 4]})
 
 // option 1 to input stimuli:
 const zeta = {[{discrimination: 1, difficulty: 0, guessing: 0, slipping: 1}, {discrimination: 1, difficulty: 0.5, guessing: 0, slipping: 1}]}
@@ -39,11 +42,11 @@ const answer = {[1, 0]}
 // update the ability estimate by adding test items 
 cat.updateAbilityEstimate(zeta, answer);
 
-const currentTheta = cat.theta;
+const currentTheta = cat1.theta;
 
-const currentSeMeasurement = cat.seMeasurement;
+const currentSeMeasurement = cat1.seMeasurement;
 
-const numItems = cat.nItems;
+const numItems = cat1.nItems;
 
 // find the next available item from an input array of stimuli based on a selection method
 
@@ -51,7 +54,7 @@ const numItems = cat.nItems;
 
 const stimuli = [{  discrimination: 1, difficulty: -2, guessing: 0, slipping: 1, item = "item1" },{ discrimination: 1, difficulty: 3, guessing: 0, slipping: 1, item = "item2" }];
 
-const nextItem = cat.findNextItem(stimuli, 'MFI');
+const nextItem = cat1.findNextItem(stimuli, 'MFI');
 ```
 
 
