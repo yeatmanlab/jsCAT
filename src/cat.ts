@@ -79,7 +79,7 @@ export class Cat {
     this._seMeasurement = Number.MAX_VALUE;
     this.nStartItems = nStartItems;
     this._rng = randomSeed === null ? seedrandom() : seedrandom(randomSeed);
-    this._prior = Cat.validatePrior(priorDist, priorPar, minTheta, maxTheta);
+    this._prior = method === 'eap' ? Cat.validatePrior(priorDist, priorPar, minTheta, maxTheta) : [];
   }
 
   public get theta() {
