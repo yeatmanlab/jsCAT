@@ -96,7 +96,7 @@ export abstract class EarlyStopping {
    * Abstract method to be implemented by subclasses to update the early stopping strategy.
    * @param {CatMap<Cat>} cats - A map of cats to update.
    */
-  public update(cats: CatMap<Cat>, catToSelect?: string): void {
+  public update(cats: CatMap<Cat>, catToEvaluate?: string): void {
     this._updateCats(cats); // This updates internal state with current cat data
 
     // Collect the stopping conditions for all cats
@@ -108,13 +108,13 @@ export abstract class EarlyStopping {
     } else if (this._logicalOperation === 'or') {
       this._earlyStop = conditions.some(Boolean); // Any condition can be true for 'or'
     } else if (this._logicalOperation === 'only') {
-      if (catToSelect === undefined) {
+      if (catToEvaluate === undefined) {
         throw new Error('Must provide a cat to select for "only" stopping condition');
       }
 
       // Evaluate the stopping condition for the selected cat
-      if (this.evaluationCats.includes(catToSelect)) {
-        this._earlyStop = this._evaluateStoppingCondition(catToSelect);
+      if (this.evaluationCats.includes(catToEvaluate)) {
+        this._earlyStop = this._evaluateStoppingCondition(catToEvaluate);
       } else {
         this._earlyStop = false; // Default to false if the selected cat is not in evaluationCats
       }

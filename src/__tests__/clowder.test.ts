@@ -728,4 +728,40 @@ describe('Clowder Early Stopping', () => {
       }
     }
   });
+
+  it('evaluates early stopping only for the specified cat', () => {
+    const earlyStopping = new StopAfterNItems({
+      requiredItems: { cat2: 1 },
+      logicalOperation: 'only',
+    });
+
+    const clowderInput: ClowderInput = {
+      cats: {
+        cat1: { method: 'MLE', theta: 0.5 },
+        cat2: { method: 'MLE', theta: 0.5 },
+      },
+      corpus: [
+        // Item validated for cat2 only – used to update cat2 and trigger early stopping
+        createMultiZetaStimulus('item2cat', [createZetaCatMap(['cat2'])]),
+        // Item validated for cat1 – would be selected if early stopping did not trigger
+        createMultiZetaStimulus('item1cat', [createZetaCatMap(['cat1'])]),
+      ],
+      earlyStopping,
+    };
+
+    const clowder = new Clowder(clowderInput);
+
+    const nextItem = clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1', // Use cat1 to select next item
+      catsToUpdate: ['cat2'], // Update cat2 to satisfy early-stopping requirement
+      items: [clowder.corpus[0]],
+      answers: [1],
+      catToEvaluateEarlyStopping: 'cat2', // Evaluate early stopping only on cat2
+    });
+
+    // Early stopping should trigger after cat2 has seen required number of items
+    expect(clowder.earlyStopping?.earlyStop).toBe(true);
+    expect(clowder.stoppingReason).toBe('Early stopping');
+    expect(nextItem).toBeUndefined(); // Should return undefined when early stopping triggers
+  });
 });
