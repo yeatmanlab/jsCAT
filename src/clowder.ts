@@ -221,6 +221,7 @@ export class Clowder {
   public updateCatAndGetNextItem({
     catToSelect,
     corpusToSelectFrom,
+    catToEvaluateEarlyStopping,
     catsToUpdate = [],
     items = [],
     answers = [],
@@ -231,6 +232,7 @@ export class Clowder {
   }: {
     catToSelect: string;
     corpusToSelectFrom?: string;
+    catToEvaluateEarlyStopping?: string;
     catsToUpdate?: string | string[];
     items?: MultiZetaStimulus | MultiZetaStimulus[];
     answers?: (0 | 1) | (0 | 1)[];
@@ -244,6 +246,7 @@ export class Clowder {
     //           +----------------+
     this._validateCatName(catToSelect, true);
     const corpusToSelect = corpusToSelectFrom ?? catToSelect;
+    const earlyStoppingCat = catToEvaluateEarlyStopping ?? corpusToSelect;
     this._validateCatName(corpusToSelect, true);
     catsToUpdate = Array.isArray(catsToUpdate) ? catsToUpdate : [catsToUpdate];
     catsToUpdate.forEach((cat) => {
@@ -268,7 +271,7 @@ export class Clowder {
     // ----------| Early Stopping |----------|
     //           +----------------+
     if (this._earlyStopping) {
-      this._earlyStopping.update(this.cats, catToSelect);
+      this._earlyStopping.update(this.cats, earlyStoppingCat);
       if (this._earlyStopping.earlyStop) {
         this._stoppingReason = 'Early stopping';
         return undefined;
