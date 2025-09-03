@@ -2,7 +2,9 @@
 import { Cat } from '..';
 import { Stimulus } from '../type';
 import seedrandom from 'seedrandom';
-import { convertZeta } from '../corpus';
+import { convertZeta, fillZetaDefaults } from '../corpus';
+import * as fs from 'fs';
+import * as path from 'path';
 
 for (const format of ['symbolic', 'semantic'] as Array<'symbolic' | 'semantic'>) {
   describe(`Cat with ${format} zeta`, () => {
@@ -288,6 +290,148 @@ for (const format of ['symbolic', 'semantic'] as Array<'symbolic' | 'semantic'>)
     });
   });
 }
+
+/**
+ * Helper function to parse item parameters CSV
+ * @param csvContent - Raw CSV content as string
+ * @returns Array of item parameter objects
+ */
+function parseItemParametersCSV(csvContent: string): Array<{
+  a: number;
+  b: number;
+}> {
+  const lines = csvContent.trim().split('\n');
+  const headers = lines[0].split(',').map((h) => h.trim());
+
+  return lines.slice(1).map((line) => {
+    const values = line.split(',').map((v) => parseFloat(v.trim()));
+    const row: Record<string, number> = {};
+
+    headers.forEach((header, index) => {
+      row[header] = values[index];
+    });
+
+    return row as {
+      a: number;
+      b: number;
+    };
+  });
+}
+
+/**
+ * Helper function to parse responses CSV (n_items x n_participants)
+ * @param csvContent - Raw CSV content as string
+ * @returns 2D array where rows are items and columns are participants
+ */
+function parseResponsesCSV(csvContent: string): (0 | 1)[][] {
+  const lines = csvContent.trim().split('\n');
+
+  return lines.map((line) => {
+    return line.split(',').map((v) => parseInt(v.trim()) as 0 | 1);
+  });
+}
+
+/**
+ * Helper function to parse theta estimates CSV (n_items x n_participants)
+ * @param csvContent - Raw CSV content as string
+ * @returns 2D array where rows are items and columns are participants
+ */
+function parseThetaEstimatesCSV(csvContent: string): number[][] {
+  const lines = csvContent.trim().split('\n');
+
+  return lines.map((line) => {
+    return line.split(',').map((v) => parseFloat(v.trim()));
+  });
+}
+
+describe('EAP Method Ground Truth Validation', () => {
+  /**
+   * Tests EAP estimation against ground truth values from multiple CSV files.
+   *
+   * Expected CSV structure:
+   * 1. item_parameters.csv (n_items x 4): a,b,c,d parameters
+   * 2. responses.csv (n_items x n_participants): 0/1 response patterns
+   * 3. theta_estimates.csv (n_items x n_participants): expected theta after each item
+   *
+   * Where:
+   * - a: discrimination parameter
+   * - b: difficulty parameter
+   */
+
+  describe('with normal prior distribution', () => {
+    it('should match ground truth theta estimates for all participants', async () => {
+      const csvDir = path.join(__dirname, '..', '..', 'validation', 'simulation', 'eap');
+      const itemParamsPath = path.join(csvDir, 'item_parameters.csv');
+      const responsesPath = path.join(csvDir, 'responses.csv');
+      const thetaEstimatesPath = path.join(csvDir, 'theta_estimates.csv');
+
+      // Skip test if any CSV file doesn't exist
+      if (!fs.existsSync(itemParamsPath) || !fs.existsSync(responsesPath) || !fs.existsSync(thetaEstimatesPath)) {
+        console.warn('Skipping EAP ground truth test: One or more CSV files not found');
+        console.warn(`  Item parameters: ${itemParamsPath}`);
+        console.warn(`  Responses: ${responsesPath}`);
+        console.warn(`  Theta estimates: ${thetaEstimatesPath}`);
+        return;
+      }
+
+      // Parse CSV files
+      const itemParams = parseItemParametersCSV(fs.readFileSync(itemParamsPath, 'utf-8'));
+      const responses = parseResponsesCSV(fs.readFileSync(responsesPath, 'utf-8'));
+      const expectedThetas = parseThetaEstimatesCSV(fs.readFileSync(thetaEstimatesPath, 'utf-8'));
+
+      // Validate dimensions
+      const nItems = itemParams.length;
+      const nParticipants = responses[0].length;
+
+      expect(responses.length).toBe(nItems);
+      expect(expectedThetas.length).toBe(nItems);
+      expect(expectedThetas[0].length).toBe(nParticipants);
+
+      // Test each participant asynchronously
+      const participantTests = Array.from({ length: nParticipants }, (_, participantIdx) => {
+        return new Promise<void>((resolve) => {
+          // Initialize CAT with EAP method and normal prior for each participant
+          const cat = new Cat({
+            method: 'eap',
+            priorDist: 'norm',
+            priorPar: [0, 1],
+            minTheta: -6,
+            maxTheta: 6,
+          });
+
+          // Process each item sequentially for this participant
+          for (let itemIdx = 0; itemIdx < nItems; itemIdx++) {
+            const zeta = fillZetaDefaults(
+              {
+                a: itemParams[itemIdx].a,
+                b: itemParams[itemIdx].b,
+              },
+              'semantic',
+            );
+
+            const response = responses[itemIdx][participantIdx];
+            const expectedTheta = expectedThetas[itemIdx][participantIdx];
+
+            cat.updateAbilityEstimate(zeta, response);
+
+            // Compare theta estimate with expected value (tolerance of 0.001)
+            expect(cat.theta).toBeCloseTo(expectedTheta, 3);
+
+            // Verify theta is within bounds
+            expect(cat.theta).toBeGreaterThanOrEqual(-6);
+            expect(cat.theta).toBeLessThanOrEqual(6);
+          }
+
+          expect(cat.nItems).toBe(nItems);
+          resolve();
+        });
+      });
+
+      // Wait for all participant tests to complete
+      await Promise.all(participantTests);
+    });
+  });
+});
 
 describe('Cat.validatePrior', () => {
   // Since we can't directly access the private method, we'll test it indirectly through constructor
