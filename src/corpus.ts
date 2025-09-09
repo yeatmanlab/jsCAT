@@ -277,8 +277,15 @@ export const prepareClowderCorpus = (
         // Extract parameters that match the category
         Object.keys(item).forEach((key) => {
           if (key.startsWith(cat + delimiter)) {
-            const paramKey = key.split(delimiter)[1];
-            zeta[paramKey as keyof Zeta] = item[key];
+            const paramKey = key.split(delimiter)[1] as keyof Zeta;
+            const raw = (item as Record<string, unknown>)[key];
+            // Making sure zetas are numbers when transforming CSV
+            if (raw !== '' && String(raw).toUpperCase() !== 'NA') {
+              const n = Number(raw);
+              if (Number.isFinite(n)) {
+                zeta[paramKey] = n;
+              }
+            }
           }
         });
 
