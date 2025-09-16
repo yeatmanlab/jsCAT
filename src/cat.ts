@@ -2,7 +2,7 @@
 import { minimize_Powell } from 'optimization-js';
 import { Stimulus, Zeta } from './type';
 import { itemResponseFunction, fisherInformation, normal, uniform, findClosest } from './utils';
-import { validateZetaParams, fillZetaDefaults } from './corpus';
+import { validateZetaParams, fillZetaDefaults, ensureZetaNumericValues } from './corpus';
 import seedrandom from 'seedrandom';
 import _clamp from 'lodash/clamp';
 import _cloneDeep from 'lodash/cloneDeep';
@@ -183,6 +183,8 @@ export class Cat {
     zeta = Array.isArray(zeta) ? zeta : [zeta];
     answer = Array.isArray(answer) ? answer : [answer];
 
+    // Ensure zeta parameters are numbers to prevent string concatenation issues
+    zeta = zeta.map((z) => ensureZetaNumericValues(z));
     zeta.forEach((z) => validateZetaParams(z, true));
 
     if (zeta.length !== answer.length) {

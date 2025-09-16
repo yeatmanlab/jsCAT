@@ -37,6 +37,33 @@ export const defaultZeta = (desiredFormat: 'symbolic' | 'semantic' = 'symbolic')
 };
 
 /**
+ * Converts zeta parameter values to numbers, ensuring they are not strings.
+ * This prevents issues where string concatenation occurs instead of addition.
+ * Filters out undefined, null, empty, 'NA', and non-finite values.
+ *
+ * @param {Zeta} zeta - The zeta parameters to convert.
+ * @returns {Zeta} A new zeta object with only valid numeric values.
+ */
+export const ensureZetaNumericValues = (zeta: Zeta): Zeta => {
+  const convertedZeta: Zeta = {};
+
+  // Convert all zeta parameter values to numbers, filtering out invalid values
+  Object.entries(zeta).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '' && String(value).toUpperCase() !== 'NA') {
+      const numValue = Number(value);
+      if (Number.isFinite(numValue)) {
+        convertedZeta[key as keyof Zeta] = numValue;
+      }
+      // Note: We intentionally omit non-finite values (Infinity, -Infinity, NaN)
+      // and values that can't be converted to numbers
+    }
+    // Note: We intentionally omit undefined, null, empty, and 'NA' values
+  });
+
+  return convertedZeta;
+};
+
+/**
  * Validates the item (a.k.a. zeta) parameters, prohibiting redundant keys and
  * optionally requiring all parameters.
  *
@@ -277,26 +304,19 @@ export const prepareClowderCorpus = (
         // Extract parameters that match the category
         Object.keys(item).forEach((key) => {
           if (key.startsWith(cat + delimiter)) {
-            const paramKey = key.split(delimiter)[1] as keyof Zeta;
-            const raw = (item as Record<string, unknown>)[key];
-            // Making sure zetas are numbers when transforming CSV
-            if (raw !== '' && String(raw).toUpperCase() !== 'NA') {
-              const n = Number(raw);
-              if (Number.isFinite(n)) {
-                zeta[paramKey] = n;
-              }
-            }
+            const paramKey = key.split(delimiter)[1];
+            zeta[paramKey as keyof Zeta] = item[key];
           }
         });
 
         return {
           cats: [cat],
-          zeta: convertZeta(zeta, itemParameterFormat),
+          zeta: convertZeta(ensureZetaNumericValues(zeta), itemParameterFormat),
         };
       })
       .filter((zeta) => {
-        // Check if zeta has no `NA` values and is not empty
-        return !_isEmpty(zeta.zeta) && Object.values(zeta.zeta).every((value) => value !== 'NA');
+        // Check if zeta is not empty (ensureZetaNumericValues already filters out invalid values)
+        return !_isEmpty(zeta.zeta);
       });
 
     // Create the MultiZetaStimulus structure without the category keys
