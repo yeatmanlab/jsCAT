@@ -115,11 +115,11 @@ describe('fillZetaDefaults', () => {
 describe('ensureZetaNumericValues', () => {
   it('converts string numbers to numeric values', () => {
     const zeta: Zeta = {
-      a: '1.5' as any,
-      b: '2.0' as any,
-      c: '0.25' as any,
-      d: '0.95' as any,
-    };
+      a: '1.5',
+      b: '2.0',
+      c: '0.25',
+      d: '0.95',
+    } as unknown as Zeta;
 
     const result = ensureZetaNumericValues(zeta);
 
@@ -167,9 +167,9 @@ describe('ensureZetaNumericValues', () => {
   it('filters out null values', () => {
     const zeta: Zeta = {
       a: 1.5,
-      b: null as any,
+      b: null,
       c: 0.25,
-    };
+    } as unknown as Zeta;
 
     const result = ensureZetaNumericValues(zeta);
 
@@ -182,9 +182,9 @@ describe('ensureZetaNumericValues', () => {
   it('filters out empty string values', () => {
     const zeta: Zeta = {
       a: 1.5,
-      b: '' as any,
+      b: '',
       c: 0.25,
-    };
+    } as unknown as Zeta;
 
     const result = ensureZetaNumericValues(zeta);
 
@@ -197,11 +197,11 @@ describe('ensureZetaNumericValues', () => {
   it('filters out NA values (case insensitive)', () => {
     const zeta: Zeta = {
       a: 1.5,
-      b: 'NA' as any,
-      c: 'na' as any,
-      d: 'Na' as any,
+      b: 'NA',
+      c: 'na',
+      d: 'Na',
       discrimination: 2.0,
-    };
+    } as unknown as Zeta;
 
     const result = ensureZetaNumericValues(zeta);
 
@@ -231,10 +231,10 @@ describe('ensureZetaNumericValues', () => {
   it('filters out non-numeric string values', () => {
     const zeta: Zeta = {
       a: 1.5,
-      b: 'not-a-number' as any,
-      c: 'abc' as any,
+      b: 'not-a-number',
+      c: 'abc',
       d: 0.95,
-    };
+    } as unknown as Zeta;
 
     const result = ensureZetaNumericValues(zeta);
 
@@ -246,11 +246,11 @@ describe('ensureZetaNumericValues', () => {
 
   it('handles mixed symbolic and semantic parameter names', () => {
     const zeta: Zeta = {
-      a: '1.5' as any,
-      difficulty: '2.0' as any,
-      c: 'invalid' as any,
-      slipping: '0.95' as any,
-    };
+      a: '1.5',
+      difficulty: '2.0',
+      c: 'invalid',
+      slipping: '0.95',
+    } as unknown as Zeta;
 
     const result = ensureZetaNumericValues(zeta);
 
@@ -264,10 +264,10 @@ describe('ensureZetaNumericValues', () => {
   it('returns empty object when all values are invalid', () => {
     const zeta: Zeta = {
       a: undefined,
-      b: null as any,
-      c: 'NA' as any,
+      b: null,
+      c: 'NA',
       d: NaN,
-    };
+    } as unknown as Zeta;
 
     const result = ensureZetaNumericValues(zeta);
 
@@ -277,10 +277,10 @@ describe('ensureZetaNumericValues', () => {
   it('handles zero values correctly', () => {
     const zeta: Zeta = {
       a: 0,
-      b: '0' as any,
+      b: '0',
       c: 0.0,
-      d: '0.0' as any,
-    };
+      d: '0.0',
+    } as unknown as Zeta;
 
     const result = ensureZetaNumericValues(zeta);
 
@@ -295,9 +295,9 @@ describe('ensureZetaNumericValues', () => {
   it('handles negative values correctly', () => {
     const zeta: Zeta = {
       a: -1.5,
-      b: '-2.0' as any,
+      b: '-2.0',
       c: 0.25,
-    };
+    } as unknown as Zeta;
 
     const result = ensureZetaNumericValues(zeta);
 
