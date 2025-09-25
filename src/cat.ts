@@ -202,18 +202,42 @@ export class Cat {
     this.calculateSE();
   }
 
+  /**
+   * Estimate the ability level using expected a posteriori estimation
+   *
+   * This function uses the "log-sum-exp" trick to compute EAP.
+   * Instead of taking the product of the likelihoods, which can lead to
+   * underflow, it takes the exponential of the sum of the log likelihoods.
+   *
+   * We also subtract the maximum log-weight before exponentiating to avoid
+   * overflow when normalizing.
+   *
+   * @returns ability estimate
+   */
   private estimateAbilityEAP() {
-    let num = 0;
-    let nf = 0;
-    this._prior.forEach(([theta, probability]) => {
-      const like = Math.exp(this.likelihood(theta)); // Convert back to probability
-      num += theta * like * probability;
-      nf += like * probability;
+    const logWeights = this._prior.map(([_theta, _probability]) => {
+      return this.logLikelihood(_theta) + Math.log(_probability);
     });
 
-    return num / nf;
+    // Stabilize log weights
+    const maxLogWeight = Math.max(...logWeights);
+    const stabilizedWeights = logWeights.map((lw) => Math.exp(lw - maxLogWeight));
+
+    const norm = stabilizedWeights.reduce((acc, w) => acc + w, 0);
+    const num = this._prior.reduce((acc, [theta], i) => acc + theta * stabilizedWeights[i], 0);
+    const eap = num / norm;
+
+    return eap;
   }
 
+  /**
+   * Estimate the ability level using maximum likelihood estimation
+   *
+   * This function uses Powell's method to find the minimum of the negative log
+   * likelihood.
+   *
+   * @returns ability estimate
+   */
   private estimateAbilityMLE() {
     const theta0 = [0];
     const solution = minimize_Powell(this.negLikelihood.bind(this), theta0);
@@ -221,15 +245,32 @@ export class Cat {
     return theta;
   }
 
+  /**
+   * Calculate the negative log likelihood of the current response pattern given the ability estimate
+   *
+   * @param thetaArray ability estimate
+   * @returns negative log likelihood
+   */
   private negLikelihood(thetaArray: Array<number>) {
-    return -this.likelihood(thetaArray[0]);
+    return -this.logLikelihood(thetaArray[0]);
   }
 
-  private likelihood(theta: number) {
+  /**
+   * Calculate the log likelihood of the current response pattern given the ability estimate
+   *
+   * The raw likelihood is a product of many probabilities, each < 1, so it
+   * shrinks toward 0 very fast. For even a moderate test length, you'll
+   * underflow to 0 in floating-point arithmetic. Using the log likelihood
+   * avoids this problem.
+   *
+   * @param theta ability estimate
+   * @returns log likelihood
+   */
+  private logLikelihood(theta: number) {
     return this._zetas.reduce((acc, zeta, i) => {
-      const irf = itemResponseFunction(theta, zeta);
-      return this._resps[i] === 1 ? acc + Math.log(irf) : acc + Math.log(1 - irf);
-    }, 1);
+      const p = itemResponseFunction(theta, zeta);
+      return this._resps[i] === 1 ? acc + Math.log(p) : acc + Math.log(1 - p);
+    }, 0);
   }
 
   /**
