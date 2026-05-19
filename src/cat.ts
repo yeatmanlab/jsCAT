@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { minimize_Powell } from 'optimization-js';
 import { Stimulus, Zeta } from './type';
-import { itemResponseFunction, fisherInformation, normal, uniform, findClosest } from './utils';
+import { itemResponseFunction, fisherInformation, normal, uniform } from './utils';
 import { validateZetaParams, fillZetaDefaults, ensureZetaNumericValues } from './corpus';
 import seedrandom from 'seedrandom';
 import _clamp from 'lodash/clamp';
@@ -18,6 +18,7 @@ export interface CatInput {
   priorDist?: string;
   priorPar?: number[];
   randomSeed?: string | null;
+  randomesque?: number;
 }
 
 export class Cat {
@@ -27,6 +28,7 @@ export class Cat {
   public maxTheta: number;
   public priorDist: string;
   public priorPar: number[];
+  public randomesque: number;
   private readonly _zetas: Zeta[];
   private readonly _resps: (0 | 1)[];
   private _theta: number;
@@ -38,7 +40,7 @@ export class Cat {
 
   /**
    * Create a Cat object. This expects an single object parameter with the following keys
-   * @param {{method: string, itemSelect: string, nStartItems: number, startSelect:string, theta: number, minTheta: number, maxTheta: number, priorDist: string, priorPar: number[]}=} destructuredParam
+   * @param {{method: string, itemSelect: string, nStartItems: number, startSelect:string, theta: number, minTheta: number, maxTheta: number, priorDist: string, priorPar: number[], randomSeed: string|null, randomesque: number}=} destructuredParam
    *     method: ability estimator, e.g. MLE or EAP, default = 'MLE'
    *     itemSelect: the method of item selection, e.g. "MFI", "random", "closest", default method = 'MFI'
    *     nStartItems: first n trials to keep non-adaptive selection
@@ -49,6 +51,7 @@ export class Cat {
    *     priorDist: the prior distribution type (only applies to EAP estimator)
    *     priorPar: the prior distribution parameters (only applies to EAP estimator)
    *     randomSeed: set a random seed to trace the simulation
+   *     randomesque: number of top items to randomly select from in MFI/closest (default = 1, i.e. always pick the best)
    */
 
   constructor({
@@ -62,6 +65,7 @@ export class Cat {
     priorDist = 'norm', // only applies to EAP estimator
     priorPar = priorDist === 'unif' ? [-4, 4] : [0, 1], // only applies to EAP estimator
     randomSeed = null,
+    randomesque = 1,
   }: CatInput = {}) {
     this.method = Cat.validateMethod(method);
 
@@ -78,6 +82,7 @@ export class Cat {
     this._theta = theta;
     this._seMeasurement = Number.MAX_VALUE;
     this.nStartItems = nStartItems;
+    this.randomesque = Math.max(1, Math.round(randomesque));
     this._rng = randomSeed === null ? seedrandom() : seedrandom(randomSeed);
     this._prior = this.method === 'eap' ? Cat.validatePrior(priorDist, priorPar, minTheta, maxTheta) : [];
   }
@@ -291,13 +296,28 @@ export class Cat {
       ...element,
     }));
 
+    if (stimuliAddFisher.length === 0) {
+      return { nextStimulus: undefined as unknown as Stimulus, remainingStimuli: [] as Stimulus[] };
+    }
+
     stimuliAddFisher.sort((a, b) => b.fisherInformation - a.fisherInformation);
-    stimuliAddFisher.forEach((stimulus: Stimulus) => {
+
+    // Randomesque: pick randomly from the top-K items by Fisher information
+    const nrIt = Math.min(this.randomesque, stimuliAddFisher.length);
+    const threshold = stimuliAddFisher[nrIt - 1].fisherInformation;
+    const topK = stimuliAddFisher.filter((s) => s.fisherInformation >= threshold);
+    const pickIndex = this.randomInteger(0, topK.length - 1);
+    const picked = topK[pickIndex];
+
+    const remaining = stimuliAddFisher.filter((s) => s !== picked);
+    remaining.forEach((stimulus: Stimulus) => {
       delete stimulus['fisherInformation'];
     });
+    delete (picked as Stimulus)['fisherInformation'];
+
     return {
-      nextStimulus: stimuliAddFisher[0],
-      remainingStimuli: stimuliAddFisher.slice(1).sort((a: Stimulus, b: Stimulus) => a.difficulty! - b.difficulty!),
+      nextStimulus: picked as Stimulus,
+      remainingStimuli: remaining.sort((a: Stimulus, b: Stimulus) => a.difficulty! - b.difficulty!),
     };
   }
 
@@ -319,9 +339,21 @@ export class Cat {
 
   private selectorClosest(arr: Stimulus[]) {
     //findClosest requires arr is sorted by difficulty
-    const index = findClosest(arr, this._theta + 0.481);
-    const nextItem = arr[index];
-    arr.splice(index, 1);
+    if (arr.length === 0) {
+      return { nextStimulus: undefined as unknown as Stimulus, remainingStimuli: [] as Stimulus[] };
+    }
+    // Compute distances from target for randomesque support
+    const target = this._theta + 0.481;
+    const distances = arr.map((s, i) => ({ index: i, dist: Math.abs(s.difficulty! - target) }));
+    distances.sort((a, b) => a.dist - b.dist);
+
+    const nrIt = Math.min(this.randomesque, distances.length);
+    const threshold = distances[nrIt - 1].dist;
+    const topK = distances.filter((d) => d.dist <= threshold);
+    const pick = topK[this.randomInteger(0, topK.length - 1)];
+
+    const nextItem = arr[pick.index];
+    arr.splice(pick.index, 1);
     return {
       nextStimulus: nextItem,
       remainingStimuli: arr,
