@@ -765,3 +765,272 @@ describe('Clowder Early Stopping', () => {
     expect(nextItem).toBeUndefined(); // Should return undefined when early stopping triggers
   });
 });
+
+describe('Clowder additionalItemsToRemove parameter', () => {
+  it('should remove additional items from remainingItems when additionalItemsToRemove is provided', () => {
+    const clowderInput: ClowderInput = {
+      cats: {
+        cat1: { method: 'MLE', theta: 0.5 },
+      },
+      corpus: [
+        createMultiZetaStimulus('0', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('1', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('2', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('3', [createZetaCatMap(['cat1'])]),
+      ],
+    };
+
+    const clowder = new Clowder(clowderInput);
+
+    // Remove items 0 and 2 using additionalItemsToRemove
+    clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1',
+      additionalItemsToRemove: [clowder.corpus[0], clowder.corpus[2]],
+    });
+
+    // Should have 2 remaining items (1 and 3)
+    expect(clowder.remainingItems).toHaveLength(2);
+    expect(clowder.remainingItems.map((item) => item.id)).toEqual(['1', '3']);
+  });
+
+  it('should remove additional items along with presented items', () => {
+    const clowderInput: ClowderInput = {
+      cats: {
+        cat1: { method: 'MLE', theta: 0.5 },
+      },
+      corpus: [
+        createMultiZetaStimulus('0', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('1', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('2', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('3', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('4', [createZetaCatMap(['cat1'])]),
+      ],
+    };
+
+    const clowder = new Clowder(clowderInput);
+
+    // Present item 0 and additionally remove items 2 and 3
+    clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1',
+      catsToUpdate: ['cat1'],
+      items: [clowder.corpus[0]],
+      answers: [1],
+      additionalItemsToRemove: [clowder.corpus[2], clowder.corpus[3]],
+    });
+
+    // Should have 2 remaining items (1 and 4)
+    expect(clowder.remainingItems).toHaveLength(2);
+    expect(clowder.remainingItems.map((item) => item.id)).toEqual(['1', '4']);
+    // Item 0 should be in seenItems
+    expect(clowder.seenItems).toHaveLength(1);
+    expect(clowder.seenItems[0].id).toBe('0');
+  });
+
+  it('should not add additional items to seenItems', () => {
+    const clowderInput: ClowderInput = {
+      cats: {
+        cat1: { method: 'MLE', theta: 0.5 },
+      },
+      corpus: [
+        createMultiZetaStimulus('0', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('1', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('2', [createZetaCatMap(['cat1'])]),
+      ],
+    };
+
+    const clowder = new Clowder(clowderInput);
+
+    clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1',
+      additionalItemsToRemove: [clowder.corpus[0], clowder.corpus[1]],
+    });
+
+    // Only the presented items should be in seenItems (none in this case)
+    expect(clowder.seenItems).toHaveLength(0);
+  });
+
+  it('should handle empty additionalItemsToRemove array', () => {
+    const clowderInput: ClowderInput = {
+      cats: {
+        cat1: { method: 'MLE', theta: 0.5 },
+      },
+      corpus: [
+        createMultiZetaStimulus('0', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('1', [createZetaCatMap(['cat1'])]),
+      ],
+    };
+
+    const clowder = new Clowder(clowderInput);
+
+    clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1',
+      additionalItemsToRemove: [],
+    });
+
+    // All items should remain
+    expect(clowder.remainingItems).toHaveLength(2);
+  });
+
+  it('should handle additionalItemsToRemove with no items parameter', () => {
+    const clowderInput: ClowderInput = {
+      cats: {
+        cat1: { method: 'MLE', theta: 0.5 },
+      },
+      corpus: [
+        createMultiZetaStimulus('0', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('1', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('2', [createZetaCatMap(['cat1'])]),
+      ],
+    };
+
+    const clowder = new Clowder(clowderInput);
+
+    clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1',
+      additionalItemsToRemove: [clowder.corpus[0]],
+    });
+
+    // Item 0 should be removed, but not added to seenItems
+    expect(clowder.remainingItems).toHaveLength(2);
+    expect(clowder.seenItems).toHaveLength(0);
+  });
+
+  it('should remove items with multiple zeta parameters', () => {
+    const clowderInput: ClowderInput = {
+      cats: {
+        cat1: { method: 'MLE', theta: 0.5 },
+        cat2: { method: 'MLE', theta: 0.5 },
+      },
+      corpus: [
+        createMultiZetaStimulus('0', [createZetaCatMap(['cat1', 'cat2'])]),
+        createMultiZetaStimulus('1', [createZetaCatMap(['cat1']), createZetaCatMap(['cat2'])]),
+        createMultiZetaStimulus('2', [createZetaCatMap(['cat1', 'cat2'])]),
+      ],
+    };
+
+    const clowder = new Clowder(clowderInput);
+
+    clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1',
+      additionalItemsToRemove: [clowder.corpus[0]],
+    });
+
+    expect(clowder.remainingItems).toHaveLength(2);
+    expect(clowder.remainingItems.map((item) => item.id)).toEqual(['1', '2']);
+  });
+
+  it('should correctly handle additionalItemsToRemove with unvalidated items', () => {
+    const clowderInput: ClowderInput = {
+      cats: {
+        cat1: { method: 'MLE', theta: 0.5 },
+      },
+      corpus: [
+        createMultiZetaStimulus('0', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('1', [createZetaCatMap([])]), // Unvalidated
+        createMultiZetaStimulus('2', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('3', [createZetaCatMap([])]), // Unvalidated
+      ],
+    };
+
+    const clowder = new Clowder(clowderInput);
+
+    clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1',
+      additionalItemsToRemove: [clowder.corpus[1], clowder.corpus[3]],
+    });
+
+    // Should have 2 remaining items (0 and 2, both validated)
+    expect(clowder.remainingItems).toHaveLength(2);
+    expect(clowder.remainingItems.map((item) => item.id)).toEqual(['0', '2']);
+  });
+
+  it('should work with multiple calls to updateCatAndGetNextItem', () => {
+    const clowderInput: ClowderInput = {
+      cats: {
+        cat1: { method: 'MLE', theta: 0.5 },
+      },
+      corpus: [
+        createMultiZetaStimulus('0', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('1', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('2', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('3', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('4', [createZetaCatMap(['cat1'])]),
+      ],
+    };
+
+    const clowder = new Clowder(clowderInput);
+
+    // First call: remove items 0 and 1
+    clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1',
+      additionalItemsToRemove: [clowder.corpus[0], clowder.corpus[1]],
+    });
+
+    expect(clowder.remainingItems).toHaveLength(3);
+
+    // Second call: remove item 2
+    clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1',
+      additionalItemsToRemove: [clowder.corpus[2]],
+    });
+
+    expect(clowder.remainingItems).toHaveLength(2);
+    expect(clowder.remainingItems.map((item) => item.id)).toEqual(['3', '4']);
+  });
+
+  it('should not affect ability estimate updates when using additionalItemsToRemove', () => {
+    const clowderInput: ClowderInput = {
+      cats: {
+        cat1: { method: 'MLE', theta: 0.5 },
+      },
+      corpus: [
+        createMultiZetaStimulus('0', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('1', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('2', [createZetaCatMap(['cat1'])]),
+      ],
+    };
+
+    const clowder = new Clowder(clowderInput);
+    const originalTheta = clowder.cats.cat1.theta;
+
+    clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1',
+      catsToUpdate: ['cat1'],
+      items: [clowder.corpus[0]],
+      answers: [1],
+      additionalItemsToRemove: [clowder.corpus[1]],
+    });
+
+    // Theta should be updated based on the presented item, not the additional items
+    expect(clowder.cats.cat1.theta).not.toBe(originalTheta);
+    expect(clowder.cats.cat1.nItems).toBe(1);
+  });
+
+  it('should handle additionalItemsToRemove with duplicate items in items array', () => {
+    const clowderInput: ClowderInput = {
+      cats: {
+        cat1: { method: 'MLE', theta: 0.5 },
+      },
+      corpus: [
+        createMultiZetaStimulus('0', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('1', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('2', [createZetaCatMap(['cat1'])]),
+        createMultiZetaStimulus('3', [createZetaCatMap(['cat1'])]),
+      ],
+    };
+
+    const clowder = new Clowder(clowderInput);
+
+    clowder.updateCatAndGetNextItem({
+      catToSelect: 'cat1',
+      catsToUpdate: ['cat1'],
+      items: [clowder.corpus[0]],
+      answers: [1],
+      additionalItemsToRemove: [clowder.corpus[1], clowder.corpus[2]],
+    });
+
+    // Items 0, 1, and 2 should be removed
+    expect(clowder.remainingItems).toHaveLength(1);
+    expect(clowder.remainingItems[0].id).toBe('3');
+  });
+});

@@ -199,6 +199,7 @@ export class Clowder {
    * @param {(0 | 1) | (0 | 1)[]} [input.answers=[]] - An array of answers (0 or 1) corresponding to `items`.
    * @param {string} [input.method] - Optional method for updating ability estimates (if applicable).
    * @param {string} [input.itemSelect] - Optional item selection method (if applicable).
+   * @param {MultiZetaStimulus[]} [input.additionalItemsToRemove=[]] - Optional additional items to remove from the remainingItems.
    * @param {boolean} [input.randomlySelectUnvalidated=false] - Optional flag indicating whether to randomly select an unvalidated item for `catToSelect`.
    * @param {boolean} [input.returnUndefinedOnExhaustion=true] - Optional flag indicating whether to return undefined when no validated items are available.
    *
@@ -214,6 +215,7 @@ export class Clowder {
    * 2. Update:
    *    a. Updates the internal list of seen items.
    *    b. Updates the ability estimates for the `catsToUpdate`.
+   *    c. Removes the provided items from the remainingItems.
    * 3. Select:
    *    a. Selects the next item using `catToSelect`, considering only remaining items that are valid for that cat.
    *    b. If desired, randomly selects an unvalidated item for catToSelect.
@@ -227,6 +229,7 @@ export class Clowder {
     answers = [],
     method,
     itemSelect,
+    additionalItemsToRemove = [],
     randomlySelectUnvalidated = false,
     returnUndefinedOnExhaustion = true,
   }: {
@@ -238,6 +241,7 @@ export class Clowder {
     answers?: (0 | 1) | (0 | 1)[];
     method?: string;
     itemSelect?: string;
+    additionalItemsToRemove?: MultiZetaStimulus[];
     randomlySelectUnvalidated?: boolean;
     returnUndefinedOnExhaustion?: boolean; // New parameter type
   }): Stimulus | undefined {
@@ -265,7 +269,7 @@ export class Clowder {
     //           +----------------+
     // ----------|  Update Cats   |----------|
     //           +----------------+
-    this._updateCats(catsToUpdate, items, answers, method);
+    this._updateCats(catsToUpdate, items, answers, method, additionalItemsToRemove);
 
     //           +----------------+
     // ----------| Early Stopping |----------|
@@ -297,13 +301,21 @@ export class Clowder {
    * @param {MultiZetaStimulus[]} items - The items to update the ability estimates for.
    * @param {(0 | 1)[]} answers - The answers to the items.
    * @param {string} [method] - Optional method for updating ability estimates. If none is provided, it will use the default method for each Cat instance.
+   * @param {MultiZetaStimulus[]} [additionalItemsToRemove] - Optional additional items to remove from the remainingItems.
    */
-  private _updateCats(catsToUpdate: string[], items: MultiZetaStimulus[], answers: (0 | 1)[], method?: string) {
+  private _updateCats(
+    catsToUpdate: string[],
+    items: MultiZetaStimulus[],
+    answers: (0 | 1)[],
+    method?: string,
+    additionalItemsToRemove: MultiZetaStimulus[] = [],
+  ) {
     // Update the seenItems with the provided previous items
     this._seenItems.push(...items);
 
     // Remove the provided previous items from the remainingItems
     this._remainingItems = _differenceWith(this._remainingItems, items, _isEqual);
+    this._remainingItems = _differenceWith(this._remainingItems, additionalItemsToRemove, _isEqual);
 
     // Create a new zip array of items and answers. This will be useful in
     // filtering operations below. It ensures that items and their corresponding
