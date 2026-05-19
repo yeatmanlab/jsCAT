@@ -251,6 +251,7 @@ const nextItem = clowder.updateCatAndGetNextItem({
   catsToUpdate: ['cat1', 'cat2'], // Update responses for both Cats
   items: [clowder.corpus[0]], // Previously seen item
   answers: [1], // Response for the previously seen item
+  additionalItemsToRemove: [clowder.corpus[3]], // Optional: Remove items without updating ability estimates
 });
 
 console.log('Next item to present:', nextItem);
@@ -259,6 +260,34 @@ console.log('Next item to present:', nextItem);
 if (clowder.earlyStopping?.earlyStop) {
   console.log('Early stopping triggered:', clowder.stoppingReason);
 }
+```
+
+### 4. Managing Item Removal with `additionalItemsToRemove`
+
+The `additionalItemsToRemove` parameter allows you to remove items from the remaining corpus without updating ability estimates. This is useful for excluding items that should not be presented again (e.g., items that were skipped, flagged, or excluded for other reasons).
+
+#### Key Characteristics:
+
+- **Does not affect ability estimates**: Items in `additionalItemsToRemove` are removed from the corpus but do not contribute to Cat ability updates.
+- **Does not add to seenItems**: These items are not tracked in the `seenItems` array.
+- **Cumulative removal**: Multiple calls to `updateCatAndGetNextItem` with `additionalItemsToRemove` will cumulatively remove items.
+
+#### Example Usage:
+
+```typescript
+// Remove items that were skipped or flagged without updating ability estimates
+const nextItem = clowder.updateCatAndGetNextItem({
+  catToSelect: 'cat1',
+  catsToUpdate: ['cat1'],
+  items: [clowder.corpus[0]], // Item that was presented and answered
+  answers: [1],
+  additionalItemsToRemove: [clowder.corpus[2], clowder.corpus[3]], // Items to exclude without updating ability
+});
+
+// After this call:
+// - clowder.corpus[0] is in seenItems and was used to update cat1's ability
+// - clowder.corpus[2] and clowder.corpus[3] are removed from remainingItems but NOT in seenItems
+// - Only clowder.corpus[1] and any other items remain available for selection
 ```
 
 ---
