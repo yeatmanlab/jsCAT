@@ -7,6 +7,7 @@ import {
   convertZeta,
   checkNoDuplicateCatNames,
   filterItemsByCatParameterAvailability,
+  ensureZetaNumericValues,
 } from '../corpus';
 import { prepareClowderCorpus } from '..';
 import _omit from 'lodash/omit';
@@ -107,6 +108,203 @@ describe('fillZetaDefaults', () => {
       b: 5,
       c: 0,
       d: 1,
+    });
+  });
+});
+
+describe('ensureZetaNumericValues', () => {
+  it('converts string numbers to numeric values', () => {
+    const zeta: Zeta = {
+      a: '1.5',
+      b: '2.0',
+      c: '0.25',
+      d: '0.95',
+    } as unknown as Zeta;
+
+    const result = ensureZetaNumericValues(zeta);
+
+    expect(result).toEqual({
+      a: 1.5,
+      b: 2.0,
+      c: 0.25,
+      d: 0.95,
+    });
+  });
+
+  it('preserves numeric values', () => {
+    const zeta: Zeta = {
+      a: 1.5,
+      b: 2.0,
+      c: 0.25,
+      d: 0.95,
+    };
+
+    const result = ensureZetaNumericValues(zeta);
+
+    expect(result).toEqual({
+      a: 1.5,
+      b: 2.0,
+      c: 0.25,
+      d: 0.95,
+    });
+  });
+
+  it('filters out undefined values', () => {
+    const zeta: Zeta = {
+      a: 1.5,
+      b: undefined,
+      c: 0.25,
+    };
+
+    const result = ensureZetaNumericValues(zeta);
+
+    expect(result).toEqual({
+      a: 1.5,
+      c: 0.25,
+    });
+  });
+
+  it('filters out null values', () => {
+    const zeta: Zeta = {
+      a: 1.5,
+      b: null,
+      c: 0.25,
+    } as unknown as Zeta;
+
+    const result = ensureZetaNumericValues(zeta);
+
+    expect(result).toEqual({
+      a: 1.5,
+      c: 0.25,
+    });
+  });
+
+  it('filters out empty string values', () => {
+    const zeta: Zeta = {
+      a: 1.5,
+      b: '',
+      c: 0.25,
+    } as unknown as Zeta;
+
+    const result = ensureZetaNumericValues(zeta);
+
+    expect(result).toEqual({
+      a: 1.5,
+      c: 0.25,
+    });
+  });
+
+  it('filters out NA values (case insensitive)', () => {
+    const zeta: Zeta = {
+      a: 1.5,
+      b: 'NA',
+      c: 'na',
+      d: 'Na',
+      discrimination: 2.0,
+    } as unknown as Zeta;
+
+    const result = ensureZetaNumericValues(zeta);
+
+    expect(result).toEqual({
+      a: 1.5,
+      discrimination: 2.0,
+    });
+  });
+
+  it('filters out non-finite values (Infinity, -Infinity, NaN)', () => {
+    const zeta: Zeta = {
+      a: 1.5,
+      b: Infinity,
+      c: -Infinity,
+      d: NaN,
+      discrimination: 2.0,
+    };
+
+    const result = ensureZetaNumericValues(zeta);
+
+    expect(result).toEqual({
+      a: 1.5,
+      discrimination: 2.0,
+    });
+  });
+
+  it('filters out non-numeric string values', () => {
+    const zeta: Zeta = {
+      a: 1.5,
+      b: 'not-a-number',
+      c: 'abc',
+      d: 0.95,
+    } as unknown as Zeta;
+
+    const result = ensureZetaNumericValues(zeta);
+
+    expect(result).toEqual({
+      a: 1.5,
+      d: 0.95,
+    });
+  });
+
+  it('handles mixed symbolic and semantic parameter names', () => {
+    const zeta: Zeta = {
+      a: '1.5',
+      difficulty: '2.0',
+      c: 'invalid',
+      slipping: '0.95',
+    } as unknown as Zeta;
+
+    const result = ensureZetaNumericValues(zeta);
+
+    expect(result).toEqual({
+      a: 1.5,
+      difficulty: 2.0,
+      slipping: 0.95,
+    });
+  });
+
+  it('returns empty object when all values are invalid', () => {
+    const zeta: Zeta = {
+      a: undefined,
+      b: null,
+      c: 'NA',
+      d: NaN,
+    } as unknown as Zeta;
+
+    const result = ensureZetaNumericValues(zeta);
+
+    expect(result).toEqual({});
+  });
+
+  it('handles zero values correctly', () => {
+    const zeta: Zeta = {
+      a: 0,
+      b: '0',
+      c: 0.0,
+      d: '0.0',
+    } as unknown as Zeta;
+
+    const result = ensureZetaNumericValues(zeta);
+
+    expect(result).toEqual({
+      a: 0,
+      b: 0,
+      c: 0,
+      d: 0,
+    });
+  });
+
+  it('handles negative values correctly', () => {
+    const zeta: Zeta = {
+      a: -1.5,
+      b: '-2.0',
+      c: 0.25,
+    } as unknown as Zeta;
+
+    const result = ensureZetaNumericValues(zeta);
+
+    expect(result).toEqual({
+      a: -1.5,
+      b: -2.0,
+      c: 0.25,
     });
   });
 });
