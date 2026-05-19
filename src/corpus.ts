@@ -48,7 +48,7 @@ export const ensureZetaNumericValues = (zeta: Zeta): Zeta => {
   const convertedZeta: Zeta = {};
 
   // Convert all zeta parameter values to numbers, filtering out invalid values
-  Object.entries(zeta).forEach(([key, value]) => {
+  Object.entries(zeta).forEach(([key, value]: [string, any]) => {
     if (value !== undefined && value !== null && value !== '' && String(value).toUpperCase() !== 'NA') {
       const numValue = Number(value);
       if (Number.isFinite(numValue)) {
