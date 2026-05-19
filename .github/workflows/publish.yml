@@ -1,27 +1,93 @@
-name: Publish Package to npmjs
+name: Publish, Release, and Deploy
 on:
   push:
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
-      - 'v[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+'
-      - 'v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+'
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+"
+permissions:
+  id-token: write # Required for OIDC
+  contents: write # Required for writing tags
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout 🛎️
-        uses: actions/checkout@v3
-      # Setup .npmrc file to publish to npm
-      - uses: actions/setup-node@v3
+        uses: actions/checkout@v6
         with:
-          node-version: '19.x'
-          registry-url: 'https://registry.npmjs.org'
+          ref: main
+
+      - name: Ensure tag is on main
+        run: |
+          git fetch origin main
+          tag_sha=$GITHUB_SHA
+          if git rev-list --first-parent origin/main | grep -q $tag_sha; then
+            echo "Tag SHA: $tag_sha is on main"
+          else
+            echo "Tag SHA: $tag_sha is not on main"
+            exit 1
+          fi
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: ".nvmrc"
+          registry-url: "https://registry.npmjs.org"
+          cache: "npm"
+          cache-dependency-path: "package-lock.json"
+
+        # npm@v11.5.0+ is required for OIDC support
+        # node@v22.0.0+
+      - name: Upgrade npm for OIDC support
+        run: npm install -g npm@latest
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
       - name: Install and Build 🔧
         run: |
           npm ci
-          npm run build
-          npm run format
+          npm run package
+
+      - name: Check for uncommitted changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git commit -am "Commit uncommitted changes [skip ci]"
+
+      - name: Push tag
+        run: |
+          git push origin main --follow-tags
+
       - name: Publish 🚀
-        run: npm publish --access public
+        run: NODE_AUTH_TOKEN="" npm publish --access public
+
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+
+      - name: Notify on failure
+        if: failure()
+        uses: actions/github-script@v5
+        with:
+          script: |
+            const issue = {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: "Combined workflow failed",
+              body: `The workflow failed on [${context.sha.substring(0, 7)}](${context.payload.repository.html_url}/commit/${context.sha}). Please check it.`,
+            };
+            github.rest.issues.create(issue);
