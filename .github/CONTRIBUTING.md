@@ -51,6 +51,8 @@ import { fisherInformation } from '../utils';
  *
  * @remarks
  * Document the math, the IRT models it is exact for, and any approximations.
+ * See the scope warning below this example — this simple penalized form is
+ * NOT Warm's estimator under 3PL/4PL.
  *
  * Reference: Warm, T. A. (1989). Weighted likelihood estimation of ability in
  * item response theory. Psychometrika, 54(3), 427-450.
@@ -66,6 +68,26 @@ export class WLEEstimator implements AbilityEstimator {
   }
 }
 ```
+
+> [!WARNING]
+> **Worked example of a scope trap — read before implementing WLE.**
+> The penalized objective above (maximize ln L + ½ ln I, first-order condition
+> S(θ) + I′/(2I) = 0) equals Warm's weighted likelihood estimator **only for
+> 1PL/2PL models**, where Warm's correction term J(θ) = Σ P′ᵢP″ᵢ/(PᵢQᵢ)
+> coincides with I′(θ). Under 3PL/4PL they diverge: with c = 0.2 items, J and
+> I′ at the same theta can differ in sign, and theta estimates differ by up to
+> ≈0.2 on an all-3PL bank (≈0.04 on this repo's golden fixture bank, which
+> exceeds the golden test tolerance — the penalized form **will fail step 4**
+> against catR's `method = "WL"`, which solves the exact equation
+> S(θ) + J/(2I) = 0; see catR's `Ji()`).
+>
+> Your options, in order of preference: (a) implement the exact correction —
+> solve S(θ) + J/(2I) = 0, computing J from the first and second derivatives
+> of the IRF; or (b) ship the penalized form but document it as Jeffreys-prior
+> bias reduction (Firth, 1993) exact for 1PL/2PL only, and validate against
+> catR's `method = "BM", priorDist = "Jeffreys"` (which uses I′/(2I)) instead
+> of `"WL"`. Do not silently widen the golden test tolerances to make the
+> penalized form pass as "WLE".
 
 **2. Register it** in `src/estimators/registry.ts`:
 
@@ -88,7 +110,7 @@ The `EstimationMethod` type, runtime validation, `Cat` dispatch, and error messa
 **4. Wire it into the golden tests** (see `validation/README.md`):
 
 - Add the estimator to `scripts/generate-golden-fixtures.js` and run `npm run fixtures:generate`.
-- Add the corresponding reference call to `validation/generate-r-reference.R` (catR's `thetaEst` supports `method = "WL"`) and run it with `Rscript`.
+- Add the corresponding reference call to `validation/generate-r-reference.R` and run it with `Rscript`. Pick the catR method that matches what you actually implemented (see the warning in step 1: exact Warm WLE → `method = "WL"`; penalized/Jeffreys form → `method = "BM", priorDist = "Jeffreys"`).
 - Add the new columns to `src/__tests__/golden.test.ts`.
 - Commit the regenerated CSVs. The PR must show the golden test passing against the independent R reference.
 
