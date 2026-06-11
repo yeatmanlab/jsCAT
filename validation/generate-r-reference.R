@@ -29,7 +29,8 @@ resp_matrix <- as.matrix(responses[, grepl("^i", names(responses))])
 
 # Match jsCAT's settings: theta bounds [-6, 6]; EAP with a standard normal
 # prior. jsCAT quantizes the EAP prior on a 0.1-step grid over [-6, 6]
-# (121 points), so we use 121 quadrature points here as well.
+# (121 points). In thetaEst, the EAP integration grid is specified via
+# parInt = c(lower, upper, nqp), so we use parInt = c(-6, 6, 121).
 theta_mle <- apply(resp_matrix, 1, function(x) {
   thetaEst(it, x, method = "ML", range = c(-6, 6))
 })
@@ -40,9 +41,7 @@ theta_eap <- apply(resp_matrix, 1, function(x) {
     method = "EAP",
     priorDist = "norm",
     priorPar = c(0, 1),
-    lower = -6,
-    upper = 6,
-    nqp = 121
+    parInt = c(-6, 6, 121)
   )
 })
 
