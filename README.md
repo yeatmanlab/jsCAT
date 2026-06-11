@@ -294,6 +294,12 @@ const nextItem = clowder.updateCatAndGetNextItem({
 
 By integrating `Clowder`, your application can efficiently manage adaptive testing scenarios with robust trial and stimuli handling, multi-CAT configurations, and stopping conditions to ensure optimal performance.
 
+## Contributing
+
+Contributions are welcome — including AI-assisted ones. See [CONTRIBUTING.md](.github/CONTRIBUTING.md) for the development workflow, the architecture overview, and a step-by-step tutorial on adding a new ability estimator, item selector, or stopping rule. New psychometric algorithms must ship with validation evidence (literature reference, analytic tests, and golden fixture tests against catR/mirt — see [validation/README.md](validation/README.md)).
+
+If you point an AI coding agent at this repo, it will pick up the rules automatically from `CLAUDE.md` / `AGENTS.md` and `.ai/rules/`.
+
 ## References
 
 - Chalmers, R. P. (2012). mirt: A multidimensional item response theory package for the R environment. Journal of Statistical Software.
