@@ -154,6 +154,15 @@ describe('uniform', () => {
     });
   });
 
+  it(`it should use default bounds of [-4, 4] and step size 0.1 when called with no arguments`, () => {
+    const result = uniform();
+    const probs = result.map(([, p]: [number, number]) => p);
+    const xs = result.map(([x]: [number, number]) => x);
+    expect(probs.reduce((a: number, b: number) => a + b, 0)).toBeCloseTo(1, 6);
+    expect(xs[0]).toBeCloseTo(-4, 6);
+    expect(xs[xs.length - 1]).toBeCloseTo(4, 6);
+  });
+
   it(`it should use the first two values as the fullmin and fullmax if they are not provided`, () => {
     const result = uniform(-1, 1, 0.5);
     const probs = result.map(([, p]: [number, number]) => p);

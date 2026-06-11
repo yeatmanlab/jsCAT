@@ -452,8 +452,9 @@ export class Clowder {
     } else if (missing.length === 0 || !randomlySelectUnvalidated) {
       return returnStimulus; // Return validated item if available
     } else {
-      // Randomly decide whether to return a validated or unvalidated item
-      const random = Math.random();
+      // Randomly decide whether to return a validated or unvalidated item.
+      // Use the seeded RNG (not Math.random()) so simulations are reproducible.
+      const random = this._rng();
       const numRemaining = { available: available.length, missing: missing.length };
       return random < numRemaining.missing / (numRemaining.available + numRemaining.missing)
         ? missing[Math.floor(this._rng() * missing.length)]

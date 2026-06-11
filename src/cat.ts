@@ -1,17 +1,27 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { minimize_Powell } from 'optimization-js';
 import { Stimulus, Zeta } from './type';
-import { itemResponseFunction, fisherInformation, normal, uniform, findClosest } from './utils';
+import { fisherInformation, normal, uniform } from './utils';
 import { validateZetaParams, fillZetaDefaults, ensureZetaNumericValues } from './corpus';
+import { EstimationMethod, EstimationMethodInput, getEstimator, validateEstimationMethod } from './estimators';
+import {
+  ItemSelectMethod,
+  ItemSelectMethodInput,
+  SelectorContext,
+  SelectorMethod,
+  StartSelectMethod,
+  StartSelectMethodInput,
+  getSelector,
+  validateItemSelect,
+  validateStartSelect,
+} from './selectors';
 import seedrandom from 'seedrandom';
 import _clamp from 'lodash/clamp';
 import _cloneDeep from 'lodash/cloneDeep';
 
 export interface CatInput {
-  method?: string;
-  itemSelect?: string;
+  method?: EstimationMethodInput;
+  itemSelect?: ItemSelectMethodInput;
   nStartItems?: number;
-  startSelect?: string;
+  startSelect?: StartSelectMethodInput;
   theta?: number;
   minTheta?: number;
   maxTheta?: number;
@@ -21,8 +31,8 @@ export interface CatInput {
 }
 
 export class Cat {
-  public method: string;
-  public itemSelect: string;
+  public method: EstimationMethod;
+  public itemSelect: ItemSelectMethod;
   public minTheta: number;
   public maxTheta: number;
   public priorDist: string;
@@ -32,14 +42,14 @@ export class Cat {
   private _theta: number;
   private _seMeasurement: number;
   public nStartItems: number;
-  public startSelect: string;
+  public startSelect: StartSelectMethod;
   private readonly _rng: ReturnType<seedrandom>;
   private _prior: [number, number][];
 
   /**
    * Create a Cat object. This expects an single object parameter with the following keys
    * @param {{method: string, itemSelect: string, nStartItems: number, startSelect:string, theta: number, minTheta: number, maxTheta: number, priorDist: string, priorPar: number[]}=} destructuredParam
-   *     method: ability estimator, e.g. MLE or EAP, default = 'MLE'
+   *     method: ability estimator, e.g. MLE or EAP, default = 'MLE' (see src/estimators/registry.ts for the full list)
    *     itemSelect: the method of item selection, e.g. "MFI", "random", "closest", default method = 'MFI'
    *     nStartItems: first n trials to keep non-adaptive selection
    *     startSelect: rule to select first n trials
@@ -52,8 +62,8 @@ export class Cat {
    */
 
   constructor({
-    method = 'MLE',
-    itemSelect = 'MFI',
+    method = 'mle',
+    itemSelect = 'mfi',
     nStartItems = 0,
     startSelect = 'middle',
     theta = 0,
@@ -144,41 +154,30 @@ export class Cat {
     throw new Error(`priorDist must be "unif" or "norm." Received ${priorDist} instead.`);
   }
 
-  private static validateMethod(method: string) {
-    const lowerMethod = method.toLowerCase();
-    const validMethods: Array<string> = ['mle', 'eap']; // TO DO: add staircase
-    if (!validMethods.includes(lowerMethod)) {
-      throw new Error('The abilityEstimator you provided is not in the list of valid methods');
-    }
-    return lowerMethod;
+  private static validateMethod(method: string): EstimationMethod {
+    return validateEstimationMethod(method);
   }
 
-  private static validateItemSelect(itemSelect: string) {
-    const lowerItemSelect = itemSelect.toLowerCase();
-    const validItemSelect: Array<string> = ['mfi', 'random', 'closest', 'fixed'];
-    if (!validItemSelect.includes(lowerItemSelect)) {
-      throw new Error('The itemSelector you provided is not in the list of valid methods');
-    }
-    return lowerItemSelect;
+  private static validateItemSelect(itemSelect: string): ItemSelectMethod {
+    return validateItemSelect(itemSelect);
   }
 
-  private static validateStartSelect(startSelect: string) {
-    const lowerStartSelect = startSelect.toLowerCase();
-    const validStartSelect: Array<string> = ['random', 'middle', 'fixed']; // TO DO: add staircase
-    if (!validStartSelect.includes(lowerStartSelect)) {
-      throw new Error('The startSelect you provided is not in the list of valid methods');
-    }
-    return lowerStartSelect;
+  private static validateStartSelect(startSelect: string): StartSelectMethod {
+    return validateStartSelect(startSelect);
   }
 
   /**
    * use previous response patterns and item params to calculate the estimate ability based on a defined method
    * @param zeta - last item param
    * @param answer - last response pattern
-   * @param method
+   * @param method - the estimation method to use; defaults to the Cat's configured method
    */
-  public updateAbilityEstimate(zeta: Zeta | Zeta[], answer: (0 | 1) | (0 | 1)[], method: string = this.method) {
-    method = Cat.validateMethod(method);
+  public updateAbilityEstimate(
+    zeta: Zeta | Zeta[],
+    answer: (0 | 1) | (0 | 1)[],
+    method: EstimationMethodInput = this.method,
+  ) {
+    const validatedMethod = Cat.validateMethod(method);
 
     zeta = Array.isArray(zeta) ? zeta : [zeta];
     answer = Array.isArray(answer) ? answer : [answer];
@@ -193,43 +192,18 @@ export class Cat {
     this._zetas.push(...zeta);
     this._resps.push(...answer);
 
-    if (method === 'eap') {
-      this._theta = this.estimateAbilityEAP();
-    } else if (method === 'mle') {
-      this._theta = this.estimateAbilityMLE();
-    }
-    this._theta = _clamp(this._theta, this.minTheta, this.maxTheta);
-    this.calculateSE();
-  }
-
-  private estimateAbilityEAP() {
-    let num = 0;
-    let nf = 0;
-    this._prior.forEach(([theta, probability]) => {
-      const like = Math.exp(this.likelihood(theta)); // Convert back to probability
-      num += theta * like * probability;
-      nf += like * probability;
+    // All estimators are dispatched through the registry. To add a new
+    // estimator, see src/estimators/registry.ts — no changes are needed here.
+    this._theta = getEstimator(validatedMethod).estimateAbility({
+      zetas: this._zetas,
+      resps: this._resps,
+      minTheta: this.minTheta,
+      maxTheta: this.maxTheta,
+      prior: this._prior,
     });
 
-    return num / nf;
-  }
-
-  private estimateAbilityMLE() {
-    const theta0 = [0];
-    const solution = minimize_Powell(this.negLikelihood.bind(this), theta0);
-    const theta = solution.argument[0];
-    return theta;
-  }
-
-  private negLikelihood(thetaArray: Array<number>) {
-    return -this.likelihood(thetaArray[0]);
-  }
-
-  private likelihood(theta: number) {
-    return this._zetas.reduce((acc, zeta, i) => {
-      const irf = itemResponseFunction(theta, zeta);
-      return this._resps[i] === 1 ? acc + Math.log(irf) : acc + Math.log(1 - irf);
-    }, 1);
+    this._theta = _clamp(this._theta, this.minTheta, this.maxTheta);
+    this.calculateSE();
   }
 
   /**
@@ -249,9 +223,9 @@ export class Cat {
    * @param deepCopy - default deepCopy = true
    * @returns {nextStimulus: Stimulus, remainingStimuli: Array<Stimulus>}
    */
-  public findNextItem(stimuli: Stimulus[], itemSelect: string = this.itemSelect, deepCopy = true) {
+  public findNextItem(stimuli: Stimulus[], itemSelect: ItemSelectMethodInput = this.itemSelect, deepCopy = true) {
     let arr: Array<Stimulus>;
-    let selector = Cat.validateItemSelect(itemSelect);
+    let selector: SelectorMethod = Cat.validateItemSelect(itemSelect);
     if (deepCopy) {
       arr = _cloneDeep(stimuli);
     } else {
@@ -267,91 +241,18 @@ export class Cat {
       // for mfi, we sort the arr by fisher information in the private function to select the best item,
       // and then sort by difficulty to return the remainingStimuli
       // for fixed, we want to keep the corpus order as input
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       arr.sort((a: Stimulus, b: Stimulus) => a.difficulty! - b.difficulty!);
     }
 
-    if (selector === 'middle') {
-      // middle will only be used in startSelect
-      return this.selectorMiddle(arr);
-    } else if (selector === 'closest') {
-      return this.selectorClosest(arr);
-    } else if (selector === 'random') {
-      return this.selectorRandom(arr);
-    } else if (selector === 'fixed') {
-      return this.selectorFixed(arr);
-    } else {
-      return this.selectorMFI(arr);
-    }
-  }
-
-  private selectorMFI(inputStimuli: Stimulus[]) {
-    const stimuli = inputStimuli.map((stim) => fillZetaDefaults(stim, 'semantic'));
-    const stimuliAddFisher = stimuli.map((element: Stimulus) => ({
-      fisherInformation: fisherInformation(this._theta, fillZetaDefaults(element, 'symbolic')),
-      ...element,
-    }));
-
-    stimuliAddFisher.sort((a, b) => b.fisherInformation - a.fisherInformation);
-    stimuliAddFisher.forEach((stimulus: Stimulus) => {
-      delete stimulus['fisherInformation'];
-    });
-    return {
-      nextStimulus: stimuliAddFisher[0],
-      remainingStimuli: stimuliAddFisher.slice(1).sort((a: Stimulus, b: Stimulus) => a.difficulty! - b.difficulty!),
+    // All selectors are dispatched through the registry. To add a new
+    // selector, see src/selectors/registry.ts — no changes are needed here.
+    const context: SelectorContext = {
+      theta: this._theta,
+      nStartItems: this.nStartItems,
+      randomInteger: this.randomInteger.bind(this),
     };
-  }
-
-  private selectorMiddle(arr: Stimulus[]) {
-    let index: number;
-    index = Math.floor(arr.length / 2);
-
-    if (arr.length >= this.nStartItems) {
-      index += this.randomInteger(-Math.floor(this.nStartItems / 2), Math.floor(this.nStartItems / 2));
-    }
-
-    const nextItem = arr[index];
-    arr.splice(index, 1);
-    return {
-      nextStimulus: nextItem,
-      remainingStimuli: arr,
-    };
-  }
-
-  private selectorClosest(arr: Stimulus[]) {
-    //findClosest requires arr is sorted by difficulty
-    const index = findClosest(arr, this._theta + 0.481);
-    const nextItem = arr[index];
-    arr.splice(index, 1);
-    return {
-      nextStimulus: nextItem,
-      remainingStimuli: arr,
-    };
-  }
-
-  private selectorRandom(arr: Stimulus[]) {
-    const index = this.randomInteger(0, arr.length - 1);
-    const nextItem = arr.splice(index, 1)[0];
-    return {
-      nextStimulus: nextItem,
-      remainingStimuli: arr,
-    };
-  }
-
-  /**
-   * Picks the next item in line from the given list of stimuli.
-   * It grabs the first item from the list, removes it, and then returns it along with the rest of the list.
-   *
-   * @param arr - The list of stimuli to choose from.
-   * @returns {Object} - An object with the next item and the updated list.
-   * @returns {Stimulus} return.nextStimulus - The item that was picked from the list.
-   * @returns {Stimulus[]} return.remainingStimuli - The list of what's left after picking the item.
-   */
-  private selectorFixed(arr: Stimulus[]) {
-    const nextItem = arr.shift();
-    return {
-      nextStimulus: nextItem,
-      remainingStimuli: arr,
-    };
+    return getSelector(selector).select(arr, context);
   }
 
   /**

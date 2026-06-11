@@ -7,3 +7,28 @@ export {
   StopOnSEMeasurementPlateau,
   StopIfSEMeasurementBelowThreshold,
 } from './stopping';
+export {
+  AbilityEstimator,
+  EstimationContext,
+  EstimationMethod,
+  EstimationMethodInput,
+  ABILITY_ESTIMATORS,
+  validateEstimationMethod,
+  logLikelihood,
+  maximizeOverTheta,
+} from './estimators';
+export {
+  ItemSelector,
+  SelectorContext,
+  SelectorResult,
+  SelectorMethod,
+  ItemSelectMethod,
+  StartSelectMethod,
+  ItemSelectMethodInput,
+  StartSelectMethodInput,
+  SELECTORS,
+  ITEM_SELECT_METHODS,
+  START_SELECT_METHODS,
+  validateItemSelect,
+  validateStartSelect,
+} from './selectors';

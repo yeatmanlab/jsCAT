@@ -57,7 +57,6 @@ const stimuli = [{  discrimination: 1, difficulty: -2, guessing: 0, slipping: 1,
 const nextItem = cat1.findNextItem(stimuli, 'MFI');
 ```
 
-
 ## Validation
 
 ### Validation of theta estimate and theta standard error
@@ -65,7 +64,7 @@ const nextItem = cat1.findNextItem(stimuli, 'MFI');
 Reference software: mirt (Chalmers, 2012)
 ![img.png](validation/plots/jsCAT_validation_1.png)
 
-### Validation of MFI algorithm 
+### Validation of MFI algorithm
 
 Reference software: catR (Magis et al., 2017)
 ![img_1.png](validation/plots/jsCAT_validation_2.png)
@@ -92,12 +91,14 @@ The `Clowder` class is a powerful tool for managing multiple `Cat` instances and
 ### 1. Replacing Single `Cat` Usage
 
 #### Single `Cat` Example:
+
 ```typescript
 const cat = new Cat({ method: 'MLE', theta: 0.5 });
 const nextItem = cat.findNextItem(stimuli);
 ```
 
 #### Clowder Equivalent:
+
 ```typescript
 const clowder = new Clowder({
   cats: { cat1: { method: 'MLE', theta: 0.5 } },
@@ -141,17 +142,20 @@ export const defaultZeta = (desiredFormat: 'symbolic' | 'semantic' = 'symbolic')
 };
 
 ```
+
 - If desiredFormat is not specified, it defaults to 'symbolic'.
 - This ensures consistency across different stimuli and prevents errors from missing Zeta parameters.
 - You can pass 'semantic' as an argument to convert the default Zeta values into a different representation.
 
 #### Validate the Corpus:
+
 ```typescript
 import { checkNoDuplicateCatNames } from './corpus';
 checkNoDuplicateCatNames(corpus);
 ```
 
 #### Filter Stimuli for a Specific Cat:
+
 ```typescript
 import { filterItemsByCatParameterAvailability } from './corpus';
 const { available, missing } = filterItemsByCatParameterAvailability(corpus, 'cat1');
@@ -164,6 +168,7 @@ const { available, missing } = filterItemsByCatParameterAvailability(corpus, 'ca
 Integrate early stopping mechanisms to optimize the testing process.
 
 #### Example: Stop After N Items
+
 ```typescript
 import { StopAfterNItems } from './stopping';
 
@@ -293,6 +298,12 @@ const nextItem = clowder.updateCatAndGetNextItem({
 ---
 
 By integrating `Clowder`, your application can efficiently manage adaptive testing scenarios with robust trial and stimuli handling, multi-CAT configurations, and stopping conditions to ensure optimal performance.
+
+## Contributing
+
+Contributions are welcome — including AI-assisted ones. See [CONTRIBUTING.md](.github/CONTRIBUTING.md) for the development workflow, the architecture overview, and a step-by-step tutorial on adding a new ability estimator, item selector, or stopping rule. New psychometric algorithms must ship with validation evidence (literature reference, analytic tests, and golden fixture tests against catR/mirt — see [validation/README.md](validation/README.md)).
+
+If you point an AI coding agent at this repo, it will pick up the rules automatically from `CLAUDE.md` / `AGENTS.md` and `.ai/rules/`.
 
 ## References
 
