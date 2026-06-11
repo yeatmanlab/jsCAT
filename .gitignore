@@ -188,3 +188,9 @@ docs
 validation/data
 validation/simulation/resp
 validation/.DS_Store
+
+# IDE and OS junk
+.idea/
+.DS_Store
+.Rproj.user/
+.Rhistory
