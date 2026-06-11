@@ -10,6 +10,7 @@
     "format": "prettier --write \"src/**/*.ts\" \"lib/**/*.js\"",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "doc": "npx typedoc",
+    "fixtures:generate": "npm run build && node scripts/generate-golden-fixtures.js",
     "prepare": "npm run build",
     "prepublishOnly": "npm test && npm run lint",
     "preversion": "npm run lint",
