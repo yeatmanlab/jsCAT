@@ -26,11 +26,14 @@ const FIXTURE_DIR = path.join(__dirname, '__fixtures__', 'golden');
 const R_REFERENCE_FILE = path.join(FIXTURE_DIR, 'expected-r-reference.csv');
 
 // Tolerances for agreement with the external (catR) reference. jsCAT and catR
-// use different optimizers and quadrature schemes, so exact equality is not
-// expected. These bounds are intentionally provisional and should be tightened
-// after the first committed regeneration if observed agreement allows.
-const R_REFERENCE_MAX_ABS_DIFF = 0.05;
-const R_REFERENCE_MEAN_ABS_DIFF = 0.01;
+// use different optimizers, so exact equality is not expected. Observed
+// agreement on the initial fixture set: MLE max |diff| = 0.0036 (Powell vs.
+// catR's optimizer, same objective), EAP max |diff| = 2.4e-6 (same rectangular
+// quadrature). The bounds below give ~5x headroom over the observed MLE
+// differences; if a new estimator legitimately needs looser bounds, document
+// why in the PR rather than silently widening these.
+const R_REFERENCE_MAX_ABS_DIFF = 0.02;
+const R_REFERENCE_MEAN_ABS_DIFF = 0.002;
 
 // The characterization baseline is jsCAT's own output, so agreement should be
 // exact up to floating point noise across platforms.
@@ -40,11 +43,16 @@ interface CsvRow {
   [key: string]: string;
 }
 
+/** Strip surrounding double quotes (R's write.csv quotes character fields and headers). */
+function unquote(value: string): string {
+  return value.trim().replace(/^"|"$/g, '');
+}
+
 function parseCsv(filepath: string): CsvRow[] {
   const lines = fs.readFileSync(filepath, 'utf8').trim().split('\n');
-  const headers = lines[0].split(',').map((h) => h.trim());
+  const headers = lines[0].split(',').map(unquote);
   return lines.slice(1).map((line) => {
-    const values = line.split(',').map((v) => v.trim());
+    const values = line.split(',').map(unquote);
     return headers.reduce<CsvRow>((row, header, i) => {
       row[header] = values[i] ?? '';
       return row;
