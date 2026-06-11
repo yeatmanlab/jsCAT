@@ -1,6 +1,6 @@
 # Contributing to jsCAT
 
-Thank you for contributing! jsCAT is a research software project: it implements psychometric algorithms whose correctness matters for real assessments of real students. This guide explains how to set up a development environment, how the codebase is organized, and — most importantly — what we require before merging a new algorithm.
+Thank you for contributing! jsCAT is a research software project: it implements psychometric algorithms whose correctness matters for real assessments of real students. This guide explains how to set up a development environment, how the codebase is organized, and, most importantly, what we require before merging a new algorithm.
 
 AI-assisted contributions are welcome (many of our best PRs are AI-generated). See [AI-assisted contributions](#ai-assisted-contributions) for the disclosure policy, and note that the requirements below are designed so that a reviewer can verify correctness without trusting the author or the tool that produced the code.
 
@@ -103,7 +103,7 @@ Every PR that adds or changes a psychometric algorithm must include:
 1. **A literature reference** for the method, cited in the class JSDoc (author, year, journal).
 2. **Documented scope**: which IRT models (1PL/2PL/3PL/4PL) the implementation is exact for, and what happens outside that scope.
 3. **Analytic unit tests** for closed-form cases, with the derivation in a comment.
-4. **Golden test coverage**: committed fixtures showing agreement with an independent reference implementation (catR or mirt), passing in CI. A validation plot alone is not sufficient — plots rot, tests don't.
+4. **Golden test coverage**: committed fixtures showing agreement with an independent reference implementation (catR or mirt), passing in CI. A validation plot alone is not sufficient.
 5. **No new dispatch logic** outside the registries.
 
 PRs that change existing numerical behavior must regenerate the characterization baseline (`npm run fixtures:generate`) and justify the change in the PR description.
@@ -128,4 +128,4 @@ If you are using an AI agent in this repo, point it at `CLAUDE.md` / `AGENTS.md`
 
 ## Questions
 
-Open a [GitHub issue](https://github.com/yeatmanlab/jsCAT/issues) — including for questions about whether an algorithmic idea fits the library before you build it. We'd rather discuss the design first.
+Open a [GitHub issue](https://github.com/yeatmanlab/jsCAT/issues) for questions about whether an algorithmic idea fits the library before you build it. We'd rather discuss the design first.
