@@ -50,6 +50,22 @@ describe('validateZetaParams', () => {
 });
 
 describe('fillZetaDefaults', () => {
+  it('defaults to symbolic format when no format is provided', () => {
+    const zeta: Zeta = {
+      b: 1,
+      c: 0.5,
+    };
+
+    const filledZeta = fillZetaDefaults(zeta);
+
+    expect(filledZeta).toEqual({
+      a: 1,
+      b: 1,
+      c: 0.5,
+      d: 1,
+    });
+  });
+
   it('fills in default values for missing keys', () => {
     const zeta: Zeta = {
       difficulty: 1,

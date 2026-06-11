@@ -1,7 +1,7 @@
 {
   "collectCoverage": true,
   "coverageDirectory": "coverage",
-  "coverageProvider": "v8",
+  "coverageProvider": "babel",
   "coveragePathIgnorePatterns": ["/node_modules/", "/__tests__/"],
   "coverageReporters": ["text", "lcov"],
   "collectCoverageFrom": [
@@ -9,7 +9,7 @@
     "!src/**/*.d.ts",
     "!src/**/types.ts",
     "!src/**/type.ts",
-    "!src/index.ts"
+    "!src/**/index.ts"
   ],
   "transform": {
     "^.+\\.ts?$": "ts-jest",
