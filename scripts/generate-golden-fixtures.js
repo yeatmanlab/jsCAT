@@ -35,6 +35,13 @@ const N_PEOPLE = 100;
 const MIN_THETA = -6;
 const MAX_THETA = 6;
 
+// Estimates are written rounded to this many decimal places. Cross-platform
+// floating point noise (different libm / V8 builds) perturbs the optimizer
+// path at the ~1e-9 level; rounding to 8 decimals makes regeneration
+// byte-stable across machines while staying far above the golden test's
+// comparison tolerance (1e-6).
+const BASELINE_DECIMALS = 8;
+
 const FIXTURE_DIR = path.join(__dirname, '..', 'src', '__tests__', '__fixtures__', 'golden');
 
 const rng = seedrandom(SEED);
@@ -112,10 +119,10 @@ const expected = responses.map(({ pid, resps }) => {
 
   return {
     pid,
-    theta_mle: catMLE.theta,
-    se_mle: catMLE.seMeasurement,
-    theta_eap: catEAP.theta,
-    se_eap: catEAP.seMeasurement,
+    theta_mle: round(catMLE.theta, BASELINE_DECIMALS),
+    se_mle: round(catMLE.seMeasurement, BASELINE_DECIMALS),
+    theta_eap: round(catEAP.theta, BASELINE_DECIMALS),
+    se_eap: round(catEAP.seMeasurement, BASELINE_DECIMALS),
   };
 });
 
