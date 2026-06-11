@@ -39,7 +39,7 @@ export class Cat {
   /**
    * Create a Cat object. This expects an single object parameter with the following keys
    * @param {{method: string, itemSelect: string, nStartItems: number, startSelect:string, theta: number, minTheta: number, maxTheta: number, priorDist: string, priorPar: number[]}=} destructuredParam
-   *     method: ability estimator, e.g. MLE or EAP, default = 'MLE'
+   *     method: ability estimator, 'MLE', 'WLE', or 'EAP', default = 'MLE'
    *     itemSelect: the method of item selection, e.g. "MFI", "random", "closest", default method = 'MFI'
    *     nStartItems: first n trials to keep non-adaptive selection
    *     startSelect: rule to select first n trials
@@ -146,7 +146,7 @@ export class Cat {
 
   private static validateMethod(method: string) {
     const lowerMethod = method.toLowerCase();
-    const validMethods: Array<string> = ['mle', 'eap']; // TO DO: add staircase
+    const validMethods: Array<string> = ['mle', 'eap', 'wle'];
     if (!validMethods.includes(lowerMethod)) {
       throw new Error('The abilityEstimator you provided is not in the list of valid methods');
     }
@@ -197,6 +197,8 @@ export class Cat {
       this._theta = this.estimateAbilityEAP();
     } else if (method === 'mle') {
       this._theta = this.estimateAbilityMLE();
+    } else if (method === 'wle') {
+      this._theta = this.estimateAbilityWLE();
     }
     this._theta = _clamp(this._theta, this.minTheta, this.maxTheta);
     this.calculateSE();
@@ -223,6 +225,20 @@ export class Cat {
 
   private negLikelihood(thetaArray: Array<number>) {
     return -this.likelihood(thetaArray[0]);
+  }
+
+  // Warm (1989) bias-corrected MLE: maximizes L(θ) + 0.5·ln I(θ)
+  private estimateAbilityWLE() {
+    const theta0 = [0];
+    const solution = minimize_Powell(this.negWLEObjective.bind(this), theta0);
+    return solution.argument[0];
+  }
+
+  private negWLEObjective(thetaArray: number[]) {
+    const theta = thetaArray[0];
+    const totalInfo = this._zetas.reduce((sum, zeta) => sum + fisherInformation(theta, zeta), 0);
+    if (totalInfo <= 0) return -this.likelihood(theta);
+    return -(this.likelihood(theta) + 0.5 * Math.log(totalInfo));
   }
 
   private likelihood(theta: number) {

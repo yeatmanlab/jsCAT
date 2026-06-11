@@ -391,3 +391,70 @@ ggsave("../plots/jsCAT_validation_2.png")
 ggsave("../plots/jsCAT_validation_2.pdf")
 ```
 
+# Validate WLE Estimator
+
+Compares jsCAT WLE theta estimates against mirt WLE (`fscores(method = "WLE")`)
+on a 50-item Rasch bank with 100 simulated examinees. All items are presented to
+each examinee (no adaptive selection) so the comparison isolates the estimator.
+
+## Generate data and compute mirt WLE
+
+```{r wle-generate-data}
+set.seed(42)
+n_items_wle <- 50
+n_people_wle <- 100
+
+b_wle <- seq(-3, 3, length.out = n_items_wle)
+
+th_wle <- rnorm(n_people_wle, 0, 1.5)
+resp_wle <- sapply(seq_len(n_items_wle), function(j) {
+  rbinom(n_people_wle, 1, plogis(th_wle - b_wle[j]))
+})
+
+mod_wle <- mirt(data.frame(resp_wle), 1, itemtype = "Rasch", verbose = FALSE)
+params_wle_b <- data.frame(coef(mod_wle, IRTpars = TRUE, simplify = TRUE))$items.b
+
+wle_mirt_out <- as_tibble(fscores(
+  mod_wle, method = "WLE",
+  response.pattern = resp_wle,
+  theta_lim = c(-6, 6)
+))
+
+dir.create("../data", showWarnings = FALSE)
+write.csv(
+  data.frame(a = 1, b = params_wle_b, c = 0, d = 1),
+  "../data/wle_items.csv", row.names = FALSE
+)
+write.csv(data.frame(resp_wle), "../data/wle_responses.csv", row.names = FALSE)
+```
+
+## Run jsCAT WLE simulation
+
+Run this once from the repo root before knitting (requires a fresh build):
+`npm run build && node validation/simulation/wle-simulation.js`
+
+```{r wle-run-jscat}
+system("cd ../.. && node validation/simulation/wle-simulation.js", intern = TRUE)
+```
+
+## Compare jsCAT WLE vs mirt WLE
+
+```{r wle-plot}
+jscat_wle <- read.csv("../data/wle_jscat.csv")
+
+g.wle <- ggplot(mapping = aes(x = wle_mirt_out$F1, y = jscat_wle$jscat_wle)) +
+  geom_point() +
+  labs(
+    title = "WLE estimate",
+    x = "WLE estimate from mirt",
+    y = "WLE estimate from jsCAT"
+  ) +
+  geom_abline(color = "gray") +
+  xlim(-6, 6) + ylim(-6, 6) +
+  coord_equal()
+
+g.wle
+
+ggsave("../plots/jsCAT_validation_3.png")
+ggsave("../plots/jsCAT_validation_3.pdf")
+```

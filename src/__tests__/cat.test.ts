@@ -241,6 +241,43 @@ for (const format of ['symbolic', 'semantic'] as Array<'symbolic' | 'semantic'>)
       expect(Math.max(...priorXValues)).toBeLessThanOrEqual(3);
     });
 
+    it('correctly updates ability estimate through WLE', () => {
+      // Single 2PL item: a=1, b=0, c=0, d=1, correct response.
+      // WLE score eq: (1-σ) + 0.5*(1-2σ) = 0  ⟹  σ=0.75  ⟹  θ=logit(0.75)=ln(3)≈1.099
+      const cat = new Cat({ method: 'WLE' });
+      cat.updateAbilityEstimate(convertZeta({ a: 1, b: 0, c: 0, d: 1 }, format), 1);
+      expect(cat.theta).toBeCloseTo(Math.log(3), 1);
+    });
+
+    it('WLE estimate is pulled toward center relative to MLE for extreme response patterns', () => {
+      const items = [
+        convertZeta({ a: 1, b: -4.0, c: 0, d: 1 }, format),
+        convertZeta({ a: 1, b: -3.0, c: 0, d: 1 }, format),
+      ];
+      const catMLE = new Cat({ method: 'MLE' });
+      const catWLE = new Cat({ method: 'WLE' });
+      catMLE.updateAbilityEstimate(items, [0, 0]);
+      catWLE.updateAbilityEstimate(items, [0, 0]);
+      // Both negative; WLE should be less extreme (closer to 0) than MLE
+      expect(catMLE.theta).toBeLessThan(catWLE.theta);
+    });
+
+    it('WLE estimate stays within theta bounds', () => {
+      const catWLE = new Cat({ method: 'WLE', minTheta: -6, maxTheta: 6 });
+      catWLE.updateAbilityEstimate(
+        [
+          convertZeta({ a: 2.225, b: -1.885, c: 0.21, d: 1 }, format),
+          convertZeta({ a: 1.174, b: -2.411, c: 0.212, d: 1 }, format),
+          convertZeta({ a: 2.104, b: -2.439, c: 0.192, d: 1 }, format),
+        ],
+        [1, 0, 1],
+      );
+      expect(catWLE.theta).toBeGreaterThanOrEqual(-6);
+      expect(catWLE.theta).toBeLessThanOrEqual(6);
+      expect(catWLE.seMeasurement).toBeGreaterThan(0);
+      expect(catWLE.seMeasurement).toBeLessThan(Number.MAX_VALUE);
+    });
+
     it('should throw an error if method is invalid', () => {
       try {
         new Cat({ method: 'coolMethod' });
