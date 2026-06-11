@@ -23,13 +23,16 @@ For existing jsCAT users: to make your applications compatible to the updated js
 import { Cat } from '@bdelab/jscat';
 
 // create a Cat object with MLE estimator
-const cat1 = new CAT({method: 'MLE', itemSelect: 'MFI', nStartItems: 0, theta: 0, minTheta: -6, maxTheta: 6})
+const cat1 = new Cat({method: 'MLE', itemSelect: 'MFI', nStartItems: 0, theta: 0, minTheta: -6, maxTheta: 6})
+
+// create a Cat object with WLE estimator (Warm 1989 bias-corrected MLE)
+const cat2 = new Cat({method: 'WLE', itemSelect: 'MFI', nStartItems: 0, theta: 0, minTheta: -6, maxTheta: 6})
 
 // create a Cat object with EAP estimator with normal distribution
-const cat2 = new CAT({method: 'eap', itemSelect: 'MFI', nStartItems: 0, theta: 0, minTheta: -6, maxTheta: 6, priorDist: 'norm', priorPar: [0, 1]})
+const cat3 = new Cat({method: 'eap', itemSelect: 'MFI', nStartItems: 0, theta: 0, minTheta: -6, maxTheta: 6, priorDist: 'norm', priorPar: [0, 1]})
 
-// create a Cat object with EAP estimator with unirform distribution
-const cat3 = new CAT({method: 'eap', itemSelect: 'MFI', nStartItems: 0, theta: 0, minTheta: -6, maxTheta: 6, priorDist: 'unif', priorPar: [-4, 4]})
+// create a Cat object with EAP estimator with uniform distribution
+const cat4 = new Cat({method: 'eap', itemSelect: 'MFI', nStartItems: 0, theta: 0, minTheta: -6, maxTheta: 6, priorDist: 'unif', priorPar: [-4, 4]})
 
 // option 1 to input stimuli:
 const zeta = {[{discrimination: 1, difficulty: 0, guessing: 0, slipping: 1}, {discrimination: 1, difficulty: 0.5, guessing: 0, slipping: 1}]}
@@ -40,7 +43,7 @@ const zeta = {[{a: 1, b: 0, c: 0, d: 1}, {a: 1, b: 0.5, c: 0, d: 1}]}
 const answer = {[1, 0]}
 
 // update the ability estimate by adding test items 
-cat.updateAbilityEstimate(zeta, answer);
+cat1.updateAbilityEstimate(zeta, answer);
 
 const currentTheta = cat1.theta;
 
@@ -69,6 +72,11 @@ Reference software: mirt (Chalmers, 2012)
 
 Reference software: catR (Magis et al., 2017)
 ![img_1.png](validation/plots/jsCAT_validation_2.png)
+
+### Validation of WLE estimator
+
+Reference software: mirt (Chalmers, 2012)
+![img_2.png](validation/plots/jsCAT_validation_3.png)
 
 # Clowder Usage Guide
 
